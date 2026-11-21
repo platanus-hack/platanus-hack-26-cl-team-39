@@ -96,6 +96,19 @@ El cerebro ([`cerebro/`](cerebro/)) es otro cliente del relé. Con cada frase de
 - Una versión recién activada queda a prueba: si no logra conectarse al relé en 60 s o se cae 3 veces, el bicho vuelve solo a la anterior y lo informa en `info.vuelta_atras`.
 - Lo que el cerebro decide llega a la web como `{"t":"cerebro","tipo":"…","texto":"…"}` (detalle en `cerebro/README.md`).
 
+### Voz: cuando el bicho habla
+
+El bicho se expresa casi siempre con sonidos y luces; la voz es especial. Cuando el cerebro decide hablar, pide el audio a ElevenLabs con una de las dos voces de [`bicho/lenguaje.json`](bicho/lenguaje.json) → `voces` (`dueno` o `extrano`) y lo manda por el relé:
+
+| Mensaje | Va a | Para qué |
+|---|---|---|
+| `{"t":"cerebro","tipo":"responde","texto":"…","voz":"dueno"}` | la web | Qué dijo y con qué voz |
+| `{"cmd":"hablar","voz":"dueno","fmt":"wav","b64":"…"}` | el bicho | Que lo diga por su parlante |
+| `{"t":"voz","evento":"<id del evento>","voz":"dueno","texto":"…","fmt":"wav","b64":"…"}` | la web | Escucharlo en bicho·dev (plan B si el parlante falla). El relé no lo guarda |
+
+- El audio es un WAV de 16 kHz, mono, 16 bits, en base64; dura 15 s como máximo (el relé acepta hasta 1 MB por mensaje).
+- `hablar` lo implementa el propio bicho cuando aprende a hablar ("bicho, aprende a hablar por tu parlante"): decodifica el WAV y lo reproduce con `aplay` en un hilo. Mientras no lo sepa, responde `comando desconocido` y su voz se oye solo en bicho·dev.
+
 ## Versiones
 
 1. Sube `version` (y `desc`) en `bicho/version.json`.

@@ -137,6 +137,26 @@ export default function App() {
   // Lo que decide y aprende el cerebro, y las imágenes que manda el bicho (su cámara, si aprendió a usarla).
   const [eventos, setEventos] = useState<Evento[]>([])
   const [imagenes, setImagenes] = useState<Imagen[]>([])
+  // Lo que el bicho dijo en voz alta: audio (data URL) por id del evento del cerebro.
+  const [voces, setVoces] = useState<Record<string, string>>({})
+  // Si su voz también suena en este computador (plan B por si el parlante del bicho falla).
+  const [vozAqui, setVozAqui] = useState(() => {
+    try {
+      return localStorage.getItem('bicho.vozAqui') === '1'
+    } catch {
+      return false
+    }
+  })
+  const vozAquiRef = useRef(vozAqui)
+  vozAquiRef.current = vozAqui
+  const cambiarVozAqui = (v: boolean) => {
+    setVozAqui(v)
+    try {
+      localStorage.setItem('bicho.vozAqui', v ? '1' : '0')
+    } catch {
+      /* sin localStorage */
+    }
+  }
   // El relé no dejó mandar desde esta conexión (clave del equipo ausente o incorrecta).
   const [claveRechazada, setClaveRechazada] = useState(false)
   // Lo que esta web le escribió al cerebro y el relé todavía no devuelve.
@@ -247,6 +267,14 @@ export default function App() {
           if (e.id) pendientes.current.delete(e.id)
           if (e.id && e.tipo)
             setEventos((prev) => (prev.some((x) => x.id === e.id) ? prev.map((x) => (x.id === e.id ? { ...e, pendiente: false } : x)) : [...prev, e].slice(-80)))
+        } else if (m.t === 'voz') {
+          // El cerebro manda el audio de lo que el bicho dijo en voz alta (ElevenLabs, WAV en base64).
+          const v = m as unknown as { evento?: string; fmt?: string; b64?: string }
+          if (v.evento && v.b64) {
+            const url = `data:audio/${v.fmt === 'mp3' ? 'mpeg' : 'wav'};base64,${v.b64}`
+            setVoces((prev) => Object.fromEntries([...Object.entries(prev).slice(-9), [v.evento!, url]]))
+            if (vozAquiRef.current) new Audio(url).play().catch(() => {})
+          }
         } else if (m.t === 'imagen') {
           const i = m as unknown as { nombre?: string; fmt?: string; b64?: string }
           if (i.nombre && i.b64) {
@@ -327,6 +355,7 @@ export default function App() {
       setFrases([])
       setEventos([])
       setImagenes([])
+      setVoces({})
       linkRef.current = l
       setLink(l)
       try {
@@ -953,6 +982,9 @@ export default function App() {
             <Cerebro
               eventos={eventos}
               imagenes={imagenes}
+              voces={voces}
+              vozAqui={vozAqui}
+              onVozAqui={cambiarVozAqui}
               connected={connected}
               motivo={motivoCerebro}
               onReconectar={reconectarRele}

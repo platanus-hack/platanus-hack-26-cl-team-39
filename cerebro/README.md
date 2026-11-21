@@ -8,6 +8,7 @@ Servicio aparte que le da inteligencia al bicho. Se conecta al relé ([`../rele/
 | responder | Le conversan o preguntan | La respuesta sale en bicho·dev → Cerebro |
 | comando | Le piden algo que ya sabe | Manda un comando de los de `bicho/comandos.py` |
 | aprender | Le piden algo que no sabe | Escribe el código, lo instala en el bicho y lo prueba |
+| hablar | Hay que decirlo en voz alta (saludar al dueño, advertir a un extraño) | Lo dice con una de sus voces de ElevenLabs. Solo si hay `ELEVENLABS_API_KEY` |
 
 ## Cómo aprende
 
@@ -26,8 +27,21 @@ cd cerebro && npm install
 ```
 
 ```bash
-ANTHROPIC_API_KEY=... RELE_URL=https://<relé> CLAVE_EQUIPO=... node cerebro.mjs
+ANTHROPIC_API_KEY=... RELE_URL=https://<relé> CLAVE_EQUIPO=... ELEVENLABS_API_KEY=... node cerebro.mjs
 ```
+
+## Voz
+
+El bicho se expresa casi siempre con sonidos y luces; la voz es especial. Tiene dos, diseñadas en ElevenLabs (los `voice_id` están en [`../bicho/lenguaje.json`](../bicho/lenguaje.json) → `voces`):
+
+- **dueno**: grave, algo robótica, cercana y protectora. Para su dueño y la gente que conoce.
+- **extrano**: demoníaca, muy grave y con eco. Para advertirle a un extraño o avisar de un peligro.
+
+Cuando Claude elige `hablar`, el cerebro pide el audio a ElevenLabs (WAV de 16 kHz) y lo manda al bicho con `{"cmd":"hablar",...}` y a bicho·dev con `{"t":"voz",...}`. Formato en [`../PROTOCOLO.md`](../PROTOCOLO.md).
+
+- Sin `ELEVENLABS_API_KEY` la herramienta no aparece y el bicho responde solo por escrito.
+- Si el bicho todavía no sabe reproducir audio, su voz se oye solo en bicho·dev. Para que aprenda: escríbele "bicho, aprende a hablar por tu parlante".
+- La clave es de la cuenta de ElevenLabs donde están las voces. Va en `cerebro/.env` o en el entorno, nunca en el repo.
 
 | Variable | Para qué |
 |---|---|

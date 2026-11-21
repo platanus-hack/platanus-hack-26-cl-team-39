@@ -14,6 +14,8 @@ export type Evento = {
   version?: string | null
   /** Lo escribió esta web y el relé todavía no confirma que lo recibió. */
   pendiente?: boolean
+  /** Lo dijo en voz alta, con esa voz (ElevenLabs). */
+  voz?: 'dueno' | 'extrano'
 }
 
 export type Imagen = { nombre: string; url: string; ts: number }
@@ -29,11 +31,16 @@ const ETIQUETA: Record<Evento['tipo'], string> = {
   decir: 'Le escribieron',
 }
 
+const VOZ: Record<NonNullable<Evento['voz']>, string> = { dueno: 'voz del dueño', extrano: 'voz para extraños' }
+
 const hora = (ts?: number) => (ts ? new Date(ts).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '')
 
 export function Cerebro({
   eventos,
   imagenes,
+  voces,
+  vozAqui,
+  onVozAqui,
   connected,
   motivo,
   onReconectar,
@@ -41,6 +48,11 @@ export function Cerebro({
 }: {
   eventos: Evento[]
   imagenes: Imagen[]
+  /** Audio de lo que dijo en voz alta, por id del evento. */
+  voces: Record<string, string>
+  /** Si su voz también suena en este computador. */
+  vozAqui: boolean
+  onVozAqui: (v: boolean) => void
   connected: boolean
   /** Por qué no se le puede escribir ahora (null si se puede). */
   motivo: string | null
@@ -74,10 +86,21 @@ export function Cerebro({
             <h2>Cerebro</h2>
             <p>Qué decide con lo que oye, qué hace y qué aprende · Claude Fable 5.2</p>
           </div>
-          <span className={`live ${aprendiendo ? '' : 'idle'}`}>
-            <i className="live-dot" aria-hidden />
-            {aprendiendo ? 'Aprendiendo…' : 'Atento'}
-          </span>
+          <div className="cerebro-estado">
+            <button
+              type="button"
+              className="capsule"
+              aria-pressed={vozAqui}
+              onClick={() => onVozAqui(!vozAqui)}
+              title="Cuando el bicho hable, que su voz suene también en este computador (por si su parlante falla)"
+            >
+              Voz aquí <b>{vozAqui ? 'sí' : 'no'}</b>
+            </button>
+            <span className={`live ${aprendiendo ? '' : 'idle'}`}>
+              <i className="live-dot" aria-hidden />
+              {aprendiendo ? 'Aprendiendo…' : 'Atento'}
+            </span>
+          </div>
         </header>
 
         <div className="cerebro-cuerpo">
@@ -121,10 +144,16 @@ export function Cerebro({
               <ol className="cerebro-eventos">
                 {lista.map((e) => (
                   <li key={e.id} className={`ev ev-${e.tipo}${e.pendiente ? ' ev-pendiente' : ''}`}>
-                    <span className="ev-tipo">{e.pendiente ? 'Enviando…' : (ETIQUETA[e.tipo] ?? e.tipo)}</span>
+                    <span className="ev-tipo">{e.pendiente ? 'Enviando…' : e.voz ? 'Dice' : (ETIQUETA[e.tipo] ?? e.tipo)}</span>
                     <div className="ev-cuerpo">
                       {e.oido && <p className="ev-oido">«{e.oido}»{typeof e.angulo === 'number' ? ` · ${e.angulo}°` : ''}</p>}
                       <p className="ev-texto">{e.texto}</p>
+                      {e.voz && (
+                        <div className={`ev-voz ev-voz-${e.voz}`}>
+                          <span>En voz alta · {VOZ[e.voz]}</span>
+                          {voces[e.id] ? <audio controls preload="none" src={voces[e.id]} /> : <small>preparando el audio…</small>}
+                        </div>
+                      )}
                     </div>
                     <span className="ev-hora">{hora(e.ts)}</span>
                   </li>

@@ -304,6 +304,12 @@ function conectarWeb(c, puedeMandar) {
         aLasWebs(l)
         continue
       }
+      // La voz del bicho ({"t":"voz"}, audio en base64 que manda el cerebro): se reparte a las webs, pero no se
+      // guarda para quien llegue después porque pesa mucho.
+      if (cmd === undefined && tipo === 'voz') {
+        if (c.puedeMandar) aLasWebs(l)
+        continue
+      }
       if (cmd === 'info') {
         if (E.info) c.enviar(linea(E.info))
         continue

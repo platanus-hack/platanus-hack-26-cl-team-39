@@ -2,6 +2,22 @@
   "version": 1,
   "nota": "Idioma del bicho: piezas que lleva y cómo se expresa en cada estado. Lo leen el simulador (web/src/sim) y, después, la Pi. Sonidos: lista de notas con onda (sine, triangle, square, sawtooth o ruido), frecuencia inicial f y final f2 en Hz, inicio t y duración d en segundos, volumen vol, trémolo trem en Hz y filtro pasa bajos en Hz. Luz: patrón del anillo de 24 LEDs. Cabeza: hacia dónde mira y qué gesto hace. Cuerpo: cómo se mueve con las ruedas. Matriz: ícono de la pantalla 8×8 del pecho.",
 
+  "voces": {
+    "nota": "El Bicho habla casi siempre con sonidos; la voz es para momentos especiales. Son voces diseñadas en ElevenLabs (cuenta de Guty): el voice_id sirve con una clave de esa cuenta, que no va en el repo.",
+    "dueno": {
+      "voice_id": "zg6zF76OfnKdG4pZCBxV",
+      "nombre": "Bicho · dueño",
+      "uso": "Con su dueño y la gente que conoce",
+      "como_suena": "Grave, con un timbre levemente robótico, llena de confianza y energía; cercana y protectora."
+    },
+    "extrano": {
+      "voice_id": "7Sc7WNBGMRPF7zGKowJh",
+      "nombre": "Bicho · extraños",
+      "uso": "Con extraños o cuando detecta un peligro",
+      "como_suena": "Demoníaca, muy grave y ronca, con eco profundo; lenta y fría."
+    }
+  },
+
   "piezas": [
     { "id": "chasis", "nombre": "Chasis acrílico 4WD de doble piso", "cantidad": 1, "uso": "El cuerpo" },
     { "id": "motores", "nombre": "Motorreductor DC amarillo + rueda de goma", "cantidad": 4, "uso": "Moverse" },
@@ -208,6 +224,7 @@
         { "onda": "sawtooth", "f": 500, "f2": 230, "t": 0.26, "d": 0.15, "vol": 0.45, "filtro": 2200 }
       ],
       "voz": "Esta es propiedad privada. El dueño ya fue avisado.",
+      "voz_de": "extrano",
       "luz": { "patron": "fijo", "color": "#ffffff" },
       "cabeza": { "mirar": "objetivo" }, "cuerpo": "plantarse", "matriz": "alto",
       "foco": true,

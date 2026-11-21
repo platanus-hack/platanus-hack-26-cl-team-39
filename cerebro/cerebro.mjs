@@ -10,6 +10,8 @@
 //   comando    le piden algo que ya sabe hacer (lo que hay en comandos.py del bicho)
 //   aprender   le piden algo que no sabe: Claude escribe el código, lo instala en el bicho por el
 //              relé y lo prueba. Si la versión nueva falla, el bicho vuelve solo a la anterior.
+//   hablar     como responder, pero lo dice en voz alta con una de sus voces de ElevenLabs (solo si
+//              hay ELEVENLABS_API_KEY). Casi siempre se expresa con sonidos y luces: la voz es especial.
 //
 // Lo que decide y hace lo anuncia con {"t":"cerebro",...}, que el relé reparte a bicho·dev.
 //
@@ -24,6 +26,9 @@
 //   CEREBRO_ESCUCHA     "nombre" (por defecto): de lo que oye, solo evalúa las frases que dicen "bicho" o que
 //                       siguen una conversación reciente. "todo": evalúa cada frase (caro: cada una es una
 //                       llamada a Claude, y el micrófono capta todas las conversaciones de alrededor).
+//   ELEVENLABS_API_KEY  clave de ElevenLabs para que el bicho hable. Sin ella, solo responde por escrito.
+//   ELEVENLABS_MODELO   modelo de voz (eleven_v4 por defecto; eleven_flash_v2_5 es más rápido).
+//   ELEVENLABS_VOZ_DUENO, ELEVENLABS_VOZ_EXTRANO  voice_id de cada voz; por defecto, los de bicho/lenguaje.json.
 import Anthropic from '@anthropic-ai/sdk'
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
@@ -51,6 +56,22 @@ const ESCUCHA_TODO = process.env.CEREBRO_ESCUCHA === 'todo'
 // Cómo suele transcribir Whisper el nombre del bicho.
 const LO_NOMBRAN = /\b(bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)\b/i
 const VENTANA_CONVERSACION_MS = 45_000
+
+// Voz: las que se diseñaron en ElevenLabs. Los voice_id están en bicho/lenguaje.json → voces.
+const ELEVEN = process.env.ELEVENLABS_API_KEY || ''
+const MODELO_VOZ = process.env.ELEVENLABS_MODELO || 'eleven_v4'
+const VOCES = (() => {
+  const v = { dueno: process.env.ELEVENLABS_VOZ_DUENO || '', extrano: process.env.ELEVENLABS_VOZ_EXTRANO || '' }
+  try {
+    const l = JSON.parse(readFileSync(join(AQUI, '..', 'bicho', 'lenguaje.json'), 'utf8'))
+    v.dueno ||= l.voces?.dueno?.voice_id ?? ''
+    v.extrano ||= l.voces?.extrano?.voice_id ?? ''
+  } catch {
+    /* sin lenguaje.json: solo las variables de entorno */
+  }
+  return v
+})()
+const HABLA = Boolean(ELEVEN && VOCES.dueno && VOCES.extrano)
 const log = (m) => console.log(`[${new Date().toISOString()}] ${m}`)
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -64,6 +85,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 // baseURL fijo: en el entorno puede haber un ANTHROPIC_BASE_URL de otra herramienta.
 const claude = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, baseURL: 'https://api.anthropic.com' })
+log(HABLA ? `voz: activa (${MODELO_VOZ})` : 'voz: apagada (falta ELEVENLABS_API_KEY o los voice_id); responde solo por escrito')
 
 /* ------------------------------------------------------------------ */
 /* Conexión con el relé                                                 */
@@ -282,6 +304,18 @@ const H_DECIDIR = [
       aviso: { type: 'string', description: 'Lo que el bicho le dice a la persona mientras tanto, corto.' },
     },
   ),
+  ...(HABLA
+    ? [
+        herramienta('hablar', 'Como responder, pero además lo dices en voz alta por tu parlante. Úsalo poco: la voz es especial.', {
+          texto: { type: 'string', description: 'Lo que dices, corto (una o dos frases), en español de Chile.' },
+          voz: {
+            type: 'string',
+            enum: ['dueno', 'extrano'],
+            description: '"dueno" para tu dueño y la gente que conoces; "extrano" (grave y demoníaca, da miedo a propósito) para un extraño o un peligro.',
+          },
+        }),
+      ]
+    : []),
 ]
 
 function sistemaDecidir(comandosPy) {
@@ -293,11 +327,16 @@ Te llega cada frase que se oye cerca, transcrita. La mayoría NO es para ti: el 
 - responder: te hablan o te preguntan algo y basta con contestar.
 - comando: te piden algo que ya sabes hacer. Tus comandos son exactamente los de comandos.py (abajo). No inventes comandos.
 - aprender: te piden algo que no sabes hacer todavía y que se podría lograr con código nuevo y el hardware que tienes conectado (por ejemplo, te dicen que te conectaron una cámara y que muestres lo que ves, y no tienes ningún comando de cámara). Úsalo solo cuando te lo piden a ti de forma clara.${APRENDE ? '' : ' AHORA EL APRENDIZAJE ESTÁ DESACTIVADO: si te piden algo que no sabes, responde que no puedes aprender en este momento.'}
-- mirar: si ya tienes cámara funcionando y te preguntan qué ves, mira antes de responder. Si la frase ya viene con una imagen adjunta, eso es lo que ves ahora: responde directo, sin usar mirar.
+- mirar: si ya tienes cámara funcionando y te preguntan qué ves, mira antes de responder. Si la frase ya viene con una imagen adjunta, eso es lo que ves ahora: responde directo, sin usar mirar.${
+    HABLA
+      ? `
+- hablar: igual que responder, pero además lo dices en voz alta por tu parlante. Tu forma normal de expresarte son sonidos y luces: la voz es especial y se usa poco. Úsala cuando te piden que hables o que le digas algo a alguien, para saludar o tranquilizar a tu dueño o a alguien de la casa (voz "dueno"), o para advertirle a un extraño que está en el terreno o avisar de un peligro (voz "extrano", grave y que da miedo a propósito). Con un extraño sé firme y breve: es propiedad privada, estás grabando y el dueño ya fue avisado. Nunca amenaces con hacerle daño a nadie ni insultes.`
+      : ''
+  }
 
 Se nota que te hablan a ti cuando te nombran ("bicho"), te saludan o te hablan directo ("hey", "oye", "puedes…", "tienes…") o siguen una conversación que ya tenías. La transcripción puede venir con errores: interpreta con sentido común.
 
-Habla en español de Chile, corto y con gracia, sin emojis. Después de usar "comando" o "mirar", termina con "responder" para contarle a la persona qué pasó.
+Habla en español de Chile, corto y con gracia, sin emojis. Después de usar "comando" o "mirar", termina con "responder"${HABLA ? ' (o "hablar")' : ''} para contarle a la persona qué pasó.
 
 Así es tu código de comandos ahora mismo (lo que sabes hacer):
 
@@ -377,6 +416,10 @@ La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
         hecho = { tipo: 'responde', texto: String(x.texto ?? '') }
         return { fin: 'responde' }
       }
+      if (nombre === 'hablar') {
+        hecho = { tipo: 'responde', texto: String(x.texto ?? ''), voz: x.voz === 'extrano' ? 'extrano' : 'dueno' }
+        return { fin: 'responde' }
+      }
       if (nombre === 'comando') {
         const c = x.comando
         if (!c || typeof c !== 'object' || typeof c.cmd !== 'string' || c.cmd.startsWith('_')) throw new Error('El comando debe ser un objeto con "cmd".')
@@ -399,12 +442,73 @@ La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
   })
 
   if (!hecho) hecho = r.texto ? { tipo: 'responde', texto: r.texto } : { tipo: 'ignora', texto: r.motivo === 'refusal' ? 'Claude declinó responder.' : 'sin decisión' }
-  E.historia.push(`Oíste «${frase.texto}» (${frase.angulo ?? '?'}°) → ${hecho.tipo}: ${hecho.texto}`)
+  E.historia.push(`Oíste «${frase.texto}» (${frase.angulo ?? '?'}°) → ${hecho.tipo}${hecho.voz ? ` en voz alta (voz ${hecho.voz})` : ''}: ${hecho.texto}`)
   if (E.historia.length > 12) E.historia.shift()
   if (hecho.tipo !== 'ignora') E.ultimaInteraccion = Date.now()
   log(`decidió en ${Date.now() - inicio} ms (${MODELO_DECIDIR})`)
-  anunciar(hecho.tipo, hecho.texto, { frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null })
+  const idEvento = randomUUID()
+  anunciar(hecho.tipo, hecho.texto, { id: idEvento, frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null, ...(hecho.voz ? { voz: hecho.voz } : {}) })
+  if (hecho.voz) hablar(hecho.texto, hecho.voz, idEvento).catch((e) => anunciar('error', `No pude hablar: ${String(e?.message ?? e).slice(0, 200)}`, { frase: frase.id }))
   if (hecho.tipo === 'aprende') aprender(hecho.que, frase).catch((e) => errorDeClaude(e, 'aprendiendo'))
+}
+
+/* ------------------------------------------------------------------ */
+/* Hablar: el texto se convierte en audio con ElevenLabs                */
+/* ------------------------------------------------------------------ */
+
+const MUESTREO = 16000 // Hz: alcanza para un parlante chico y el WAV pesa poco por el relé
+
+/** WAV mono de 16 bits a partir del PCM crudo que devuelve ElevenLabs. */
+function wav(pcm, hz) {
+  const h = Buffer.alloc(44)
+  h.write('RIFF', 0)
+  h.writeUInt32LE(36 + pcm.length, 4)
+  h.write('WAVE', 8)
+  h.write('fmt ', 12)
+  h.writeUInt32LE(16, 16)
+  h.writeUInt16LE(1, 20) // PCM
+  h.writeUInt16LE(1, 22) // mono
+  h.writeUInt32LE(hz, 24)
+  h.writeUInt32LE(hz * 2, 28)
+  h.writeUInt16LE(2, 32)
+  h.writeUInt16LE(16, 34)
+  h.write('data', 36)
+  h.writeUInt32LE(pcm.length, 40)
+  return Buffer.concat([h, pcm])
+}
+
+/** Pide a ElevenLabs el audio de un texto con una de las voces del bicho. Devuelve un WAV en base64. */
+async function sintetizar(texto, voz) {
+  const id = VOCES[voz] || VOCES.dueno
+  const pedirAudio = (modelo) =>
+    fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(id)}?output_format=pcm_${MUESTREO}`, {
+      method: 'POST',
+      headers: { 'xi-api-key': ELEVEN, 'content-type': 'application/json' },
+      body: JSON.stringify({ text: texto.slice(0, 250), model_id: modelo }), // ~15 s: el relé acepta hasta 1 MB por mensaje
+    })
+  let r = await pedirAudio(MODELO_VOZ)
+  // Si la cuenta no tiene ese modelo, se intenta una vez con uno que siempre está.
+  if (!r.ok && (r.status === 400 || r.status === 422) && MODELO_VOZ !== 'eleven_multilingual_v2') r = await pedirAudio('eleven_multilingual_v2')
+  if (!r.ok) throw new Error(`ElevenLabs respondió ${r.status}: ${(await r.text()).slice(0, 200)}`)
+  return wav(Buffer.from(await r.arrayBuffer()), MUESTREO).toString('base64')
+}
+
+let ultimoAvisoSinParlante = 0
+
+/**
+ * Dice un texto en voz alta. El audio va al bicho ({"cmd":"hablar"}), que lo reproduce por su parlante, y a
+ * bicho·dev ({"t":"voz"}), que lo puede reproducir en el computador: sirve de plan B si el parlante falla.
+ */
+async function hablar(texto, voz, evento) {
+  const inicio = Date.now()
+  const b64 = await sintetizar(texto, voz)
+  log(`voz ${voz} lista en ${Date.now() - inicio} ms (${Math.round(b64.length / 1024)} KB)`)
+  enviar({ t: 'voz', id: randomUUID(), evento, voz, texto, fmt: 'wav', b64, ts: Date.now() })
+  const r = await comandoAlBicho({ cmd: 'hablar', voz, fmt: 'wav', b64 }, 1500)
+  if (/comando desconocido/i.test(r) && Date.now() - ultimoAvisoSinParlante > 10 * 60_000) {
+    ultimoAvisoSinParlante = Date.now()
+    anunciar('error', 'El bicho todavía no sabe hablar por su parlante: por ahora su voz se oye solo en bicho·dev. Pídele que aprenda a hablar.')
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -445,6 +549,7 @@ Cómo es tu código (carpeta bicho/, todo en un mismo directorio, se importa por
 - sensores.py: leer() -> dict. Se llama 20 veces por segundo: tiene que ser rápida y no bloquear. Lo numérico o booleano se grafica solo en la web.
 - salida.py: salida.emitir(dict) manda algo a la web desde cualquier hilo. La web ya sabe mostrar {"t":"imagen","nombre":"camara","fmt":"jpeg","b64":"<base64>"} en su sección Vista (muestra la última de cada nombre). salida.hay_publico() dice si alguien está mirando.
 - Puedes crear módulos nuevos (por ejemplo camara.py) e importarlos desde comandos.py o sensores.py.
+- Para que hables, el cerebro te manda {"cmd":"hablar","voz":"dueno"|"extrano","fmt":"wav","b64":"<WAV en base64: 16 kHz, mono, 16 bits>"}. Si te piden aprender a hablar, implementa ese comando: decodifica el base64 a un archivo temporal y reprodúcelo con aplay (en la tarjeta de sonido que diga el diagnóstico) en un hilo daemon y con timeout. Si llega otro mientras suena, corta el anterior. Devuelve un texto corto, sin el base64.
 
 Reglas para que la versión nueva no se rompa:
 1. Antes de escribir, usa inspeccionar_hardware para saber qué hay conectado de verdad y con qué programas cuentas. No supongas.
