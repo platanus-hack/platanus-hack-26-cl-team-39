@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Console, type ConsoleLine } from './components/Console'
 import { Countdown } from './components/Countdown'
+import { Inventario } from './components/Inventario'
 import { Sensors } from './components/Sensors'
 import { Toasts, type Toast } from './components/Toasts'
 import { Icon, SparkDefs, fmtAgo, fmtBytes, fmtUptime } from './components/ui'
@@ -128,6 +129,24 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const mainRef = useRef<HTMLElement>(null)
   const { active, scrolled, pick } = useScrollSpy(mainRef)
+  // Vista principal: el panel del bicho o el inventario del equipo (#inventario).
+  const [view, setView] = useState<'bicho' | 'inventario'>(() => (location.hash === '#inventario' ? 'inventario' : 'bicho'))
+  useEffect(() => {
+    const onHash = () => setView(location.hash === '#inventario' ? 'inventario' : 'bicho')
+    addEventListener('hashchange', onHash)
+    return () => removeEventListener('hashchange', onHash)
+  }, [])
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 })
+  }, [view])
+  const goSection = (e: React.MouseEvent, i: number) => {
+    if (view === 'bicho') return pick(i)
+    e.preventDefault()
+    history.pushState(null, '', `#${NAV[i].id}`)
+    setView('bicho')
+    requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(NAV[i].id)?.scrollIntoView()))
+    pick(i)
+  }
   const toastId = useRef(0)
   const prevStatus = useRef<LinkStatus>('disconnected')
   const userClosing = useRef(false)
@@ -499,13 +518,21 @@ export default function App() {
           <nav className="nav" aria-label="Secciones">
             <p className="nav-label">Bicho</p>
             {NAV.map((n, i) => (
-              <a key={n.id} href={`#${n.id}`} aria-current={active === i ? 'true' : undefined} onClick={() => pick(i)}>
+              <a key={n.id} href={`#${n.id}`} aria-current={view === 'bicho' && active === i ? 'true' : undefined} onClick={(e) => goSection(e, i)}>
                 <n.icon />
                 <span>{n.label}</span>
                 {n.id === 'firmware' && fwState === 'outdated' && <i className="nav-badge" title="Hay una versión nueva" />}
                 {n.id === 'sensores' && <small className="nav-aside">{connected ? store.hz.toFixed(1) : '0.0'} Hz</small>}
               </a>
             ))}
+          </nav>
+
+          <nav className="nav nav-inv" aria-label="Equipo">
+            <p className="nav-label">Equipo</p>
+            <a href="#inventario" aria-current={view === 'inventario' ? 'true' : undefined}>
+              <Icon.Box />
+              <span>Inventario</span>
+            </a>
           </nav>
 
           <div className="conn">
@@ -549,6 +576,10 @@ export default function App() {
         {/* ── contenido ── */}
         <main className={`main ${scrolled ? 'scrolled' : ''}`} ref={mainRef}>
           <div className="main-inner">
+            {view === 'inventario' ? (
+              <Inventario toast={toast} />
+            ) : (
+            <>
             <header className="toolbar">
               <div className="tb-title">
                 <h1>{NAV[active].label}</h1>
@@ -857,6 +888,8 @@ export default function App() {
                 </article>
               </section>
             </div>
+            </>
+            )}
           </div>
         </main>
       </div>

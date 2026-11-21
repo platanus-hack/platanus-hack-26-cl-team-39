@@ -102,6 +102,40 @@ export const Icon = {
       <path d="M8 5.5v13l10-6.5Z" fill="currentColor" />
     </svg>
   ),
+  Box: (p: P) => (
+    <svg {...base} strokeWidth={1.7} {...p}>
+      <path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z" />
+      <path d="M3.5 7.5 12 12l8.5-4.5M12 12v9" />
+    </svg>
+  ),
+  Sparkle: (p: P) => (
+    <svg {...base} strokeWidth={1.7} {...p}>
+      <path d="M12 3.5c.5 3.9 2.6 6 6.5 6.5-3.9.5-6 2.6-6.5 6.5-.5-3.9-2.6-6-6.5-6.5 3.9-.5 6-2.6 6.5-6.5Z" fill="currentColor" fillOpacity={0.18} />
+      <path d="M18.5 15.5c.2 1.5 1 2.3 2.5 2.5-1.5.2-2.3 1-2.5 2.5-.2-1.5-1-2.3-2.5-2.5 1.5-.2 2.3-1 2.5-2.5Z" />
+    </svg>
+  ),
+  Search: (p: P) => (
+    <svg {...base} strokeWidth={1.9} {...p}>
+      <circle cx="10.8" cy="10.8" r="6.3" />
+      <path d="m15.5 15.5 4.5 4.5" />
+    </svg>
+  ),
+  Plus: (p: P) => (
+    <svg {...base} strokeWidth={2} {...p}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  ),
+  Close: (p: P) => (
+    <svg {...base} strokeWidth={2} {...p}>
+      <path d="m6.5 6.5 11 11M17.5 6.5l-11 11" />
+    </svg>
+  ),
+  Key: (p: P) => (
+    <svg {...base} strokeWidth={1.8} {...p}>
+      <circle cx="8" cy="15" r="4" />
+      <path d="m10.8 12.2 7.7-7.7M15.5 7.5l2.5 2.5M17.8 5.2l1.8 1.8" />
+    </svg>
+  ),
   /** Lámpara robótica: el ícono de la app. */
   Bicho: (p: P) => (
     <svg viewBox="0 0 32 32" fill="none" stroke="#3b2a00" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" {...p}>

@@ -34,3 +34,16 @@ npm run release -- --notes "Agrega el micrófono"
 ```
 
 El paquete queda en `public/firmware/<versión>/` y se agrega a `manifest.json`. La web lo muestra como disponible en unos 10 segundos y avisa a quien la tenga abierta. Haz commit de `public/firmware/` para que el resto del equipo también lo vea.
+
+## Inventario del equipo
+
+En la barra lateral, **Equipo → Inventario**: el hardware del equipo (sensores, motores, placas, herramientas), con buscador, filtros, ficha para editar cada ítem y la actividad en vivo de quién cambió qué. Reemplaza al Claude Sheet.
+
+- **Datos:** Neon, proyecto `crbrc-platanus`, base `inventario` ([`db/schema.sql`](db/schema.sql)). Se cargó desde las tres pestañas del Sheet con [`scripts/cargar-inventario.mjs`](scripts/cargar-inventario.mjs).
+- **API:** funciones en [`api/`](api/) que corren igual en Vercel y en `npm run dev`. Leer es público; agregar, editar, borrar y preguntarle a Claude piden la clave del equipo (`Authorization: Bearer …`).
+  - `GET /api/inventario` (`?q=`, `?categoria=`, `?estado=`, `?origen=`, `?id=`), `POST`, `PATCH ?id=`, `DELETE ?id=`
+  - `GET /api/historial`
+  - `POST /api/preguntar` `{ "pregunta": "…" }`: Claude responde con todo el inventario como contexto.
+  - `POST /api/mcp`: servidor MCP con las mismas herramientas.
+- **Para los Claude del equipo:** la skill [`../.claude/skills/inventario`](../.claude/skills/inventario/SKILL.md) les enseña a usarlo. Se carga sola en Claude Code dentro del repo.
+- **Variables:** copia [`.env.example`](.env.example) a `.env`. Sin `DATABASE_URL`, el dev server usa la API publicada, así que para mirar el inventario no necesitas nada.
