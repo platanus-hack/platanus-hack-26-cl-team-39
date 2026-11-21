@@ -4,8 +4,6 @@
     { "pieza": "Cunas de motor ×4", "impresora": "Bambu A1", "inicio": "2026-11-21T14:03:00-03:00", "minutos": 86 },
     { "pieza": "Placa de abajo", "impresora": "Bambu A2L n.º 1", "inicio": "2026-11-21T14:10:00-03:00", "minutos": 368 },
     { "pieza": "Placa de arriba", "impresora": "Bambu A2L n.º 2", "inicio": "2026-11-21T15:50:00-03:00", "minutos": 368 },
-    { "pieza": "Brazo · placas", "impresora": "Creality CR-3040 Pro", "inicio": "2026-11-21T17:35:00-03:00", "minutos": 221, "aprox": true },
-    { "pieza": "Brazo · torreta y dedos", "impresora": "Bambu A1 n.º 1", "inicio": "2026-11-21T17:35:00-03:00", "minutos": 214, "aprox": true },
-    { "pieza": "Brazo · cunas y palma", "impresora": "Bambu A1 n.º 2", "inicio": "2026-11-21T17:35:00-03:00", "minutos": 201, "aprox": true }
+    { "pieza": "Brazo · placas", "impresora": "Creality CR-3040 Pro", "inicio": "2026-11-21T17:35:00-03:00", "minutos": 221, "aprox": true }
   ]
 }
