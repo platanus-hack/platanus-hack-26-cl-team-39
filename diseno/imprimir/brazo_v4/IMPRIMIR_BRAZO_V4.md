@@ -2,6 +2,41 @@
 
 21-nov-2026 · Equipo CRBRC · Platanus Hack 26. **Reemplaza al brazo de la bandeja B07** (P07-P11, P14, P15 de la v3): no imprimir B07 ni B08.
 
+## Archivos para la SD (ya laminados) ✅
+
+**No hay que laminar nada.** En [`SD/`](SD/) están los `.gcode.3mf` listos, en 4 carpetas: `A1_PETG`, `A1_PLA`, `A2L_PETG` y `A2L_PLA`. Se laminaron con Bambu Studio 2.09 y los perfiles oficiales: boquilla 0,4, placa Textured PEI, capa de 0,20 mm, 4 paredes, 5/5 capas y 40 % de giroide. B10 lleva soporte árbol por dentro, B12 lleva brim de 4 mm y B14 va al 100 %.
+
+Para imprimir:
+1. Copia a la SD **solo la carpeta de tu impresora y tu filamento**.
+2. En la impresora, entra a **Archivos** y elige la bandeja.
+
+Usa PETG si hay. El PLA es el respaldo.
+
+| Bandeja | A1 | A2L | PETG |
+|---|---|---|---|
+| B10 · Torreta | 4,4 h | 4,8 h | 102 g |
+| B11 · Plataforma y cuna del hombro | 2,3 h | 2,5 h | 50 g |
+| B12 · Placas de los eslabones | 2,5 h | 2,8 h | 60 g |
+| B13 · Cuna del codo, palma, contraplaca y separadores | 5,0 h | 5,3 h | 94 g |
+| B14 · Dedos y bujes (100 %) | 1,5 h | 1,4 h | 25 g |
+| B15 · Soportes del LiDAR y de la cámara | 0,9 h | 0,9 h | 11 g |
+| **Total** | **16.6 h** | **17.7 h** | **342 g** |
+
+Los tiempos son los que calcula Bambu Studio. Todos están en [`SD/tiempos_bambu.json`](SD/tiempos_bambu.json).
+
+**Aviso «floating cantilever» en B11, B12 y B13.** Son puentes cortos y previstos: el asiento del horn (Ø25 × 1,6 mm) y las ventanas de las cunas (20 mm). Se imprimen bien sin soporte. Si se les pone soporte, queda atrapado en el asiento del horn.
+
+**Orden:**
+1. **B12 y B13 primero**, porque son el brazo. Usa la impresora que esté libre: todas caben en la A1.
+2. Después B10, B11, B14 y B15.
+
+**Copia en Drive**, con el mismo contenido, para bajarla directo a la SD: https://drive.google.com/drive/folders/1tgVAXhTr5cy_0PL6q8t-ZDHyu3ACUdJh
+
+**Para regenerar** si cambia una medida:
+1. `Blender -b -P diseno/blender/generar_brazo_v4.py -- <salida>`
+2. `python3 -I diseno/blender/empaquetar_brazo_v4.py <salida> diseno/imprimir/brazo_v4`
+3. `python3 -I diseno/blender/laminar_brazo_v4.py`. Necesita Bambu Studio 2.09 en `/Applications`. Los perfiles aplanados están en `perfiles_bambu/`.
+
 ## Por qué cambió
 
 Dos análisis estructurales independientes (Opus 5.5 y Fable 5.2, agente ORBI · Ingeniero Estructural) revisaron el brazo v3 y llegaron a lo mismo: **no se podía armar y no tenía carga admisible.** Lo confirmamos midiendo el script y las STL:
@@ -39,7 +74,7 @@ Dos análisis estructurales independientes (Opus 5.5 y Fable 5.2, agente ORBI ·
 | **B13** Cunas y pinza | P35 (cuna del codo), P30 (palma), P34 (contraplaca), P36 ×2, P37 | 97 | 4 paredes, 40 % giroide, sin soportes |
 | **B14** Dedos y bujes | P31, P32, P33 | 26 | **100 % de relleno** |
 
-Son unos 333 g de PETG.
+Son unos 342 g de PETG, según el cálculo de Bambu Studio.
 
 **Con 2 impresoras:**
 - A2L n.º 1: B12 → B13.

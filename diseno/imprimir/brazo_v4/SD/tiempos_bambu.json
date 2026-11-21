@@ -1,0 +1,194 @@
+[
+ {
+  "impresora": "A1",
+  "material": "PETG",
+  "bandeja": "B10",
+  "horas": 4.43,
+  "gramos": 102,
+  "aviso": ""
+ },
+ {
+  "impresora": "A1",
+  "material": "PETG",
+  "bandeja": "B11",
+  "horas": 2.29,
+  "gramos": 50,
+  "aviso": "It seems object P08_plataforma_y_cuna_del_hombro has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A1",
+  "material": "PETG",
+  "bandeja": "B12",
+  "horas": 2.47,
+  "gramos": 60,
+  "aviso": "It seems object P09A_eslabon_1_placa_del_horn has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A1",
+  "material": "PETG",
+  "bandeja": "B13",
+  "horas": 5.03,
+  "gramos": 94,
+  "aviso": "It seems object P35_cuna_del_codo has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A1",
+  "material": "PETG",
+  "bandeja": "B14",
+  "horas": 1.46,
+  "gramos": 25,
+  "aviso": ""
+ },
+ {
+  "impresora": "A1",
+  "material": "PETG",
+  "bandeja": "B15",
+  "horas": 0.9,
+  "gramos": 11,
+  "aviso": ""
+ },
+ {
+  "impresora": "A1",
+  "material": "PLA",
+  "bandeja": "B10",
+  "horas": 4.3,
+  "gramos": 107,
+  "aviso": ""
+ },
+ {
+  "impresora": "A1",
+  "material": "PLA",
+  "bandeja": "B11",
+  "horas": 1.87,
+  "gramos": 53,
+  "aviso": "It seems object P08_plataforma_y_cuna_del_hombro has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A1",
+  "material": "PLA",
+  "bandeja": "B12",
+  "horas": 2.35,
+  "gramos": 63,
+  "aviso": "It seems object P09A_eslabon_1_placa_del_horn has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A1",
+  "material": "PLA",
+  "bandeja": "B13",
+  "horas": 4.7,
+  "gramos": 98,
+  "aviso": "It seems object P35_cuna_del_codo has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A1",
+  "material": "PLA",
+  "bandeja": "B14",
+  "horas": 1.38,
+  "gramos": 26,
+  "aviso": ""
+ },
+ {
+  "impresora": "A1",
+  "material": "PLA",
+  "bandeja": "B15",
+  "horas": 0.75,
+  "gramos": 11,
+  "aviso": ""
+ },
+ {
+  "impresora": "A2L",
+  "material": "PETG",
+  "bandeja": "B10",
+  "horas": 4.8,
+  "gramos": 102,
+  "aviso": ""
+ },
+ {
+  "impresora": "A2L",
+  "material": "PETG",
+  "bandeja": "B11",
+  "horas": 2.47,
+  "gramos": 50,
+  "aviso": "It seems object P08_plataforma_y_cuna_del_hombro has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A2L",
+  "material": "PETG",
+  "bandeja": "B12",
+  "horas": 2.77,
+  "gramos": 60,
+  "aviso": "It seems object P09A_eslabon_1_placa_del_horn has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A2L",
+  "material": "PETG",
+  "bandeja": "B13",
+  "horas": 5.35,
+  "gramos": 94,
+  "aviso": "It seems object P35_cuna_del_codo has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A2L",
+  "material": "PETG",
+  "bandeja": "B14",
+  "horas": 1.38,
+  "gramos": 25,
+  "aviso": ""
+ },
+ {
+  "impresora": "A2L",
+  "material": "PETG",
+  "bandeja": "B15",
+  "horas": 0.91,
+  "gramos": 10,
+  "aviso": ""
+ },
+ {
+  "impresora": "A2L",
+  "material": "PLA",
+  "bandeja": "B10",
+  "horas": 4.55,
+  "gramos": 107,
+  "aviso": ""
+ },
+ {
+  "impresora": "A2L",
+  "material": "PLA",
+  "bandeja": "B11",
+  "horas": 2.03,
+  "gramos": 53,
+  "aviso": "It seems object P08_plataforma_y_cuna_del_hombro has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A2L",
+  "material": "PLA",
+  "bandeja": "B12",
+  "horas": 2.65,
+  "gramos": 63,
+  "aviso": "It seems object P09A_eslabon_1_placa_del_horn has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A2L",
+  "material": "PLA",
+  "bandeja": "B13",
+  "horas": 5.05,
+  "gramos": 98,
+  "aviso": "It seems object P35_cuna_del_codo has floating cantilever. Please re-orient the object or enable support generation."
+ },
+ {
+  "impresora": "A2L",
+  "material": "PLA",
+  "bandeja": "B14",
+  "horas": 1.31,
+  "gramos": 26,
+  "aviso": ""
+ },
+ {
+  "impresora": "A2L",
+  "material": "PLA",
+  "bandeja": "B15",
+  "horas": 0.76,
+  "gramos": 11,
+  "aviso": ""
+ }
+]

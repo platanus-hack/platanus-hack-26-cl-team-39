@@ -18,6 +18,7 @@ _Agrega aquí todo link que el resto vaya a necesitar. Nada con claves, tokens n
 
 ## Diseño e impresión 3D
 
+- **Brazo v4 listo para la SD (G-code A1/A2L, PETG/PLA, STL y guía):** https://drive.google.com/drive/folders/1tgVAXhTr5cy_0PL6q8t-ZDHyu3ACUdJh · en el repo: `diseno/imprimir/brazo_v4/`
 - **Archivos para imprimir (Drive):** https://drive.google.com/drive/folders/1a9WasSzIEE1wSZMqfCm-AzRK_FrVOw_S (placas enteras de 320 × 200)
 - Versión con las placas en dos mitades, para camas chicas, y versiones anteriores: https://drive.google.com/drive/folders/1YMCR-BZjomPj6vu6_y4VduugyFtjLoXz
 - Fotos y videos del proceso: https://drive.google.com/drive/folders/1-Ze_hGI7VpxI-U5A6CU_j8Gqs-QH9ReH
