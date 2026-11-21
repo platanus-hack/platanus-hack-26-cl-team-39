@@ -48,7 +48,9 @@ const store = {
     }
   },
 }
-export const clave = { get: () => store.get('inventario.clave'), set: (v: string) => store.set('inventario.clave', v.trim()) }
+// En desarrollo local se puede dejar en web/.env.local como VITE_BICHO_CLAVE (ese archivo no se sube al repo).
+const CLAVE_LOCAL = (import.meta.env.VITE_BICHO_CLAVE as string | undefined)?.trim() || ''
+export const clave = { get: () => store.get('inventario.clave') || CLAVE_LOCAL, set: (v: string) => store.set('inventario.clave', v.trim()) }
 export const autor = { get: () => store.get('inventario.autor'), set: (v: string) => store.set('inventario.autor', v.trim()) }
 
 export class ErrorApi extends Error {
