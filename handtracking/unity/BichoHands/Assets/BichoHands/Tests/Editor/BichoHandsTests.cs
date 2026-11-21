@@ -43,6 +43,11 @@ namespace Bicho.Hands.Tests
         {
             Assert.AreEqual("ws://192.168.1.50:8080/ws", BichoLink.Url("192.168.1.50"));
             Assert.AreEqual("ws://bicho.local:9000/ws", BichoLink.Url("http://bicho.local:9000/"));
+            Assert.AreEqual("wss://x.trycloudflare.com/ws", BichoLink.Url("https://x.trycloudflare.com/"));
+            Assert.AreEqual("wss://x.trycloudflare.com/ws?clave=a%20b", BichoLink.Url("x.trycloudflare.com", "a b"));
+            Assert.AreEqual("ws://192.168.1.50:8080/ws", BichoLink.Url("192.168.1.50", "ignorada"));
+            Assert.AreEqual("si", BichoHandController.LightFor(Gesture.ThumbsUp));
+            Assert.AreEqual(null, BichoHandController.LightFor(Gesture.OpenPalm));
         }
     }
 }

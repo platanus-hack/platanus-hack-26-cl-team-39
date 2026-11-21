@@ -13,7 +13,7 @@ namespace Bicho.Hands
         public BichoLink link;
         public BichoHandController controller;
 
-        const string PrefHost = "bicho.host";
+        const string PrefHost = "bicho.host", PrefClave = "bicho.clave";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Bootstrap()
@@ -31,6 +31,7 @@ namespace Bicho.Hands
             receiver = gameObject.AddComponent<HandTrackingReceiver>();
             link = gameObject.AddComponent<BichoLink>();
             link.host = PlayerPrefs.GetString(PrefHost, link.host);
+            link.clave = PlayerPrefs.GetString(PrefClave, link.clave);
             controller = gameObject.AddComponent<BichoHandController>();
             controller.source = receiver;
             controller.link = link;
@@ -94,6 +95,11 @@ namespace Bicho.Hands
             lr.SetPosition(0, a); lr.SetPosition(1, b);
         }
 
-        public void SaveHost(string host) { PlayerPrefs.SetString(PrefHost, host); PlayerPrefs.Save(); }
+        public void SaveHost(string host, string clave = null)
+        {
+            PlayerPrefs.SetString(PrefHost, host);
+            if (clave != null) PlayerPrefs.SetString(PrefClave, clave);   // queda solo en este computador
+            PlayerPrefs.Save();
+        }
     }
 }

@@ -11,19 +11,37 @@ namespace Bicho.Hands
     /// <summary>Telemetría que manda el bicho: {"t":"s","ms":…,"d":{…}} (mismo formato que el panel Bicho Dev).</summary>
     [Serializable] public class BichoImu { public float pitch; public float roll; }
     [Serializable] public class BichoData { public float mic; public BichoImu imu; public float dist_cm = -1; public int[] servo; public float temp_cpu; public bool boton; }
-    [Serializable] public class BichoMsg { public string t; public long ms; public BichoData d; public string name; public string fw; }
+    [Serializable] public class BichoMsg
+    {
+        public string t; public long ms; public BichoData d; public string name; public string fw;
+        public bool bicho; public bool puedeMandar;   // {"t":"rele","bicho":true,"puedeMandar":true}
+        public string lvl; public string msg;          // {"t":"log","lvl":"warn","msg":"…"}
+    }
 
     /// <summary>
-    /// Conexión WebSocket con el bicho: ws://&lt;ip-de-la-pi&gt;:8080/ws (el mismo canal del panel web).
+    /// Conexión WebSocket con el bicho, directa (ws://&lt;ip-de-la-pi&gt;:8080/ws, misma red) o por el relé
+    /// (wss://&lt;relé&gt;/ws?clave=…, desde cualquier red; ver PROTOCOLO.md). Es el mismo canal de bicho·dev.
     /// Un solo hilo de envío (ClientWebSocket no admite envíos concurrentes). El comando de manejo es
     /// «último gana»: si el envío se atrasa, se descarta el viejo y se manda el más reciente.
     /// </summary>
     public class BichoLink : MonoBehaviour
     {
         public const int DefaultPort = 8080;
+        const int MaxLine = 64 * 1024;
 
-        [Tooltip("IP o host de la Raspberry Pi (puerto 8080 por defecto)")]
+        [Tooltip("IP de la Raspberry Pi (puerto 8080), o https://<relé> para entrar por el relé")]
         public string host = "bicho.local";
+
+        [Tooltip("Clave del equipo (la del inventario). Solo la pide el relé para mandar comandos.")]
+        public string clave = "";
+
+        /// <summary>true si la conexión es por el relé (https/wss o *.trycloudflare.com).</summary>
+        public bool IsRelay { get; private set; }
+        /// <summary>Por el relé: si el bicho está conectado al relé. Directo: siempre true.</summary>
+        public bool BichoOnline { get; private set; } = true;
+        /// <summary>Por el relé: si la clave sirvió para mandar comandos.</summary>
+        public bool CanCommand { get; private set; } = true;
+        public string LastLog { get; private set; }
 
         public bool IsConnected => _ws != null && _ws.State == WebSocketState.Open;
         public string Status { get; private set; } = "desconectado";
@@ -39,13 +57,22 @@ namespace Bicho.Hands
         readonly object _driveLock = new object();
         readonly AutoResetEvent _wake = new AutoResetEvent(false);
 
-        public static string Url(string host)
+        public static bool LooksLikeRelay(string host)
         {
+            var h = host.Trim().ToLowerInvariant();
+            return h.StartsWith("https://") || h.StartsWith("wss://") || h.Contains(".trycloudflare.com");
+        }
+
+        public static string Url(string host, string clave = null)
+        {
+            bool relay = LooksLikeRelay(host);
             var h = host.Trim();
             foreach (var pre in new[] { "ws://", "wss://", "http://", "https://" })
                 if (h.StartsWith(pre)) h = h.Substring(pre.Length);
             int slash = h.IndexOf('/');
             if (slash >= 0) h = h.Substring(0, slash);
+            if (relay)
+                return $"wss://{h}/ws" + (string.IsNullOrWhiteSpace(clave) ? "" : "?clave=" + Uri.EscapeDataString(clave.Trim()));
             if (!h.Contains(":")) h += ":" + DefaultPort;
             return $"ws://{h}/ws";
         }
@@ -54,8 +81,10 @@ namespace Bicho.Hands
         {
             Disconnect();
             _cts = new CancellationTokenSource();
-            var url = Url(host);
-            Status = "conectando a " + url + "…";
+            var url = Url(host, clave);
+            IsRelay = LooksLikeRelay(host);
+            BichoOnline = !IsRelay; CanCommand = true; LastLog = null;
+            Status = "conectando a " + (IsRelay ? "relé " : "") + url.Split('?')[0] + "…";
             _ = Run(new Uri(url), _cts.Token);
         }
 
@@ -77,10 +106,10 @@ namespace Bicho.Hands
             {
                 using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
                 {
-                    timeout.CancelAfter(4000);
+                    timeout.CancelAfter(IsRelay ? 8000 : 4000);
                     await ws.ConnectAsync(uri, timeout.Token);
                 }
-                Status = "conectado · " + uri.Host;
+                Status = (IsRelay ? "conectado al relé · " : "conectado · ") + uri.Host;
                 Enqueue("{\"cmd\":\"info\"}");
                 var send = Task.Run(() => SendLoop(ws, ct));
                 await ReceiveLoop(ws, ct);
@@ -99,17 +128,21 @@ namespace Bicho.Hands
         async Task ReceiveLoop(ClientWebSocket ws, CancellationToken ct)
         {
             var buf = new byte[16 * 1024];
-            var sb = new StringBuilder();
+            var ms = new System.IO.MemoryStream();
             while (ws.State == WebSocketState.Open && !ct.IsCancellationRequested)
             {
                 var r = await ws.ReceiveAsync(new ArraySegment<byte>(buf), ct);
                 if (r.MessageType == WebSocketMessageType.Close) break;
-                sb.Append(Encoding.UTF8.GetString(buf, 0, r.Count));
+                ms.Write(buf, 0, r.Count);   // bytes enteros: un carácter UTF-8 puede quedar partido entre trozos
                 if (!r.EndOfMessage) continue;
-                // El firmware puede mandar varias líneas JSON en un mensaje.
-                foreach (var line in sb.ToString().Split('\n'))
-                    if (line.Trim().Length > 0) _inbox.Enqueue(line.Trim());
-                sb.Clear();
+                // Las imágenes de la cámara y la voz (cientos de KB) no le sirven a esta app: se descartan.
+                if (ms.Length <= MaxLine)
+                {
+                    // El firmware puede mandar varias líneas JSON en un mensaje.
+                    foreach (var line in Encoding.UTF8.GetString(ms.GetBuffer(), 0, (int)ms.Length).Split('\n'))
+                        if (line.Trim().Length > 0) _inbox.Enqueue(line.Trim());
+                }
+                ms.SetLength(0);
             }
         }
 
@@ -161,7 +194,14 @@ namespace Bicho.Hands
                     var m = JsonUtility.FromJson<BichoMsg>(line);
                     if (m == null) continue;
                     if (m.t == "s") LastTelemetry = m;
-                    else if (m.t == "info") Info = m;
+                    else if (m.t == "info") { Info = m; BichoOnline = true; }
+                    else if (m.t == "rele")
+                    {
+                        BichoOnline = m.bicho;
+                        // El aviso de conexión trae puedeMandar; el de «se cayó/volvió el bicho» no.
+                        if (line.Contains("puedeMandar")) CanCommand = m.puedeMandar;
+                    }
+                    else if (m.t == "log" && !string.IsNullOrEmpty(m.msg)) LastLog = m.msg;
                 }
                 catch { /* línea de log del firmware, no JSON */ }
             }

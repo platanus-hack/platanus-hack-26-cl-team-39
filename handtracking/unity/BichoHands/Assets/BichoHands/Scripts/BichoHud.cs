@@ -6,11 +6,11 @@ namespace Bicho.Hands
     public class BichoHud : MonoBehaviour
     {
         public BichoHandsApp app;
-        string _host;
+        string _host, _clave;
         GUIStyle _title, _label, _big, _stop;
         Texture2D _px;
 
-        void Start() { _host = app.link.host; }
+        void Start() { _host = app.link.host; _clave = app.link.clave; }
 
         void Styles()
         {
@@ -41,18 +41,32 @@ namespace Bicho.Hands
             Rect(new Rect(sw * (0.5f - dz), sh * (0.5f - dz), sw * dz * 2, sh * dz * 2), new Color(0.17f, 0.97f, 0.83f, 0.07f));
 
             // Panel izquierdo
-            Rect(new Rect(10, 10, 330, 300), new Color(0, 0, 0.12f, 0.82f));
-            GUILayout.BeginArea(new Rect(22, 18, 306, 290));
+            Rect(new Rect(10, 10, 330, 340), new Color(0, 0, 0.12f, 0.82f));
+            GUILayout.BeginArea(new Rect(22, 18, 306, 330));
             GUILayout.Label("bicho · hand tracking", _title);
             GUILayout.Label($"Manos: {rx.Status}", _label);
             GUILayout.Space(6);
-            GUILayout.Label("IP de la Raspberry Pi (puerto 8080):", _label);
+            GUILayout.Label("IP del Pi, o https://<relé> desde otra red:", _label);
             GUILayout.BeginHorizontal();
-            _host = GUILayout.TextField(_host, GUILayout.Width(170));
-            if (!link.IsConnected) { if (GUILayout.Button("Conectar")) { link.host = _host; app.SaveHost(_host); link.Connect(); } }
+            _host = GUILayout.TextField(_host, GUILayout.Width(206));
+            if (!link.IsConnected) { if (GUILayout.Button("Conectar")) { link.host = _host; link.clave = _clave; app.SaveHost(_host, _clave); link.Connect(); } }
             else if (GUILayout.Button("Desconectar")) link.Disconnect();
             GUILayout.EndHorizontal();
+            if (BichoLink.LooksLikeRelay(_host))
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Clave del equipo:", _label, GUILayout.Width(110));
+                _clave = GUILayout.PasswordField(_clave ?? "", '*', GUILayout.Width(150));
+                GUILayout.EndHorizontal();
+            }
             GUILayout.Label($"Bicho: {(link.IsConnected ? "<color=#2BF7D4>" : "<color=#FFB040>")}{link.Status}</color>", _label);
+            if (link.IsConnected && link.IsRelay)
+                GUILayout.Label(!link.BichoOnline ? "<color=#FFB040>el relé no ve al bicho (¿Pi apagado o sin WiFi?)</color>"
+                              : !link.CanCommand ? "<color=#FF5050>la clave no sirve: el relé no deja mandar comandos</color>"
+                              : "<color=#2BF7D4>bicho en línea por el relé</color>", _label);
+            c.gestureLights = GUILayout.Toggle(c.gestureLights, " gestos prenden luces del bicho (pulgar, V, puño)");
+            c.sendMotion = GUILayout.Toggle(c.sendMotion, c.sendMotion ? " <b>enviando manejo al bicho</b>" : " enviar manejo al bicho (solo gestos ahora)");
+            if (!string.IsNullOrEmpty(link.LastLog)) GUILayout.Label($"<size=11>bicho: {link.LastLog}</size>", _label);
             if (link.Info != null) GUILayout.Label($"fw {link.Info.fw}", _label);
             var t = link.LastTelemetry?.d;
             if (t != null)
@@ -71,6 +85,7 @@ namespace Bicho.Hands
 
             // Estado grande
             string state = c.EmergencyStop ? "<color=#FF5050>PARADA DE EMERGENCIA</color>"
+                         : c.NeedsCenter ? "<color=#FFB040>lleva la palma al centro para arrancar</color>"
                          : c.Armed ? "<color=#2BF7D4>MANEJANDO</color>"
                          : c.DriveGesture == Gesture.Fist ? "<color=#FF5050>STOP</color>"
                          : "<color=#FFFFFF>muestra la palma para manejar</color>";

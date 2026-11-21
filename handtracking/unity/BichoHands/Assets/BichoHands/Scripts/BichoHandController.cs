@@ -37,6 +37,12 @@ namespace Bicho.Hands
         [Header("Servos")]
         public bool servosEnabled = true;
 
+        [Header("Bicho real")]
+        [Tooltip("Mandar drive/stop/servo al bicho. Parte apagado: mientras el bicho no tenga esos comandos, cada uno vuelve como aviso «comando desconocido» a todas las consolas de bicho·dev. Los gestos se mandan siempre (uno por cambio).")]
+        public bool sendMotion = false;
+        [Tooltip("Pulgar arriba → luz verde (si), victoria → responder, puño → luz roja (no). Comandos que el bicho vivo ya entiende (fw 0.10+).")]
+        public bool gestureLights = true;
+
         // Estado visible para el HUD
         public float Left { get; private set; }
         public float Right { get; private set; }
@@ -44,6 +50,8 @@ namespace Bicho.Hands
         public float Turn { get; private set; }
         public bool Armed { get; private set; }
         public bool EmergencyStop { get; private set; }
+        /// <summary>Palma lista pero fuera del centro: no arranca hasta pasar por la zona muerta (evita salir a fondo si la mano entra por un borde).</summary>
+        public bool NeedsCenter { get; private set; }
         public Gesture DriveGesture => _stab[(int)driveHand].Stable;
         public Gesture AuxGesture => _stab[1 - (int)driveHand].Stable;
         public int Servo0 { get; private set; } = 90;
@@ -55,7 +63,7 @@ namespace Bicho.Hands
 
         readonly GestureStabilizer[] _stab = { new GestureStabilizer(), new GestureStabilizer() };
         float _sendT, _servoT;
-        bool _wasMoving;
+        bool _wasMoving, _engaged;
         int _sentServo0 = -1, _sentServo1 = -1;
 
         void Update()
@@ -82,9 +90,13 @@ namespace Bicho.Hands
             if (Armed)
             {
                 Joystick(dh.PalmCenter, deadZone, fullScale, out thr, out turn);
+                if (!_engaged && thr == 0 && turn == 0) _engaged = true;
+                if (!_engaged) thr = turn = 0;
                 float k = maxSpeed * (dg == Gesture.Point ? fineScale : 1f);
                 thr *= k; turn *= k;
             }
+            if (!Armed) _engaged = false;
+            NeedsCenter = Armed && !_engaged;
             float a = Armed ? smoothing : 0f; // al desarmar se frena de inmediato
             Throttle = Mathf.Lerp(thr, Throttle, a);
             Turn = Mathf.Lerp(turn, Turn, a);
@@ -125,7 +137,9 @@ namespace Bicho.Hands
             if (g == Gesture.None) return;
             if (side == driveHand && g == Gesture.Fist && _wasMoving) Send("{\"cmd\":\"stop\"}", true);
             string name = GestureName(g);
-            Send($"{{\"cmd\":\"gesto\",\"g\":\"{name}\",\"mano\":\"{(side == Handedness.Right ? "der" : "izq")}\"}}", true);
+            Send($"{{\"cmd\":\"gesto\",\"g\":\"{name}\",\"mano\":\"{(side == Handedness.Right ? "der" : "izq")}\"}}", true, motion: false);
+            var light = LightFor(g);
+            if (gestureLights && light != null) Send($"{{\"cmd\":\"{light}\"}}", true, motion: false);
         }
 
         public void ToggleEmergency()
@@ -138,10 +152,17 @@ namespace Bicho.Hands
             => Send("{\"cmd\":\"drive\",\"l\":" + l.ToString("0.00", CultureInfo.InvariantCulture) +
                     ",\"r\":" + r.ToString("0.00", CultureInfo.InvariantCulture) + "}", critical: false);
 
-        void Send(string json, bool critical)
+        /// <summary>Luz del bicho vivo para cada gesto (comandos si / no / responder de fw 0.10+).</summary>
+        public static string LightFor(Gesture g) => g switch
+        {
+            Gesture.ThumbsUp => "si", Gesture.Victory => "responder", Gesture.Fist => "no", _ => null
+        };
+
+        void Send(string json, bool critical, bool motion = true)
         {
             LastCommand = json;
             if (link == null || !link.IsConnected) return;
+            if (motion && !sendMotion) return;
             if (critical) link.Enqueue(json); else link.SetDrive(json);
         }
 
