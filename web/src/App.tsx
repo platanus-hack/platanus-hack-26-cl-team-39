@@ -16,9 +16,12 @@ import { CMD, type DeviceInfo } from './lib/protocol'
 import { SensorStore } from './lib/sensors'
 // el simulador trae three.js (~600 kB): se carga solo al abrirlo
 const Simulador = lazy(() => import('./sim/Simulador').then((m) => ({ default: m.Simulador })))
+// la vista Brazo también trae three.js: misma idea
+const Brazo = lazy(() => import('./brazo/Brazo').then((m) => ({ default: m.Brazo })))
 
-type Vista = 'bicho' | 'inventario' | 'simulador'
-const vistaDelHash = (): Vista => (location.hash === '#inventario' ? 'inventario' : location.hash === '#simulador' ? 'simulador' : 'bicho')
+type Vista = 'bicho' | 'inventario' | 'simulador' | 'brazo'
+const vistaDelHash = (): Vista =>
+  location.hash === '#inventario' ? 'inventario' : location.hash === '#simulador' ? 'simulador' : location.hash === '#brazo' ? 'brazo' : 'bicho'
 
 const MAX_LINES = 600
 // Bicho por defecto de este computador: VITE_BICHO_HOST en web/.env.local (no va al repo).
@@ -689,6 +692,10 @@ export default function App() {
               <Icon.Play />
               <span>Simulador</span>
             </a>
+            <a href="#brazo" aria-current={view === 'brazo' ? 'true' : undefined}>
+              <Icon.Brazo />
+              <span>Brazo</span>
+            </a>
           </nav>
 
           <nav className="nav nav-inv" aria-label="Equipo">
@@ -738,13 +745,17 @@ export default function App() {
         </aside>
 
         {/* ── contenido ── */}
-        <main className={`main ${scrolled ? 'scrolled' : ''}`} ref={mainRef}>
+        <main className={`main ${scrolled ? 'scrolled' : ''} ${view === 'brazo' ? 'fija' : ''}`} ref={mainRef}>
           <div className="main-inner">
             {view === 'inventario' ? (
               <Inventario toast={toast} />
             ) : view === 'simulador' ? (
               <Suspense fallback={<p className="notice">Cargando el simulador…</p>}>
                 <Simulador />
+              </Suspense>
+            ) : view === 'brazo' ? (
+              <Suspense fallback={<p className="notice">Cargando el brazo…</p>}>
+                <Brazo conectado={connected && !sinBicho} motivo={relLink ? motivoCerebro : null} enviar={(l) => void send(l)} />
               </Suspense>
             ) : (
             <>

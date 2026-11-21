@@ -102,6 +102,14 @@ export const Icon = {
       <path d="M8 5.5v13l10-6.5Z" fill="currentColor" />
     </svg>
   ),
+  Brazo: (p: P) => (
+    <svg {...base} strokeWidth={1.8} {...p}>
+      <path d="M4 20.5h9M6.5 20.5V17h4v3.5" />
+      <path d="m8.5 17 2-7.5 7-3" />
+      <circle cx="10.5" cy="9.5" r="1.6" />
+      <path d="m17.5 6.5 2.5-1.5M17.5 6.5l1.2 2.6" />
+    </svg>
+  ),
   Box: (p: P) => (
     <svg {...base} strokeWidth={1.7} {...p}>
       <path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5z" />
