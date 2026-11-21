@@ -6,6 +6,7 @@ import { Sensors } from './components/Sensors'
 import { Toasts, type Toast } from './components/Toasts'
 import { Icon, SparkDefs, fmtAgo, fmtBytes, fmtUptime } from './components/ui'
 import { cmpSemver, fetchPackage, loadManifest, looksLikePackage, uploadPackage, type Manifest, type Release } from './lib/firmware'
+import { Cerebro, type Evento, type Imagen } from './components/Cerebro'
 import { Oido, type Frase } from './components/Oido'
 import { clave as claveEquipo } from './lib/inventario'
 import releCfg from './lib/rele.json'
@@ -51,6 +52,7 @@ const NAV = [
   { id: 'firmware', label: 'Firmware', icon: Icon.Chip },
   { id: 'sensores', label: 'Sensores', icon: Icon.Pulse },
   { id: 'oido', label: 'Oído', icon: Icon.Sparkle },
+  { id: 'cerebro', label: 'Cerebro', icon: Icon.Bicho },
   { id: 'consola', label: 'Consola', icon: Icon.Terminal },
   { id: 'versiones', label: 'Versiones', icon: Icon.History },
 ] as const
@@ -132,6 +134,9 @@ export default function App() {
   const [sinBicho, setSinBicho] = useState(false)
   // Frases que escuchó el bicho (ReSpeaker). El relé manda cada una dos veces: al oírla y ya transcrita.
   const [frases, setFrases] = useState<Frase[]>([])
+  // Lo que decide y aprende el cerebro, y las imágenes que manda el bicho (su cámara, si aprendió a usarla).
+  const [eventos, setEventos] = useState<Evento[]>([])
+  const [imagenes, setImagenes] = useState<Imagen[]>([])
   const [info, setInfo] = useState<DeviceInfo | null>(null)
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [manifestErr, setManifestErr] = useState<string>()
@@ -230,7 +235,16 @@ export default function App() {
       },
       onMessage: (m) => {
         if (m.t === 's' && m.d && typeof m.d === 'object') store.push(m.d as Record<string, unknown>)
-        else if (m.t === 'oido') {
+        else if (m.t === 'cerebro') {
+          const e = m as unknown as Evento
+          if (e.id && e.tipo) setEventos((prev) => (prev.some((x) => x.id === e.id) ? prev : [...prev, e].slice(-80)))
+        } else if (m.t === 'imagen') {
+          const i = m as unknown as { nombre?: string; fmt?: string; b64?: string }
+          if (i.nombre && i.b64) {
+            const img = { nombre: i.nombre, url: `data:image/${i.fmt === 'png' ? 'png' : 'jpeg'};base64,${i.b64}`, ts: Date.now() }
+            setImagenes((prev) => [...prev.filter((x) => x.nombre !== img.nombre), img])
+          }
+        } else if (m.t === 'oido') {
           const f = m as unknown as Frase
           if (f.estado === 'vacio') setFrases((prev) => prev.filter((x) => x.id !== f.id)) // era ruido: no dijo nada
           else
@@ -300,6 +314,8 @@ export default function App() {
       setInfo(null)
       setSinBicho(false)
       setFrases([])
+      setEventos([])
+      setImagenes([])
       linkRef.current = l
       setLink(l)
       try {
@@ -891,6 +907,14 @@ export default function App() {
             <Sensors store={store} connected={connected} onRate={(hz) => send(CMD.rate(hz))} />
 
             <Oido store={store} connected={connected} frases={frases} />
+
+            <Cerebro
+              eventos={eventos}
+              imagenes={imagenes}
+              connected={connected}
+              puedeMandar={Boolean(claveEquipo.get())}
+              onDecir={(texto) => send(JSON.stringify({ t: 'cerebro', id: crypto.randomUUID(), tipo: 'decir', texto, ts: Date.now() }))}
+            />
 
             <div className="split">
               <Console

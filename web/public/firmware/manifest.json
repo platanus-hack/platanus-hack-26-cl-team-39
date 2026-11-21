@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.5.0",
+      "date": "2026-11-21T11:00:25.770Z",
+      "author": "TesslaRay",
+      "notes": "Listo para aprender: prueba el código nuevo antes de activarlo, vuelve atrás solo si falla, y los módulos pueden mandar imágenes a la web (salida.py).",
+      "package": "0.5.0/bicho-0.5.0.tar.gz",
+      "size": 23688
+    },
+    {
       "version": "0.4.1",
       "date": "2026-11-21T10:24:20.203Z",
       "author": "TesslaRay",

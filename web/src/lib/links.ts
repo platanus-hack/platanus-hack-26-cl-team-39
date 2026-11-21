@@ -40,7 +40,9 @@ export function normalizeHost(host: string) {
 function dispatchLine(line: string, h: LinkHandlers) {
   if (!line) return
   const msg = parseLine(line)
-  h.onLine(line, 'in')
+  // Las imágenes y el código fuente son líneas enormes: en la consola va solo un resumen.
+  const pesado = msg && (msg.t === 'imagen' || msg.t === 'fuente') && line.length > 400
+  h.onLine(pesado ? `{"t":"${msg.t}", … ${Math.round(line.length / 1024)} KB}` : line, 'in')
   if (msg) h.onMessage(msg)
 }
 

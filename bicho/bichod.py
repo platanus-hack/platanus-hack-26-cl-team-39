@@ -28,6 +28,7 @@ import ssl
 import subprocess
 import sys
 import tarfile
+import threading
 import time
 import traceback
 import uuid
@@ -36,9 +37,71 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-import comandos  # noqa: E402
-import oido  # noqa: E402
-import sensores  # noqa: E402
+
+# ---------------------------------------------------------------------------
+# Vuelta atrás: una versión recién instalada está "a prueba" hasta que demuestra que funciona
+# ---------------------------------------------------------------------------
+# install_release() deja prueba.json con la versión anterior. Si la nueva no logra cargar sus
+# módulos, se cae 3 veces seguidas o no confirma en 60 s, el bicho vuelve solo a la anterior.
+# Va antes de cargar comandos.py y sensores.py, que son los archivos que cambian al aprender.
+
+
+def _casa() -> Path:
+    if os.environ.get("BICHO_HOME"):
+        return Path(os.environ["BICHO_HOME"])
+    opt = Path("/opt/bicho")
+    return opt if opt.exists() and os.access(opt, os.W_OK) else Path.home() / ".bicho"
+
+
+_PRUEBA = _casa() / "prueba.json"
+
+
+def _a_prueba() -> dict | None:
+    try:
+        p = json.loads(_PRUEBA.read_text(encoding="utf-8"))
+        return p if p.get("nueva") == HERE.name else None
+    except (OSError, ValueError):
+        return None
+
+
+def volver_atras(motivo: str) -> None:
+    """Apunta current a la versión anterior y se reinicia con ella."""
+    p = _a_prueba()
+    casa = _casa()
+    anterior = casa / "releases" / str((p or {}).get("anterior", ""))
+    try:
+        _PRUEBA.unlink()
+    except OSError:
+        pass
+    if not p or not (anterior / "bichod.py").exists():
+        return
+    print(f"[bichod] VUELTA ATRÁS a v{anterior.name}: {motivo}", flush=True)
+    (casa / "vuelta-atras.json").write_text(json.dumps({"de": HERE.name, "a": anterior.name, "motivo": motivo[-600:], "cuando": time.time()}), encoding="utf-8")
+    tmp = casa / "current.tmp"
+    if tmp.is_symlink() or tmp.exists():
+        tmp.unlink()
+    os.symlink(Path("releases") / anterior.name, tmp)
+    os.replace(tmp, casa / "current")
+    os.execv(sys.executable, [sys.executable, str(anterior / "bichod.py")])
+
+
+_p = _a_prueba()
+if _p:
+    _p["arranques"] = int(_p.get("arranques", 0)) + 1
+    if _p["arranques"] > 3:
+        volver_atras("la versión nueva se reinició más de 3 veces sin confirmar")
+    else:
+        _PRUEBA.write_text(json.dumps(_p), encoding="utf-8")
+
+try:
+    import comandos  # noqa: E402
+    import oido  # noqa: E402
+    import salida  # noqa: E402
+    import sensores  # noqa: E402
+except Exception:
+    if _a_prueba():
+        volver_atras("no cargaron los módulos: " + traceback.format_exc())
+    raise
 
 PORT = int(os.environ.get("BICHO_PORT", "8080"))
 MAX_PACKAGE = 64 * 1024 * 1024
@@ -135,6 +198,15 @@ def _mem_available() -> int | None:
     return None
 
 
+def _ultima_vuelta_atras() -> dict | None:
+    """Si hace poco una versión nueva falló y se volvió a la anterior, cuál y por qué."""
+    try:
+        v = json.loads((HOME / "vuelta-atras.json").read_text(encoding="utf-8"))
+        return {"de": v.get("de"), "motivo": v.get("motivo")} if time.time() - float(v.get("cuando", 0)) < 600 else None
+    except (OSError, ValueError):
+        return None
+
+
 def info() -> dict:
     built = META.get("built")
     if not built:
@@ -148,6 +220,7 @@ def info() -> dict:
         "build": built,
         "ip": _ip(),
         "red": _red(),
+        "vuelta_atras": _ultima_vuelta_atras(),
         "mac": _mac(),
         "uptime": int(time.time() - START),
         "heap": _mem_available(),
@@ -264,6 +337,11 @@ async def handle_cmd(text: str, ws: WebSocket) -> None:
         if 0 < hz <= 100:
             period = 1 / hz
             await send_log(f"tasa de sensores: {hz:g} Hz")
+    elif cmd == "diag":
+        d = await asyncio.get_running_loop().run_in_executor(None, _diag)
+        await broadcast({"t": "diag", "id": c.get("id"), "d": d})
+    elif cmd == "fuente":
+        await broadcast({"t": "fuente", "id": c.get("id"), "version": META["version"], "archivos": _fuente()})
     elif cmd == "reboot":
         await send_log("reiniciando el agente")
         asyncio.get_running_loop().call_later(0.3, restart)
@@ -274,6 +352,41 @@ async def handle_cmd(text: str, ws: WebSocket) -> None:
             await send_log(f"error en comandos.py: {e!r}", "error")
             return
         await send_log(out if out else f"comando desconocido: {text[:120]}", "info" if out else "warn")
+
+
+# Qué hardware ve el Pi. Son comandos fijos, de solo lectura: el cerebro los usa antes de aprender algo.
+_DIAG = {
+    "usb": "lsusb",
+    "video": "ls -l /dev/video* 2>&1 | head -20",
+    "camaras_v4l2": "v4l2-ctl --list-devices 2>&1 | head -40",
+    "camaras_csi": "(rpicam-hello --list-cameras || libcamera-hello --list-cameras) 2>&1 | head -30",
+    "microfonos": "arecord -l 2>&1 | head -12",
+    "parlantes": "aplay -l 2>&1 | grep '^card' | head -8",
+    "i2c": "ls /dev/i2c-* 2>&1",
+    "programas": "for p in ffmpeg rpicam-still rpicam-jpeg libcamera-still fswebcam v4l2-ctl pinctrl aplay; do printf '%s: ' $p; command -v $p || echo no; done",
+    "python": "python3 -c \"import importlib.util as u; print({m: bool(u.find_spec(m)) for m in ['picamera2','cv2','PIL','numpy','gpiozero','smbus2','usb','serial']})\"",
+    "gpio_libre": "pinctrl get 2-27 2>&1 | head -30",
+}
+
+
+def _diag() -> dict:
+    out = {}
+    for nombre, cmd in _DIAG.items():
+        try:
+            r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=10)
+            out[nombre] = (r.stdout + r.stderr).strip()[:1500]
+        except subprocess.TimeoutExpired:
+            out[nombre] = "(tardó más de 10 s)"
+    return out
+
+
+def _fuente() -> dict:
+    """El código que está corriendo, para que el cerebro edite exactamente lo instalado."""
+    out = {}
+    for f in sorted(HERE.iterdir()):
+        if f.is_file() and f.suffix in (".py", ".json", ".txt", ".md") and f.stat().st_size < 120_000:
+            out[f.name] = f.read_text(encoding="utf-8", errors="replace")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -320,6 +433,11 @@ def install_release(data: bytes) -> str:
                 target.write_bytes(tf.extractfile(m).read())  # type: ignore[union-attr]
 
     _install_requirements(tmp)
+    _probar_antes_de_activar(tmp)
+
+    anterior = CURRENT.resolve().name if CURRENT.exists() else HERE.name
+    if anterior != version and (RELEASES / anterior / "bichod.py").exists():
+        _PRUEBA.write_text(json.dumps({"nueva": version, "anterior": anterior, "arranques": 0}), encoding="utf-8")
 
     dest = RELEASES / version
     if dest.exists():
@@ -333,6 +451,26 @@ def install_release(data: bytes) -> str:
     os.replace(link_tmp, CURRENT)
     _prune(keep=5)
     return version
+
+
+def _probar_antes_de_activar(nuevo: Path) -> None:
+    """Si el código nuevo no compila o sus módulos no cargan, no se instala: se queda la versión actual."""
+    for f in sorted(nuevo.glob("*.py")):
+        r = subprocess.run([sys.executable, "-m", "py_compile", str(f)], capture_output=True, text=True, timeout=30)
+        if r.returncode != 0:
+            raise ValueError(f"{f.name} no compila: {(r.stderr or r.stdout).strip()[-500:]}")
+    prueba = (
+        "import sys, json; sys.path.insert(0, sys.argv[1]); import comandos, sensores; "
+        "d = sensores.leer(); assert isinstance(d, dict), 'sensores.leer() debe devolver un dict'; json.dumps(d); "
+        "r = comandos.manejar({'cmd': 'hola'}); assert r is None or isinstance(r, str), 'manejar() debe devolver str o None'"
+    )
+    env = {**os.environ, "BICHO_SIMULAR": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+    try:
+        r = subprocess.run([sys.executable, "-c", prueba, str(nuevo)], capture_output=True, text=True, timeout=30, env=env)
+    except subprocess.TimeoutExpired:
+        raise ValueError("cargar comandos.py y sensores.py tardó más de 30 s: algo bloquea al importar")
+    if r.returncode != 0:
+        raise ValueError(f"los módulos nuevos fallan al cargar: {(r.stderr or r.stdout).strip()[-700:]}")
 
 
 def _install_requirements(new: Path) -> None:
@@ -547,6 +685,7 @@ async def _rele_sesion(url: str, token: str) -> None:
         ws.max_msg = MAX_PACKAGE * 2  # los paquetes de actualización llegan en base64
         rele_ws = ws
         log(f"conectado al relé {host}")
+        confirmar_version()
         await ws.send(json.dumps(info(), ensure_ascii=False))
         while True:
             # el relé manda un latido cada 20 s: si pasa un minuto sin nada, la conexión está muerta
@@ -646,6 +785,48 @@ async def sensor_loop() -> None:
         await asyncio.sleep(max(0.0, period - (time.monotonic() - t0)))
 
 
+_confirmada = False
+
+
+def confirmar_version() -> None:
+    """La versión nueva demostró que funciona: deja de estar a prueba."""
+    global _confirmada
+    _confirmada = True
+    try:
+        _PRUEBA.unlink()
+    except OSError:
+        pass
+
+
+def _vigilar_version() -> None:
+    """Hilo aparte (por si el código nuevo bloquea el bucle principal): a los 60 s sin confirmar, vuelta atrás."""
+    if not _a_prueba():
+        return
+    con_rele = _rele_cfg() is not None
+
+    def revisar() -> None:
+        if _confirmada or not _a_prueba():
+            return
+        if con_rele:
+            volver_atras("la versión nueva no logró conectarse al relé en 60 s")
+        else:
+            confirmar_version()  # sin relé, basta con haber durado un minuto arriba
+
+    t = threading.Timer(60, revisar)
+    t.daemon = True
+    t.start()
+
+
+async def salida_loop() -> None:
+    """Reparte lo que los módulos emiten con salida.emitir() (imágenes de la cámara, etc.)."""
+    while True:
+        await asyncio.sleep(0.05)
+        salida._marcar_publico(bool(clients))
+        for m in salida._recoger():
+            if isinstance(m, dict) and isinstance(m.get("t"), str) and not m["t"].startswith("_"):
+                await broadcast(m)
+
+
 async def oido_loop() -> None:
     """Recoge las frases que escuchó el ReSpeaker. El audio va solo al relé, que lo transcribe."""
     oido.partir()
@@ -682,10 +863,11 @@ async def info_loop() -> None:
 
 
 async def main() -> None:
+    _vigilar_version()
     server = await asyncio.start_server(handle_conn, host="0.0.0.0", port=PORT, reuse_address=True)
     log(f"v{META['version']} escuchando en http://{_ip()}:{PORT} (WebSocket en /ws) · releases en {RELEASES}")
     async with server:
-        await asyncio.gather(server.serve_forever(), sensor_loop(), info_loop(), rele_loop(), oido_loop())
+        await asyncio.gather(server.serve_forever(), sensor_loop(), info_loop(), rele_loop(), oido_loop(), salida_loop())
 
 
 if __name__ == "__main__":

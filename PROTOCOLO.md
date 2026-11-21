@@ -82,6 +82,20 @@ Con un ReSpeaker XVF3800 por USB, `bichod` ([`bicho/oido.py`](bicho/oido.py)) ha
 - El audio no llega a la web: solo viaja del bicho al relé. Quien se conecta recibe las últimas 40 frases.
 - El relé transcribe con Groq (`GROQ_API_KEY`) o con un servicio propio (`WHISPER_URL`). Conectado directo al bicho, sin relé, llega el aviso con el ángulo pero sin texto.
 
+## Cerebro y aprendizaje
+
+El cerebro ([`cerebro/`](cerebro/)) es otro cliente del relé. Con cada frase decide si ignora, responde, manda un comando o **aprende**: escribe código nuevo para el bicho y lo instala. Para eso el núcleo del bicho ofrece:
+
+| Comando | Responde | Para qué |
+|---|---|---|
+| `{"cmd":"fuente","id":"x"}` | `{"t":"fuente","id":"x","version":"0.5.0","archivos":{"comandos.py":"…"}}` | El código que está corriendo |
+| `{"cmd":"diag","id":"x"}` | `{"t":"diag","id":"x","d":{"usb":"…","camaras_v4l2":"…"}}` | Qué hardware ve el Pi (solo lectura) |
+
+- Un módulo del bicho le manda cosas a la web con `salida.emitir({...})` ([`bicho/salida.py`](bicho/salida.py)). La web ya muestra `{"t":"imagen","nombre":"camara","fmt":"jpeg","b64":"…"}` en Cerebro → vista.
+- Al instalar, el Pi prueba la versión antes de activarla; si no compila o los módulos no cargan, responde `FALLO: …` y no cambia nada.
+- Una versión recién activada queda a prueba: si no logra conectarse al relé en 60 s o se cae 3 veces, el bicho vuelve solo a la anterior y lo informa en `info.vuelta_atras`.
+- Lo que el cerebro decide llega a la web como `{"t":"cerebro","tipo":"…","texto":"…"}` (detalle en `cerebro/README.md`).
+
 ## Versiones
 
 1. Sube `version` (y `desc`) en `bicho/version.json`.

@@ -164,6 +164,8 @@ class Conexion {
 
 const E = {
   frases: [], // lo último que oyó el bicho: se le manda a quien abre la web
+  cerebro: [], // lo último que decidió o hizo el cerebro (cerebro/ en el repo)
+  imagenes: new Map(), // la última imagen de cada nombre ("camara", ...)
   bicho: null,
   info: null,
   desde: null,
@@ -254,6 +256,7 @@ function conectarBicho(c) {
         continue
       }
       if (m?.t === 'info') E.info = m
+      if (m?.t === 'imagen' && typeof m.nombre === 'string') E.imagenes.set(m.nombre, l)
       aLasWebs(l)
     }
   }
@@ -276,14 +279,27 @@ function conectarWeb(c, puedeMandar) {
   c.enviar(linea({ t: 'rele', bicho: Boolean(E.bicho) }))
   if (E.info) c.enviar(linea(E.info))
   for (const f of E.frases) c.enviar(linea(f))
+  for (const x of E.cerebro) c.enviar(x)
+  for (const x of E.imagenes.values()) c.enviar(x)
   c.alMensaje = (texto) => {
     for (const l of texto.split('\n')) {
       if (!l.trim()) continue
-      let cmd
+      let cmd, tipo
       try {
-        cmd = JSON.parse(l).cmd
+        const m = JSON.parse(l)
+        cmd = m.cmd
+        tipo = m.t
       } catch {
         cmd = undefined
+      }
+      // El cerebro es un cliente más, con la clave del equipo: lo que anuncia ({"t":"cerebro",...})
+      // se reparte a todos los que miran y se guarda para quien llegue después.
+      if (cmd === undefined && tipo === 'cerebro') {
+        if (!c.puedeMandar) continue
+        E.cerebro.push(l)
+        if (E.cerebro.length > 60) E.cerebro.shift()
+        aLasWebs(l)
+        continue
       }
       if (cmd === 'info') {
         if (E.info) c.enviar(linea(E.info))
