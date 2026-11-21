@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { EVENTOS, agenda, falta, hora } from '../lib/cronograma'
+import { IMPRESIONES, avance, restante } from '../lib/impresiones'
 
 /** Horarios de la Platanus Hack 26 (hora de Santiago). */
 export const HACKATHON = {
@@ -71,6 +72,18 @@ export function Countdown({ onAlert }: { onAlert?: (a: { title: string; body: st
     }
   }, [now, onAlert])
 
+  // Avisar cuando una pieza termina de imprimirse.
+  const prevPrint = useRef<number | null>(null)
+  useEffect(() => {
+    const prev = prevPrint.current
+    prevPrint.current = now
+    if (prev === null || !onAlert) return
+    for (const i of IMPRESIONES) {
+      const t = i.fin.getTime()
+      if (prev < t && now >= t) onAlert({ title: `🖨️ ${i.pieza}: lista`, body: `Terminó en la ${i.impresora}. Sácala con cuidado y avisa al equipo.`, urgent: false })
+    }
+  }, [now, onAlert])
+
   const level = left <= 0 ? 'over' : left <= 3_600_000 ? 'urgent' : left <= 6 * 3_600_000 ? 'soon' : 'ok'
   const notStarted = now < HACKATHON.start.getTime()
   const { h, m, sec } = parts(left)
@@ -98,7 +111,34 @@ export function Countdown({ onAlert }: { onAlert?: (a: { title: string; body: st
         <span style={{ '--p': elapsed } as CSSProperties} />
       </div>
       <Agenda now={now} />
+      <Impresiones now={now} />
     </div>
+  )
+}
+
+/** Cuenta regresiva de cada pieza que se está imprimiendo. */
+function Impresiones({ now }: { now: number }) {
+  if (!IMPRESIONES.length) return null
+  return (
+    <ul className="prints" aria-label="Piezas en las impresoras 3D">
+      {IMPRESIONES.map((i) => {
+        const { p, lista } = avance(i, now)
+        return (
+          <li key={i.pieza} data-lista={lista || undefined} title={`${i.impresora} · partió ${hora(i.inicio, now)}`}>
+            <span className="prints-head">
+              <b>🖨️ {i.pieza}</b>
+              <small>{lista ? 'lista ✓' : restante(i, now)}</small>
+            </span>
+            <span className="prints-sub">
+              {i.impresora} · {lista ? `terminó ${hora(i.fin, now)}` : `termina ${hora(i.fin, now)}`}
+            </span>
+            <span className="prints-bar">
+              <span style={{ '--p': p } as CSSProperties} />
+            </span>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

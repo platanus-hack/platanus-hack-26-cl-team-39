@@ -564,6 +564,17 @@ select.btn-secondary{padding-right:28px;background-image:linear-gradient(45deg,t
 .agenda-what small{font:500 11px var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums}
 .agenda li:first-child .agenda-label{color:var(--blue-ink)}
 
+.prints{list-style:none;margin:10px 0 0;padding:10px 0 0;border-top:.5px solid var(--hair);display:grid;gap:9px}
+.prints li{display:grid;gap:2px;min-width:0}
+.prints-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
+.prints-head b{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prints-head small{flex:none;font:600 12px var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.prints-sub{font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prints-bar{height:3px;margin-top:3px;border-radius:999px;background:var(--fill);overflow:hidden}
+.prints-bar span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff9f3d,#ff7a00);transform-origin:0 50%;transform:scaleX(var(--p,0));transition:transform .6s var(--ease)}
+.prints li[data-lista] .prints-head small{color:var(--green-ink)}
+.prints li[data-lista] .prints-bar span{background:var(--green)}
+
 /* ── inventario ────────────────────────────────────────────────── */
 .muted{color:var(--ink-4)}
 kbd{font:600 11px var(--mono);padding:1px 6px;border-radius:6px;background:rgba(255,255,255,.8);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.14),0 1px 0 rgba(0,0,0,.08)}

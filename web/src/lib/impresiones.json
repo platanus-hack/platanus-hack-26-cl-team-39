@@ -1,0 +1,8 @@
+{
+  "nota": "Piezas que se están imprimiendo para el bicho, con la hora en que partieron (Santiago) y cuánto dura cada una según Bambu Studio. bicho·dev muestra la cuenta regresiva bajo el cronómetro. Si una impresión se cae o se reinicia, cambia aquí su inicio. Los inicios son aproximados (±5 min): si quieres afinarlos, mira cuánto le queda en la pantalla de la impresora.",
+  "impresiones": [
+    { "pieza": "Cunas de motor ×4", "impresora": "Bambu A1", "inicio": "2026-11-21T14:03:00-03:00", "minutos": 86 },
+    { "pieza": "Placa de abajo", "impresora": "Bambu A2L n.º 1", "inicio": "2026-11-21T14:10:00-03:00", "minutos": 368 },
+    { "pieza": "Placa de arriba", "impresora": "Bambu A2L n.º 2", "inicio": "2026-11-21T15:50:00-03:00", "minutos": 368 }
+  ]
+}
