@@ -40,7 +40,7 @@ const log = (m) => console.log(`[${new Date().toISOString()}] ${m}`)
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 const MAX_MENSAJE = 1024 * 1024 // lo que puede mandar un cliente en un mensaje
 const MAX_PAQUETE = 20 * 1024 * 1024
-const LATIDO_MS = 20_000
+const LATIDO_MS = 5_000 // cada cuánto se revisa que el otro lado siga vivo; a los 3 latidos sin respuesta se da por caído
 
 /* ------------------------------------------------------------------ */
 /* WebSocket mínimo del lado servidor (RFC 6455), sin dependencias      */

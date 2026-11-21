@@ -126,6 +126,8 @@ export default function App() {
   const [link, setLink] = useState<DeviceLink | null>(null)
   const [status, setStatus] = useState<LinkStatus>('disconnected')
   const [statusDetail, setStatusDetail] = useState<string>()
+  // Por el relé: hay conexión con el relé, pero el bicho no está conectado a él (apagado o sin internet).
+  const [sinBicho, setSinBicho] = useState(false)
   const [info, setInfo] = useState<DeviceInfo | null>(null)
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [manifestErr, setManifestErr] = useState<string>()
@@ -226,10 +228,12 @@ export default function App() {
         if (m.t === 's' && m.d && typeof m.d === 'object') store.push(m.d as Record<string, unknown>)
         else if (m.t === 'rele') {
           // El relé avisa si el bicho está conectado a él. Si no, la web espera sin mostrar datos viejos.
-          if (!(m as { bicho?: boolean }).bicho) {
+          const esta = Boolean((m as { bicho?: boolean }).bicho)
+          setSinBicho(!esta)
+          if (!esta) {
             setInfo(null)
             store.clear()
-            pushLine('Conectado al relé, pero el bicho no está: ¿está prendido y con internet?', 'sys')
+            pushLine('El bicho se desconectó del relé: ¿está prendido y con internet? Vuelve solo cuando se conecte.', 'sys')
           }
         } else if (m.t === 'info') {
           const i = m as unknown as DeviceInfo
@@ -285,6 +289,7 @@ export default function App() {
       }
       store.clear()
       setInfo(null)
+      setSinBicho(false)
       linkRef.current = l
       setLink(l)
       try {
@@ -398,8 +403,10 @@ export default function App() {
       ? 'Conectando'
       : !connected
         ? 'Sin conexión'
-        : !info
-          ? 'Esperando versión'
+        : sinBicho
+          ? 'Bicho desconectado'
+          : !info
+            ? 'Esperando versión'
           : !latest
             ? 'Sin versiones publicadas'
             : cmp! > 0
@@ -575,7 +582,7 @@ export default function App() {
             <div className="conn-head">
               <span className="conn-dot" aria-hidden />
               <div className="conn-text">
-                <p className="conn-title">{connected ? `Conectado por ${kindLabel}` : conn === 'wait' ? 'Conectando…' : 'Sin conexión'}</p>
+                <p className="conn-title">{connected ? ((link as WifiLink | null)?.rele ? (sinBicho ? 'Relé arriba, bicho desconectado' : 'Conectado por el relé') : `Conectado por ${kindLabel}`) : conn === 'wait' ? 'Conectando…' : 'Sin conexión'}</p>
                 <p className="conn-host">{!link ? 'Raspberry Pi por WiFi' : link.kind === 'sim' ? 'Datos simulados' : (statusDetail ?? link.label)}</p>
               </div>
             </div>
@@ -623,7 +630,7 @@ export default function App() {
               <div className="tb-title">
                 <h1>{NAV[active].label}</h1>
                 <p>
-                  {info?.name ?? 'bicho'} · {info?.chip ?? (connected ? 'esperando info' : 'sin conectar')}
+                  {info?.name ?? 'bicho'} · {info?.chip ?? (connected ? (sinBicho ? 'desconectado del relé' : 'esperando info') : 'sin conectar')}
                 </p>
               </div>
               <div className="tb-actions">
@@ -686,9 +693,11 @@ export default function App() {
                     </>
                   ) : (
                     <>
-                      <p className="version empty">{connected ? 'Esperando…' : conn === 'wait' ? 'Conectando…' : 'Sin bicho'}</p>
+                      <p className="version empty">{connected && !sinBicho ? 'Esperando…' : conn === 'wait' ? 'Conectando…' : 'Sin bicho'}</p>
                       <p className="desc">
-                        {connected
+                        {connected && sinBicho
+                          ? 'El relé está arriba, pero el bicho no está conectado a él. ¿Está prendido y con internet? Cuando vuelva, aparece solo.'
+                          : connected
                           ? 'Ya hay conexión, pero el bicho todavía no manda su versión.'
                           : conn === 'wait'
                             ? esRele(host)
@@ -843,7 +852,7 @@ export default function App() {
                             <button type="button" className="btn-primary" disabled={!canFlash} onClick={() => startRelease(latest)}>
                               <Icon.Download /> Instalar v{latest.version}
                             </button>
-                            <p className="off-hint">{connected ? 'El bicho todavía no reporta su versión.' : 'Conecta el bicho por WiFi para poder actualizarlo.'}</p>
+                            <p className="off-hint">{connected ? (sinBicho ? 'El bicho no está conectado al relé: préndelo para poder actualizarlo.' : 'El bicho todavía no reporta su versión.') : 'Conecta el bicho por WiFi para poder actualizarlo.'}</p>
                           </>
                         )}
 
