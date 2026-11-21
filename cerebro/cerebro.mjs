@@ -19,6 +19,9 @@
 //   CLAVE_EQUIPO        la clave del equipo (la misma del relé): sin ella no puede mandar comandos.
 //   CEREBRO_MODELO      modelo de Claude (claude-fable-5-2 por defecto).
 //   CEREBRO_APRENDE     "0" para que decida y responda pero no modifique el bicho.
+//   CEREBRO_ESCUCHA     "nombre" (por defecto): de lo que oye, solo evalúa las frases que dicen "bicho" o que
+//                       siguen una conversación reciente. "todo": evalúa cada frase (caro: cada una es una
+//                       llamada a Claude, y el micrófono capta todas las conversaciones de alrededor).
 import Anthropic from '@anthropic-ai/sdk'
 import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
@@ -41,6 +44,10 @@ const MODELO = process.env.CEREBRO_MODELO || 'claude-fable-5-2'
 const RELE = (process.env.RELE_URL || '').replace(/\/+$/, '')
 const CLAVE = process.env.CLAVE_EQUIPO || ''
 const APRENDE = process.env.CEREBRO_APRENDE !== '0'
+const ESCUCHA_TODO = process.env.CEREBRO_ESCUCHA === 'todo'
+// Cómo suele transcribir Whisper el nombre del bicho.
+const LO_NOMBRAN = /\b(bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)\b/i
+const VENTANA_CONVERSACION_MS = 45_000
 const log = (m) => console.log(`[${new Date().toISOString()}] ${m}`)
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -69,6 +76,7 @@ const E = {
   esperas: new Set(), // quienes esperan un mensaje del relé
   aprendiendo: null, // descripción del aprendizaje en curso
   ultimoAprendizaje: 0,
+  ultimaInteraccion: 0, // última vez que el bicho respondió o hizo algo: por un rato sigue la conversación
 }
 
 function conectar() {
@@ -287,7 +295,13 @@ let colaDecidir = Promise.resolve()
 let pendientes = 0
 
 function alOir(frase) {
-  if (!frase.escrito && frase.texto.trim().split(/\s+/).length < 2) return // una palabra suelta casi nunca es una orden
+  if (!frase.escrito) {
+    if (frase.texto.trim().split(/\s+/).length < 2) return // una palabra suelta casi nunca es una orden
+    // Cada frase evaluada es una llamada a Claude. El micrófono oye todo lo que se conversa cerca, así que
+    // solo se evalúa lo que nombra al bicho o lo que sigue una conversación que él ya estaba teniendo.
+    const enConversacion = Date.now() - E.ultimaInteraccion < VENTANA_CONVERSACION_MS
+    if (!ESCUCHA_TODO && !LO_NOMBRAN.test(frase.texto) && !enConversacion) return
+  }
   if (pendientes >= 3) return // si se acumulan, se bota la más nueva: mejor responder tarde que a destiempo
   pendientes++
   colaDecidir = colaDecidir
@@ -367,6 +381,7 @@ async function decidir(frase) {
   if (!hecho) hecho = r.texto ? { tipo: 'responde', texto: r.texto } : { tipo: 'ignora', texto: r.motivo === 'refusal' ? 'Claude declinó responder.' : 'sin decisión' }
   E.historia.push(`Oíste «${frase.texto}» (${frase.angulo ?? '?'}°) → ${hecho.tipo}: ${hecho.texto}`)
   if (E.historia.length > 12) E.historia.shift()
+  if (hecho.tipo !== 'ignora') E.ultimaInteraccion = Date.now()
   anunciar(hecho.tipo, hecho.texto, { frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null })
   if (hecho.tipo === 'aprende') aprender(hecho.que, frase).catch((e) => errorDeClaude(e, 'aprendiendo'))
 }
@@ -474,7 +489,15 @@ async function aprender(que, frase) {
         if (nombre === 'inspeccionar_hardware') {
           paso('Reviso qué hardware tengo conectado')
           const d = await pedir('diag', 'diag', 60_000)
-          return d ? JSON.stringify(d.d, null, 1) : 'El bicho no respondió el diagnóstico.'
+          if (!d) return 'El bicho no respondió el diagnóstico.'
+          // Un resumen para quien mira la web: qué cámaras y qué aparatos USB encontró.
+          const camaras = [...String(d.d.camaras_csi ?? '').matchAll(/^\s*\d+ : (\S+)/gm)].map((x) => x[1])
+          const usb = String(d.d.usb ?? '')
+            .split('\n')
+            .map((l) => l.replace(/^Bus \d+ Device \d+: ID \S+ /, '').trim())
+            .filter((l) => l && !/root hub|SMSC|SMC9514|Ethernet Adapter/i.test(l))
+          paso(`Encontré: ${camaras.length ? `cámara ${camaras.join(', ')}` : 'ninguna cámara'}${usb.length ? `; por USB: ${usb.join(', ')}` : ''}`)
+          return JSON.stringify(d.d, null, 1)
         }
         if (nombre === 'leer_archivo') {
           const n = String(x.nombre ?? '')
@@ -548,5 +571,5 @@ async function aprender(que, frase) {
   }
 }
 
-log(`cerebro del bicho · modelo ${MODELO} · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
+log(`cerebro del bicho · modelo ${MODELO} · escucha ${ESCUCHA_TODO ? 'todo' : 'solo si lo nombran'} · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
 conectar()
