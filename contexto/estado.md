@@ -16,6 +16,7 @@ El **bicho**: un robot sobre un chasis 4WD de acrílico, con una Raspberry Pi 3 
 - **bichod** ([`bicho/`](../bicho/)): agente Python con WebSocket de sensores y actualización por `POST /update`.
 - **Inventario** en Neon, con 134 ítems sacados del Claude Sheet. Se ve en bicho·dev → Equipo → Inventario.
 - **Harness del equipo:** este `CLAUDE.md`, `contexto/` y las skills compartidas.
+- **Simulador 3D** en bicho·dev → Simulador, con el **idioma del bicho** (30 estados y 5 escenas) en [`bicho/lenguaje.json`](../bicho/lenguaje.json). Propuesta de Guty para que la ajusten Walls y Cristian.
 
 ## En qué está cada uno
 

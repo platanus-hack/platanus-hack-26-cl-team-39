@@ -76,6 +76,8 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: 'localhost',
+      // el simulador lee el idioma del bicho desde ../bicho/lenguaje.json
+      fs: { allow: ['..'] },
       proxy: local ? undefined : { '/api': { target: env.INVENTARIO_API || API_PUBLICA, changeOrigin: true } },
     },
   }

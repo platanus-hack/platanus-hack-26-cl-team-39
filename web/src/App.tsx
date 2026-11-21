@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Console, type ConsoleLine } from './components/Console'
 import { Countdown } from './components/Countdown'
 import { Inventario } from './components/Inventario'
@@ -9,6 +9,11 @@ import { cmpSemver, fetchPackage, loadManifest, looksLikePackage, uploadPackage,
 import { SimLink, WifiLink, normalizeHost, type DeviceLink, type LineDir, type LinkHandlers, type LinkStatus } from './lib/links'
 import { CMD, type DeviceInfo } from './lib/protocol'
 import { SensorStore } from './lib/sensors'
+// el simulador trae three.js (~600 kB): se carga solo al abrirlo
+const Simulador = lazy(() => import('./sim/Simulador').then((m) => ({ default: m.Simulador })))
+
+type Vista = 'bicho' | 'inventario' | 'simulador'
+const vistaDelHash = (): Vista => (location.hash === '#inventario' ? 'inventario' : location.hash === '#simulador' ? 'simulador' : 'bicho')
 
 const MAX_LINES = 600
 
@@ -129,10 +134,10 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const mainRef = useRef<HTMLElement>(null)
   const { active, scrolled, pick } = useScrollSpy(mainRef)
-  // Vista principal: el panel del bicho o el inventario del equipo (#inventario).
-  const [view, setView] = useState<'bicho' | 'inventario'>(() => (location.hash === '#inventario' ? 'inventario' : 'bicho'))
+  // Vista principal: el panel del bicho, el simulador (#simulador) o el inventario del equipo (#inventario).
+  const [view, setView] = useState<Vista>(vistaDelHash)
   useEffect(() => {
-    const onHash = () => setView(location.hash === '#inventario' ? 'inventario' : 'bicho')
+    const onHash = () => setView(vistaDelHash())
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
   }, [])
@@ -525,6 +530,10 @@ export default function App() {
                 {n.id === 'sensores' && <small className="nav-aside">{connected ? store.hz.toFixed(1) : '0.0'} Hz</small>}
               </a>
             ))}
+            <a href="#simulador" aria-current={view === 'simulador' ? 'true' : undefined}>
+              <Icon.Play />
+              <span>Simulador</span>
+            </a>
           </nav>
 
           <nav className="nav nav-inv" aria-label="Equipo">
@@ -578,6 +587,10 @@ export default function App() {
           <div className="main-inner">
             {view === 'inventario' ? (
               <Inventario toast={toast} />
+            ) : view === 'simulador' ? (
+              <Suspense fallback={<p className="notice">Cargando el simulador…</p>}>
+                <Simulador />
+              </Suspense>
             ) : (
             <>
             <header className="toolbar">

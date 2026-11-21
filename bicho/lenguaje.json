@@ -1,0 +1,402 @@
+{
+  "version": 1,
+  "nota": "Idioma del bicho: piezas que lleva y cómo se expresa en cada estado. Lo leen el simulador (web/src/sim) y, después, la Pi. Sonidos: lista de notas con onda (sine, triangle, square, sawtooth o ruido), frecuencia inicial f y final f2 en Hz, inicio t y duración d en segundos, volumen vol, trémolo trem en Hz y filtro pasa bajos en Hz. Luz: patrón del anillo de 24 LEDs. Cabeza: hacia dónde mira y qué gesto hace. Cuerpo: cómo se mueve con las ruedas. Matriz: ícono de la pantalla 8×8 del pecho.",
+
+  "piezas": [
+    { "id": "chasis", "nombre": "Chasis acrílico 4WD de doble piso", "cantidad": 1, "uso": "El cuerpo" },
+    { "id": "motores", "nombre": "Motorreductor DC amarillo + rueda de goma", "cantidad": 4, "uso": "Moverse" },
+    { "id": "drivers", "nombre": "Driver TB6612FNG", "cantidad": 2, "uso": "Controlar los 4 motores" },
+    { "id": "pi", "nombre": "Raspberry Pi 3B", "cantidad": 1, "uso": "Cerebro local: reflejos y bichod" },
+    { "id": "ups", "nombre": "Módulo UPS LX-2BUPS con 2 celdas 18650", "cantidad": 1, "uso": "Batería de la Pi" },
+    { "id": "bateria", "nombre": "Portapilas 18650", "cantidad": 1, "uso": "Batería de los motores" },
+    { "id": "brazo", "nombre": "Brazo de 3 ejes: 2 servomotores MG995 (base y hombro) + 1 MG90S (muñeca)", "cantidad": 1, "uso": "Mover la cabeza; el equipo decidió un solo brazo de 2 o 3 ejes" },
+    { "id": "pinza", "nombre": "Pinza impresa con servomotor MG90S", "cantidad": 1, "uso": "Recoger cosas, prender una luz (por decidir)" },
+    { "id": "pca9685", "nombre": "Driver PCA9685 de 16 canales", "cantidad": 1, "uso": "Mover los servos" },
+    { "id": "anillo", "nombre": "Anillo LED RGB WS2812 de 24 LEDs", "cantidad": 1, "uso": "El ojo: luz de estado, en la punta del brazo" },
+    { "id": "camara", "nombre": "Cámara Raspberry Pi v1.3", "cantidad": 1, "uso": "Ver (al centro del anillo)" },
+    { "id": "matriz", "nombre": "Matriz LED WS2812B 8×8", "cantidad": 1, "uso": "Íconos en el pecho" },
+    { "id": "foco", "nombre": "LED de 1 W en placa estrella", "cantidad": 1, "uso": "Iluminar a quien llega" },
+    { "id": "lidar", "nombre": "LiDAR 2D YDLIDAR", "cantidad": 1, "uso": "Ver 360° y armar el mapa" },
+    { "id": "ultrasonido", "nombre": "Sensor ultrasónico HC-SR04", "cantidad": 1, "uso": "No chocar de frente" },
+    { "id": "tof", "nombre": "Sensor ToF VL53L", "cantidad": 2, "uso": "Distancia a los lados" },
+    { "id": "imu", "nombre": "IMU MPU-6050", "cantidad": 1, "uso": "Saber si lo levantan o se vuelca" },
+    { "id": "piso", "nombre": "Sensor de reflectancia QTR (abajo)", "cantidad": 1, "uso": "Ver el suelo y no caerse de un borde" },
+    { "id": "respeaker", "nombre": "ReSpeaker (micrófono + parlante)", "cantidad": 1, "uso": "Escuchar y hablar (por confirmar modelo)" },
+    { "id": "bomba", "nombre": "Bomba de agua 12 V + elevador DC-DC", "cantidad": 1, "uso": "Chorro para animales" },
+    { "id": "impresas", "nombre": "Piezas impresas en 3D", "cantidad": null, "uso": "Mástil, soporte de la cabeza y boquilla" }
+  ],
+
+  "reposo": {
+    "id": "reposo",
+    "nombre": "Reposo",
+    "grupo": "Base",
+    "sonido": [],
+    "luz": { "patron": "respira", "color": "#fff4e0", "periodo": 4.5, "brillo": 0.35 },
+    "cabeza": { "mirar": "alrededor" },
+    "cuerpo": "quieto",
+    "matriz": "sonrisa",
+    "app": null
+  },
+
+  "estados": [
+    {
+      "id": "escucha", "nombre": "Te escucha", "grupo": "Conversación",
+      "sonido": [{ "onda": "sine", "f": 620, "f2": 930, "t": 0, "d": 0.14, "vol": 0.5 }],
+      "luz": { "patron": "respira", "color": "#2f80ff", "periodo": 2.2 },
+      "cabeza": { "mirar": "dueno" }, "cuerpo": "mirar_dueno", "matriz": "mic",
+      "app": "Te escucho…"
+    },
+    {
+      "id": "piensa", "nombre": "Piensa", "grupo": "Conversación",
+      "sonido": [
+        { "onda": "triangle", "f": 220, "t": 0, "d": 1.1, "vol": 0.3, "trem": 5 },
+        { "onda": "sine", "f": 330, "t": 0, "d": 1.1, "vol": 0.1 }
+      ],
+      "luz": { "patron": "gira", "color": "#5ac8fa", "periodo": 1.1 },
+      "cabeza": { "mirar": "dueno", "gesto": "ladear_izq" }, "cuerpo": "quieto", "matriz": "puntos",
+      "app": "Pensando…"
+    },
+    {
+      "id": "si", "nombre": "Sí, entendí", "grupo": "Conversación",
+      "sonido": [
+        { "onda": "sine", "f": 880, "t": 0, "d": 0.07, "vol": 0.5 },
+        { "onda": "sine", "f": 880, "t": 0.12, "d": 0.07, "vol": 0.5 }
+      ],
+      "luz": { "patron": "destello", "color": "#34c759" },
+      "cabeza": { "mirar": "dueno", "gesto": "asentir" }, "cuerpo": "quieto", "matriz": "check",
+      "app": "Listo, entendí."
+    },
+    {
+      "id": "no", "nombre": "No puedo", "grupo": "Conversación",
+      "sonido": [{ "onda": "triangle", "f": 520, "f2": 300, "t": 0, "d": 0.32, "vol": 0.5 }],
+      "luz": { "patron": "destello", "color": "#ff453a", "brillo": 0.6 },
+      "cabeza": { "mirar": "dueno", "gesto": "negar" }, "cuerpo": "quieto", "matriz": "x",
+      "app": "Eso no lo puedo hacer. Te explico por qué."
+    },
+    {
+      "id": "no_entendi", "nombre": "No entendí", "grupo": "Conversación",
+      "sonido": [
+        { "onda": "sine", "f": 600, "t": 0, "d": 0.05, "vol": 0.45 },
+        { "onda": "sine", "f": 750, "t": 0.06, "d": 0.05, "vol": 0.45 },
+        { "onda": "sine", "f": 600, "t": 0.12, "d": 0.05, "vol": 0.45 },
+        { "onda": "sine", "f": 750, "t": 0.18, "d": 0.05, "vol": 0.45 },
+        { "onda": "sine", "f": 800, "f2": 1250, "t": 0.25, "d": 0.18, "vol": 0.5 }
+      ],
+      "luz": { "patron": "parpadea", "color": "#ffc700", "periodo": 0.5 },
+      "cabeza": { "mirar": "dueno", "gesto": "ladear_der" }, "cuerpo": "quieto", "matriz": "pregunta",
+      "app": "¿Me lo repites?"
+    },
+    {
+      "id": "hola", "nombre": "Hola", "grupo": "Conversación",
+      "sonido": [
+        { "onda": "triangle", "f": 523, "t": 0, "d": 0.1, "vol": 0.5 },
+        { "onda": "triangle", "f": 659, "t": 0.11, "d": 0.1, "vol": 0.5 },
+        { "onda": "triangle", "f": 784, "t": 0.22, "d": 0.2, "vol": 0.5 }
+      ],
+      "luz": { "patron": "destello", "color": "#ffd9a0" },
+      "cabeza": { "mirar": "dueno", "gesto": "asentir" }, "cuerpo": "acercarse", "matriz": "sonrisa",
+      "app": "¡Hola! Qué bueno verte."
+    },
+    {
+      "id": "buenas_noches", "nombre": "Buenas noches", "grupo": "Conversación",
+      "sonido": [
+        { "onda": "triangle", "f": 784, "t": 0, "d": 0.2, "vol": 0.4 },
+        { "onda": "triangle", "f": 659, "t": 0.22, "d": 0.2, "vol": 0.35 },
+        { "onda": "triangle", "f": 523, "t": 0.44, "d": 0.45, "vol": 0.3 }
+      ],
+      "luz": { "patron": "apagando", "color": "#ffb36b", "periodo": 3 },
+      "cabeza": { "mirar": "abajo" }, "cuerpo": "base", "matriz": "luna",
+      "app": "Buenas noches. Quedo vigilando en silencio."
+    },
+
+    {
+      "id": "contento", "nombre": "Contento", "grupo": "Emociones",
+      "sonido": [
+        { "onda": "sine", "f": 1200, "f2": 1800, "t": 0, "d": 0.05, "vol": 0.4 },
+        { "onda": "sine", "f": 1400, "f2": 2000, "t": 0.08, "d": 0.05, "vol": 0.4 },
+        { "onda": "sine", "f": 1200, "f2": 1800, "t": 0.16, "d": 0.05, "vol": 0.4 },
+        { "onda": "sine", "f": 1500, "f2": 2100, "t": 0.24, "d": 0.06, "vol": 0.4 }
+      ],
+      "luz": { "patron": "respira", "color": "#34c759", "periodo": 1.2 },
+      "cabeza": { "mirar": "dueno" }, "cuerpo": "giro", "matriz": "sonrisa",
+      "app": null
+    },
+    {
+      "id": "emocionado", "nombre": "Emocionado", "grupo": "Emociones",
+      "sonido": [
+        { "onda": "sine", "f": 1500, "f2": 2400, "t": 0, "d": 0.04, "vol": 0.4 },
+        { "onda": "sine", "f": 1700, "f2": 2600, "t": 0.05, "d": 0.04, "vol": 0.4 },
+        { "onda": "sine", "f": 1500, "f2": 2400, "t": 0.1, "d": 0.04, "vol": 0.4 },
+        { "onda": "sine", "f": 1800, "f2": 2800, "t": 0.15, "d": 0.04, "vol": 0.4 },
+        { "onda": "sine", "f": 1600, "f2": 2500, "t": 0.2, "d": 0.04, "vol": 0.4 },
+        { "onda": "sine", "f": 2000, "f2": 3000, "t": 0.25, "d": 0.06, "vol": 0.4 }
+      ],
+      "luz": { "patron": "corre", "color": "#ff2d55", "periodo": 0.8 },
+      "cabeza": { "mirar": "dueno", "gesto": "asentir" }, "cuerpo": "vaiven", "matriz": "estrella",
+      "app": null
+    },
+    {
+      "id": "curioso", "nombre": "Curioso", "grupo": "Emociones",
+      "sonido": [{ "onda": "triangle", "f": 380, "f2": 720, "t": 0, "d": 0.38, "vol": 0.45 }],
+      "luz": { "patron": "lado", "color": "#5ac8fa" },
+      "cabeza": { "mirar": "objetivo", "gesto": "ladear_izq" }, "cuerpo": "curiosear", "matriz": "lupa",
+      "app": "Encontré algo. Te mando la foto.", "foto": true
+    },
+    {
+      "id": "sorprendido", "nombre": "Sorprendido", "grupo": "Emociones",
+      "sonido": [
+        { "onda": "sine", "f": 900, "f2": 1800, "t": 0, "d": 0.09, "vol": 0.6 },
+        { "onda": "ruido", "f": 0, "t": 0, "d": 0.05, "vol": 0.2, "filtro": 3000 }
+      ],
+      "luz": { "patron": "destello", "color": "#ffffff" },
+      "cabeza": { "mirar": "frente", "gesto": "atras" }, "cuerpo": "retroceder", "matriz": "exclamacion",
+      "app": null
+    },
+    {
+      "id": "se_equivoco", "nombre": "Se equivocó", "grupo": "Emociones",
+      "sonido": [
+        { "onda": "sine", "f": 500, "f2": 350, "t": 0, "d": 0.35, "vol": 0.45 },
+        { "onda": "sine", "f": 350, "f2": 250, "t": 0.4, "d": 0.45, "vol": 0.4 }
+      ],
+      "luz": { "patron": "fijo", "color": "#2f5bff", "brillo": 0.3 },
+      "cabeza": { "mirar": "abajo" }, "cuerpo": "quieto", "matriz": "triste",
+      "app": "Me equivoqué al girar. Ya lo corregí."
+    },
+    {
+      "id": "aburrido", "nombre": "Aburrido", "grupo": "Emociones",
+      "sonido": [
+        { "onda": "ruido", "f": 0, "t": 0, "d": 1.0, "vol": 0.22, "filtro": 1500, "filtro2": 300 },
+        { "onda": "sine", "f": 300, "f2": 200, "t": 0.1, "d": 0.8, "vol": 0.08 }
+      ],
+      "luz": { "patron": "respira", "color": "#9aa3b5", "periodo": 5 },
+      "cabeza": { "mirar": "alrededor" }, "cuerpo": "vuelta", "matriz": "aburrido",
+      "app": null
+    },
+
+    {
+      "id": "patrullando", "nombre": "Patrullando", "grupo": "Guardián",
+      "sonido": [],
+      "luz": { "patron": "faro", "color": "#ffffff", "periodo": 3, "brillo": 0.5 },
+      "cabeza": { "mirar": "frente", "gesto": "escanear" }, "cuerpo": "patrullar", "matriz": "escudo",
+      "app": "Patrullando."
+    },
+    {
+      "id": "algo_raro", "nombre": "Algo raro", "grupo": "Guardián",
+      "sonido": [{ "onda": "sawtooth", "f": 85, "t": 0, "d": 0.9, "vol": 0.35, "trem": 16, "filtro": 600 }],
+      "luz": { "patron": "fijo", "color": "#ff9f0a" },
+      "cabeza": { "mirar": "objetivo" }, "cuerpo": "orientar", "matriz": "ojo",
+      "app": null
+    },
+    {
+      "id": "alerta", "nombre": "Alerta", "grupo": "Guardián",
+      "sonido": [
+        { "onda": "ruido", "f": 0, "t": 0, "d": 0.1, "vol": 0.35, "filtro": 1800 },
+        { "onda": "sawtooth", "f": 520, "f2": 260, "t": 0, "d": 0.13, "vol": 0.45, "filtro": 2200 },
+        { "onda": "ruido", "f": 0, "t": 0.24, "d": 0.1, "vol": 0.35, "filtro": 1800 },
+        { "onda": "sawtooth", "f": 540, "f2": 250, "t": 0.24, "d": 0.14, "vol": 0.45, "filtro": 2200 }
+      ],
+      "luz": { "patron": "parpadea", "color": "#ff3b30", "periodo": 0.35 },
+      "cabeza": { "mirar": "objetivo" }, "cuerpo": "orientar", "matriz": "exclamacion",
+      "app": "Hay {visita} en el terreno.", "foto": true
+    },
+    {
+      "id": "advertencia", "nombre": "Advertencia", "grupo": "Guardián",
+      "sonido": [
+        { "onda": "ruido", "f": 0, "t": 0, "d": 0.1, "vol": 0.35, "filtro": 1800 },
+        { "onda": "sawtooth", "f": 480, "f2": 240, "t": 0, "d": 0.14, "vol": 0.45, "filtro": 2200 },
+        { "onda": "ruido", "f": 0, "t": 0.26, "d": 0.1, "vol": 0.35, "filtro": 1800 },
+        { "onda": "sawtooth", "f": 500, "f2": 230, "t": 0.26, "d": 0.15, "vol": 0.45, "filtro": 2200 }
+      ],
+      "voz": "Esta es propiedad privada. El dueño ya fue avisado.",
+      "luz": { "patron": "fijo", "color": "#ffffff" },
+      "cabeza": { "mirar": "objetivo" }, "cuerpo": "plantarse", "matriz": "alto",
+      "foco": true,
+      "app": "Le estoy hablando a {visita}. Estoy grabando."
+    },
+    {
+      "id": "espera_decision", "nombre": "Espera tu decisión", "grupo": "Guardián",
+      "sonido": [{ "onda": "sine", "f": 600, "f2": 900, "t": 0, "d": 0.16, "vol": 0.4 }],
+      "repetir": 3,
+      "luz": { "patron": "respira", "color": "#ffc700", "periodo": 1.8 },
+      "cabeza": { "mirar": "objetivo" }, "cuerpo": "orientar", "matriz": "pregunta",
+      "app": "¿Qué hago? Puedo hablarle, seguir mirando o dejarlo."
+    },
+    {
+      "id": "rocia_agua", "nombre": "Rocía agua", "grupo": "Guardián",
+      "solo_animales": true, "si_persona": "advertencia",
+      "sonido": [
+        { "onda": "ruido", "f": 0, "t": 0, "d": 0.1, "vol": 0.35, "filtro": 1800 },
+        { "onda": "sawtooth", "f": 520, "f2": 260, "t": 0, "d": 0.13, "vol": 0.45, "filtro": 2200 },
+        { "onda": "ruido", "f": 0, "t": 0.25, "d": 1.1, "vol": 0.28, "filtro": 5000 }
+      ],
+      "luz": { "patron": "gira", "color": "#3fa9ff", "periodo": 0.5 },
+      "cabeza": { "mirar": "objetivo" }, "cuerpo": "plantarse", "matriz": "gota",
+      "agua": true,
+      "app": "Mojando a {visita}. Te aviso cuando se vaya."
+    },
+    {
+      "id": "mision_cumplida", "nombre": "Misión cumplida", "grupo": "Guardián",
+      "sonido": [
+        { "onda": "ruido", "f": 0, "t": 0, "d": 0.08, "vol": 0.3, "filtro": 2200 },
+        { "onda": "sawtooth", "f": 640, "f2": 420, "t": 0, "d": 0.1, "vol": 0.4, "filtro": 2600 },
+        { "onda": "sine", "f": 1200, "f2": 1900, "t": 0.18, "d": 0.08, "vol": 0.4 }
+      ],
+      "luz": { "patron": "destello", "color": "#34c759" },
+      "cabeza": { "mirar": "dueno" }, "cuerpo": "patrullar", "matriz": "check",
+      "visita_se_va": true,
+      "app": "{Visita} se fue. Vuelvo a patrullar."
+    },
+
+    {
+      "id": "pide_pieza", "nombre": "Pide una pieza", "grupo": "Autoconstrucción",
+      "sonido": [
+        { "onda": "sine", "f": 500, "f2": 800, "t": 0, "d": 0.18, "vol": 0.45 },
+        { "onda": "sine", "f": 700, "f2": 1050, "t": 0.25, "d": 0.22, "vol": 0.45 }
+      ],
+      "luz": { "patron": "respira", "color": "#ffd60a", "periodo": 1.3 },
+      "cabeza": { "mirar": "dueno", "gesto": "ladear_izq" }, "cuerpo": "acercarse", "matriz": "caja",
+      "app": "¿Me imprimes esta pieza? Es un soporte para el sensor nuevo."
+    },
+    {
+      "id": "reprogramando", "nombre": "Se reprograma", "grupo": "Autoconstrucción",
+      "sonido": [
+        { "onda": "ruido", "f": 0, "t": 0, "d": 0.02, "vol": 0.3, "filtro": 6000 },
+        { "onda": "ruido", "f": 0, "t": 0.25, "d": 0.02, "vol": 0.3, "filtro": 6000 },
+        { "onda": "ruido", "f": 0, "t": 0.5, "d": 0.02, "vol": 0.3, "filtro": 6000 },
+        { "onda": "ruido", "f": 0, "t": 0.75, "d": 0.02, "vol": 0.3, "filtro": 6000 },
+        { "onda": "ruido", "f": 0, "t": 1.0, "d": 0.02, "vol": 0.3, "filtro": 6000 },
+        { "onda": "ruido", "f": 0, "t": 1.25, "d": 0.02, "vol": 0.3, "filtro": 6000 }
+      ],
+      "repetir": 1.5,
+      "luz": { "patron": "llena", "color": "#2f80ff", "periodo": 3 },
+      "cabeza": { "mirar": "frente" }, "cuerpo": "quieto", "matriz": "descarga",
+      "app": "Instalando la versión 0.8…"
+    },
+    {
+      "id": "probando", "nombre": "Prueba algo nuevo", "grupo": "Autoconstrucción",
+      "sonido": [
+        { "onda": "sine", "f": 1000, "t": 0, "d": 0.06, "vol": 0.4 },
+        { "onda": "sine", "f": 1000, "t": 0.3, "d": 0.06, "vol": 0.4 },
+        { "onda": "sine", "f": 1500, "t": 0.6, "d": 0.09, "vol": 0.4 }
+      ],
+      "luz": { "patron": "sectores", "color": "#5ac8fa", "periodo": 0.6 },
+      "cabeza": { "mirar": "frente", "gesto": "escanear" }, "cuerpo": "prueba", "matriz": "pulso",
+      "app": "Probando el sensor nuevo."
+    },
+    {
+      "id": "aprendio", "nombre": "Aprendió algo", "grupo": "Autoconstrucción",
+      "sonido": [
+        { "onda": "triangle", "f": 523, "t": 0, "d": 0.12, "vol": 0.45 },
+        { "onda": "triangle", "f": 659, "t": 0.12, "d": 0.12, "vol": 0.45 },
+        { "onda": "triangle", "f": 784, "t": 0.24, "d": 0.12, "vol": 0.45 },
+        { "onda": "triangle", "f": 1047, "t": 0.36, "d": 0.42, "vol": 0.5 },
+        { "onda": "square", "f": 262, "t": 0.36, "d": 0.42, "vol": 0.08 }
+      ],
+      "luz": { "patron": "arcoiris", "color": "#ffffff", "periodo": 1.5 },
+      "cabeza": { "mirar": "dueno", "gesto": "asentir" }, "cuerpo": "baile", "matriz": "estrella",
+      "app": "Aprendí a usar el sensor de distancia."
+    },
+    {
+      "id": "volvio_atras", "nombre": "Volvió atrás", "grupo": "Autoconstrucción",
+      "sonido": [
+        { "onda": "sine", "f": 800, "f2": 500, "t": 0, "d": 0.12, "vol": 0.45 },
+        { "onda": "sine", "f": 500, "f2": 300, "t": 0.15, "d": 0.25, "vol": 0.45 }
+      ],
+      "luz": { "patron": "destello", "color": "#ff3b30" },
+      "cabeza": { "mirar": "frente", "gesto": "sacudir" }, "cuerpo": "quieto", "matriz": "atras",
+      "app": "La versión 0.8 fallaba. Volví a la 0.7."
+    },
+
+    {
+      "id": "bateria_baja", "nombre": "Batería baja", "grupo": "Su cuerpo",
+      "sonido": [{ "onda": "sine", "f": 700, "f2": 300, "t": 0, "d": 0.6, "vol": 0.4 }],
+      "luz": { "patron": "fijo", "color": "#ff6b3d", "brillo": 0.25 },
+      "cabeza": { "mirar": "abajo" }, "cuerpo": "lento", "matriz": "bateria",
+      "app": "Me queda poca batería."
+    },
+    {
+      "id": "cargando", "nombre": "Cargando", "grupo": "Su cuerpo",
+      "sonido": [{ "onda": "sawtooth", "f": 48, "t": 0, "d": 1.4, "vol": 0.3, "trem": 22, "filtro": 350 }],
+      "repetir": 2,
+      "luz": { "patron": "llena", "color": "#34c759", "periodo": 3 },
+      "cabeza": { "mirar": "abajo" }, "cuerpo": "base", "matriz": "rayo",
+      "app": "Cargando."
+    },
+    {
+      "id": "atascado", "nombre": "Atascado", "grupo": "Su cuerpo",
+      "sonido": [
+        { "onda": "sawtooth", "f": 300, "t": 0, "d": 0.07, "vol": 0.3, "filtro": 1500 },
+        { "onda": "sawtooth", "f": 300, "t": 0.1, "d": 0.07, "vol": 0.3, "filtro": 1500 },
+        { "onda": "sawtooth", "f": 300, "t": 0.2, "d": 0.07, "vol": 0.3, "filtro": 1500 },
+        { "onda": "sawtooth", "f": 250, "f2": 180, "t": 0.32, "d": 0.22, "vol": 0.3, "filtro": 1500 }
+      ],
+      "luz": { "patron": "parpadea", "color": "#ff9f0a", "periodo": 0.5 },
+      "cabeza": { "mirar": "frente", "gesto": "negar" }, "cuerpo": "intentar", "matriz": "x",
+      "app": "Estoy atascado. ¿Me ayudas?"
+    },
+    {
+      "id": "lo_levantaron", "nombre": "Lo levantaron", "grupo": "Su cuerpo",
+      "sonido": [{ "onda": "sine", "f": 700, "f2": 1600, "t": 0, "d": 0.35, "vol": 0.5 }],
+      "luz": { "patron": "destello", "color": "#ffffff" },
+      "cabeza": { "mirar": "abajo" }, "cuerpo": "levantado", "matriz": "flecha_arriba",
+      "app": "¿Adónde me llevas?"
+    },
+    {
+      "id": "sin_conexion", "nombre": "Sin conexión", "grupo": "Su cuerpo",
+      "sonido": [{ "onda": "sine", "f": 440, "t": 0, "d": 0.8, "vol": 0.25 }],
+      "luz": { "patron": "fijo", "color": "#8e8e93", "brillo": 0.25 },
+      "cabeza": { "mirar": "frente" }, "cuerpo": "quieto", "matriz": "plana",
+      "app": "El bicho está sin conexión."
+    }
+  ],
+
+  "escenas": [
+    {
+      "id": "perro", "nombre": "Llega el perro del vecino", "visita": "perro",
+      "pasos": [["patrullando", 3], ["algo_raro", 2], ["alerta", 2.5], ["rocia_agua", 3.5], ["mision_cumplida", 3]]
+    },
+    {
+      "id": "persona", "nombre": "Entra una persona", "visita": "persona",
+      "pasos": [["patrullando", 3], ["algo_raro", 2], ["alerta", 2.5], ["espera_decision", 3.5], ["advertencia", 5], ["espera_decision", 2]]
+    },
+    {
+      "id": "pieza", "nombre": "Pide una pieza y aprende", "visita": "ninguna",
+      "pasos": [["curioso", 2.5], ["pide_pieza", 3.5], ["reprogramando", 3.5], ["probando", 2.5], ["aprendio", 3]]
+    },
+    {
+      "id": "falla", "nombre": "Se equivoca y vuelve atrás", "visita": "ninguna",
+      "pasos": [["reprogramando", 3], ["probando", 2.5], ["se_equivoco", 2.5], ["volvio_atras", 2.5], ["contento", 2]]
+    },
+    {
+      "id": "dueno", "nombre": "Llega el dueño", "visita": "ninguna",
+      "pasos": [["hola", 3], ["escucha", 2.5], ["piensa", 2], ["si", 2], ["contento", 2]]
+    }
+  ],
+
+  "iconos": {
+    "sonrisa":       ["00111100", "01000010", "10100101", "10000001", "10100101", "10011001", "01000010", "00111100"],
+    "triste":        ["00111100", "01000010", "10100101", "10000001", "10011001", "10100101", "01000010", "00111100"],
+    "aburrido":      ["00000000", "00000000", "11100111", "00000000", "00000000", "00111100", "00000000", "00000000"],
+    "mic":           ["00011000", "00111100", "00111100", "00111100", "10111101", "01000010", "00111100", "00011000"],
+    "puntos":        ["00000000", "00000000", "00000000", "11011011", "11011011", "00000000", "00000000", "00000000"],
+    "check":         ["00000000", "00000001", "00000011", "10000110", "11001100", "01111000", "00110000", "00000000"],
+    "x":             ["10000001", "01000010", "00100100", "00011000", "00011000", "00100100", "01000010", "10000001"],
+    "pregunta":      ["00111100", "01100110", "00000110", "00001100", "00011000", "00011000", "00000000", "00011000"],
+    "exclamacion":   ["00011000", "00011000", "00011000", "00011000", "00011000", "00000000", "00011000", "00011000"],
+    "estrella":      ["00011000", "00011000", "11111111", "01111110", "00111100", "01100110", "11000011", "00000000"],
+    "lupa":          ["00111000", "01000100", "10000010", "10000010", "10000010", "01000100", "00111110", "00000011"],
+    "luna":          ["00111000", "01110000", "11100000", "11100000", "11100000", "11110001", "01111110", "00111100"],
+    "escudo":        ["11111111", "10000001", "10000001", "10000001", "01000010", "01000010", "00100100", "00011000"],
+    "ojo":           ["00000000", "00111100", "01000010", "10011001", "10011001", "01000010", "00111100", "00000000"],
+    "alto":          ["00111100", "01111110", "11111111", "10000001", "10000001", "11111111", "01111110", "00111100"],
+    "gota":          ["00011000", "00011000", "00111100", "00111100", "01111110", "01111110", "01111110", "00111100"],
+    "caja":          ["11111111", "10000001", "11111111", "10000001", "10000001", "10000001", "10000001", "11111111"],
+    "descarga":      ["00011000", "00011000", "00011000", "11011011", "01111110", "00111100", "00011000", "11111111"],
+    "pulso":         ["00000000", "00010000", "00101000", "10101001", "01000101", "00000010", "00000000", "00000000"],
+    "atras":         ["00110000", "01100000", "11111110", "01100001", "00110001", "00000001", "00000010", "01111100"],
+    "bateria":       ["00000000", "11111110", "10000010", "11000011", "11000011", "10000010", "11111110", "00000000"],
+    "rayo":          ["00001100", "00011000", "00110000", "01111110", "00001100", "00011000", "00110000", "01100000"],
+    "flecha_arriba": ["00011000", "00111100", "01111110", "11011011", "00011000", "00011000", "00011000", "00011000"],
+    "plana":         ["00000000", "00000000", "00000000", "11111111", "00000000", "00000000", "00000000", "00000000"]
+  }
+}
