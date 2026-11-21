@@ -490,8 +490,10 @@ def pc_eslabon(name, L_, t=6, hgt=20):
     return soften(boolean(o, cuts))
 
 def pc_eslabon2(L_=90):
-    o = pbox("P10 Eslabón 2", L_, 5, 16, (L_ / 2, 0, 0), m=PLA)
-    boolean(o, [pcyl("_e", 9, 5, (0, 0, 0), (90, 0, 0)), pbox("_m", 30, 16, 26, (L_ - 4, 6, 0))], op="UNION")
+    # El alojamiento del MG90S parte al ras del eslabón (y = -2,5); antes partía en -2 y quedaba 0,5 mm sobre la cama al imprimir de canto.
+    # La barra llega hasta el alojamiento (L_ - 19) y no lo atraviesa: así la unión al ras no deja aristas rotas. La pieza queda igual.
+    o = pbox("P10 Eslabón 2", L_ - 19, 5, 16, ((L_ - 19) / 2, 0, 0), m=PLA)
+    boolean(o, [pcyl("_e", 9, 5, (0, 0, 0), (90, 0, 0)), pbox("_m", 30, 16.5, 26, (L_ - 4, 5.75, 0))], op="UNION")
     cuts = [pbox("_c", 23.2, 12.6, 40, (L_ - 4, 6, 0), (90, 0, 0)), holes([(0, 0, 0)], 6, 12, axis="Y"),
             holes([(sx * 7, 0, 0) for sx in (-1, 1)], 2.2, 12, axis="Y"), pbox("_c", 34, 8, 7, (L_ * 0.45, 0, 0))]
     return soften(boolean(o, cuts))
@@ -528,10 +530,13 @@ def pc_flujo():
 
 def pc_parachoques():
     o = pbox("P05 Parachoques", 12, 170, 35, (0, 0, 0), m=TPU)
-    boolean(o, [pbox("_t", 26, 16, 4, (-18, y, 8.5)) for y in (-50, 50)], op="UNION")
     cuts = [holes([(0, y, 0) for y in (-13, 13)], 16.5, 30, axis="X"), pbox("_c", 30, 8, 6, (0, -45, 0)), pbox("_c", 30, 8, 6, (0, 45, 0)),
-            pbox("_c", 8, 140, 27, (-4, 0, 0)), holes([(-26, y, 8) for y in (-50, 50)], 3.4, 10)]
-    return soften(boolean(o, cuts))
+            pbox("_c", 8, 140, 27, (-4, 0, 0))]
+    boolean(o, cuts)
+    # Orejas: se agregan después del hueco de atrás y cruzan hasta la pared del frente. Antes el hueco les cortaba la unión
+    # y quedaban sueltas. Van en y = ±60 (agujero de la placa en x = 140, y = ±60) para no tapar los ToF de ±45 ni sus cables.
+    boolean(o, [pbox("_t", 32, 16, 4, (-15, y, 8.5)) for y in (-60, 60)], op="UNION")
+    return soften(boolean(o, [holes([(-26, y, 8) for y in (-60, 60)], 3.4, 10)]))
 
 def pc_mastil(h=150):
     o = pbox("P02 Torre", 50, 50, 4, (0, 0, 2), m=PLA)
@@ -583,7 +588,7 @@ def chasis(R, V):
     for sx in (-1, 1):
         for sy in (-1, 1):
             cu = pc_cuna_motor(); registrar(cu, "P24", "Cuna motor TT", "PETG", .5, "No (pestaña contra la cama)", (180, 0, 0),
-                                            "Atornillar al TT con 2 M3×30 por las ranuras (±7 mm de juego para calzar los agujeros del motor)", V)
+                                            "Atornillar al TT con 2 M3×35 por las ranuras (±7 mm de juego para calzar los agujeros del motor)", V)
             parent(cu, R, (sx * (WHEEL_X - 24), sy * MOTOR_Y, ZB), (0, 0, 0 if sx > 0 else 180))
             m = c_tt_motor().done(R, (sx * (WHEEL_X - 11), sy * MOTOR_Y, 32.5), (0, 0, 0 if sx > 0 else 180), mass=30.6, etiqueta="Motorreductor TT 1:48 (ítem 54)")
             w = empty(f"W_{'d' if sx > 0 else 't'}{'i' if sy > 0 else 'd'}", (sx * WHEEL_X, sy * WHEEL_Y, 32.5), R, rueda=True)
@@ -613,7 +618,7 @@ def chasis(R, V):
                                           ("imu", "MPU-6050 · orientación (al centro de giro)", 5, 0, 21, 16, PCBB, [(0, 0, 4, 4, 0.9, BLK2)])]:
         c_board(et.split(" ·")[0], w_, d_, m_, chips=ch, pins=(8, 1, 2.54, (0, -d_ / 2 + 2, 1.6))).done(grupo(R, gid, et, (x, y, z2 + 3), superficie="piso2"), mass=3, etiqueta=et)
     g = grupo(R, "parachoques", "Parachoques con ultrasonido y 2 ToF", (L / 2 + 6, 0, ZB + T - 6.5), superficie="frente", movible=False)
-    b = pc_parachoques(); registrar(b, "P05", "Parachoques", "TPU 95A (o PETG)", .3, "No (cara al plato)", (0, 90, 0), "Se atornilla a la placa inferior con 2 M3", V)
+    b = pc_parachoques(); registrar(b, "P05", "Parachoques", "TPU 95A (o PETG)", .3, "No (cara al plato)", (0, 90, 0), "Se atornilla a la placa inferior con 2 M3×12 en x = 140, y = ±60", V)
     parent(b, g)
     c_hcsr04().done(g, (-8, 0, 0), (0, -90, 0), mass=9, etiqueta="HC-SR04 · ultrasonido (ítem 89)", sensor="ultrasonido")
     for y in (-45, 45):
@@ -633,15 +638,15 @@ def brazo(R, V, cabeza):
     parent(l1, Js, (0, 31, 0))
     c_mg995().done(Js, (100 - 10.2, 19, 0), (90, 0, 0), mass=55, etiqueta="MG995 #3 · codo")
     Je = empty("J_codo", (100, 0, 0), Js)
-    l2 = pc_eslabon2(90); registrar(l2, "P10", "Eslabón 2", "PETG", .4, "Sí (bajo la muñeca)", (90, 0, 0), "Termina en el alojamiento del MG90S", V)
+    l2 = pc_eslabon2(90); registrar(l2, "P10", "Eslabón 2", "PETG", .4, "No (de canto)", (90, 0, 0), "Termina en el alojamiento del MG90S", V)
     parent(l2, Je, (0, -10, 0))
     c_mg90s().done(Je, (90 - 4 - 5.9, -7, 0), (90, 0, 0), mass=13.4, etiqueta="MG90S #1 · muñeca")
     Jw = empty("J_muneca", (86, -38.6, 0), Je)
     h = pc_cabeza_muneca(cabeza == "camara")
     if cabeza == "camara":
-        registrar(h, "P14", "Cabeza de muñeca", "PETG", .35, "Sí (bajo la repisa)", (0, -90, 0), "Cámara Pi + anillo 24 LED al frente, LiDAR arriba, pinza abajo", V)
+        registrar(h, "P14", "Cabeza de muñeca", "PETG", .35, "Sí (árbol, bajo el disco de la cara)", (0, -90, 0), "Cámara Pi + anillo 24 LED al frente, LiDAR arriba, pinza abajo", V)
     else:
-        registrar(h, "P15", "Muñeca con LiDAR", "PETG", .35, "Sí (bajo la repisa)", (0, -90, 0), "LiDAR arriba y pinza abajo", V)
+        registrar(h, "P15", "Muñeca con LiDAR", "PETG", .35, "No", (0, -90, 0), "LiDAR arriba y pinza abajo", V)
     parent(h, Jw)
     if cabeza != "sinlidar":
         c_lidar_eai().done(Jw, (22, 0, 20), mass=5.4, etiqueta="LiDAR 2D EAI (ítem 87) · barre con el brazo", sensor="lidar").name = "S_lidar"
@@ -682,8 +687,8 @@ VERS["V1"] = R
 R = version("V2", "V2 · Brazo + torre", "Brazo al centro con LiDAR; torre trasera con cara, parlante y cámara.")
 brazo(R, ["V2"], "lidar"); ups(R, (-80, -50, DT))
 tg = grupo(R, "torre", "Torre trasera", (-120, 60, DT), superficie="cubierta")
-mt = pc_mastil(150); registrar(mt, "P02", "Torre", "PETG", .4, "No (imprimir acostada)", (0, 90, 0), "Acostada: las capas siguen el largo y aguanta un vuelco", ["V2"]); parent(mt, tg)
-an = pc_anillo_parlante(); registrar(an, "P12", "Anillo del parlante", "PLA", .25, "No", (0, 0, 0), "Prisionero M3 contra la torre", ["V2"]); parent(an, tg, (0, 0, 70))
+mt = pc_mastil(150); registrar(mt, "P02", "Torre", "PETG", .4, "Sí (acostada; soportes bajo el tubo, que queda a 14 mm de la cama)", (0, 90, 0), "Acostada: las capas siguen el largo y aguanta un vuelco", ["V2"]); parent(mt, tg)
+an = pc_anillo_parlante(); registrar(an, "P12", "Anillo del parlante", "PLA", .25, "Sí (árbol, bajo el disco de 100 mm)", (0, 0, 0), "Prisionero M3 contra la torre", ["V2"]); parent(an, tg, (0, 0, 70))
 c_speaker().done(tg, (0, 0, 73), mass=180, etiqueta="Parlante omnidireccional")
 cf = pc_cara("torre"); registrar(cf, "P03", "Cara en la torre", "PLA", .25, "Sí (árbol)", (0, -90, 0), "Enchufa en el tubo de 22×22", ["V2"]); parent(cf, tg, (15, 0, 180))
 c_ring24().done(tg, (17.5, 0, 180), (0, 90, 0), mass=8, etiqueta="Anillo WS2812 de 24 LED (ítem 5)")
@@ -701,7 +706,7 @@ Jb = empty("J_barrido", (0, 0, 34.6), bg)
 c_lidar_eai().done(Jb, (4, 0, 0), mass=5.4, etiqueta="LiDAR 2D EAI · barre ±90°", sensor="lidar").name = "S_lidar"
 empty("S_lidar_rayo", (4, 0, 11), Jb, rot=(0, 90, 0), rayo=True)
 cg_ = grupo(R, "cara", "Cara frontal", (103, 0, DT), superficie="cubierta")
-cf = pc_cara("frontal"); registrar(cf, "P18", "Cara frontal", "PLA", .25, "No", (0, -90, 0), "Pie con 2 M3 a la rejilla", ["V3"]); parent(cf, cg_, (13, 0, 38))
+cf = pc_cara("frontal"); registrar(cf, "P18", "Cara frontal", "PLA", .25, "Sí (árbol, bajo el disco)", (0, -90, 0), "Pie con 2 M3 a la rejilla", ["V3"]); parent(cf, cg_, (13, 0, 38))
 c_ring24().done(cg_, (15.5, 0, 38), (0, 90, 0), mass=8, etiqueta="Anillo WS2812 de 24 LED (ítem 5)")
 c_picam().done(cg_, (16, 0, 40), (0, 90, 0), mass=3, etiqueta="Cámara Pi v1.3 · cara al frente", sensor="camara", fov_h=53.5, fov_v=41.4).name = "S_cam_pi"
 pod(R, ["V3"], "esp1", 1, (130, -60, DT), 0, "ESP32-CAM #1 · controlador")

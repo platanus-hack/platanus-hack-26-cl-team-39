@@ -13,6 +13,15 @@ Equipo CRBRC · Platanus Hack 26 · versión v3.2 (32 × 20 cm, placas enteras),
 
 Las 19 STL pasaron el chequeo de malla cerrada: 0 bordes abiertos y 0 aristas con más de 2 caras.
 
+**Imprime desde los archivos de este repo (rama `dev`).** El 21-nov a las 12:15 se corrigieron B00, B06 y B07 (detalle abajo). Mientras no se actualice Drive, los archivos de allá tienen esos errores.
+
+**Revisión del 21-nov, 12:15.** Se revisaron las 19 STL y las 14 bandejas: malla cerrada, todas las piezas apoyadas en la cama, ninguna pieza pisa a otra y todas caben en su cama. Se corrigieron estas cosas:
+- **B00, prueba de tolerancia:** la cola de milano medía 20 mm de alto y dejaba las dos tiras flotando 10 mm sobre la cama. Ahora toda la pieza mide 4 mm de alto.
+- **B06, parachoques (P05):** las dos orejas para atornillarlo quedaban sueltas, a 2 mm del cuerpo, porque el hueco de atrás les cortaba la unión. Ahora cruzan hasta la pared del frente y quedan en una sola pieza con el resto. Se movieron a y = ±60 mm para no tapar los ToF ni sus cables, así que se atornillan en la placa inferior en x = 140, y = ±60.
+- **B07, eslabón 2 (P10):** el alojamiento del MG90S quedaba 0,5 mm sobre la cama al imprimir de canto. Ahora parte al ras de la cama y no necesita soportes.
+- **Soportes:** P02, P12 y P18 sí los necesitan, aunque antes decía que no. La lista corregida está en «Qué piezas llevan soportes».
+- **Tornillería:** había largos que no alcanzaban para la tuerca, y las columnas con M3×50 chocaban en el piso del medio. La tabla de «Tornillería» ya está corregida.
+
 ## Medidas de la estructura
 
 - **Placa estándar de 320 × 200 mm.** Es igual en los tres pisos (inferior, superior y cubierta) y tiene 4 mm de espesor. Abajo lleva nervios de 6 mm: uno en todo el borde y dos transversales a ±40 mm del centro. Las esquinas son redondeadas con radio de 15 mm.
@@ -39,7 +48,7 @@ Los perfiles son para boquilla de 0,4 mm. Configúralos en el slicer como «proc
 |---|---|---|---|---|---|---|---|---|
 | **PLA-ESTRUCTURA** (placas y columnas) | PLA o PLA+ | 210 / 60 °C | 0,20 mm | 4 | 5 / 5 | **40 % giroide** | 100 % desde la capa 3 | Para las placas: brim de 5 mm, para que una pieza de 32 cm no se levante en las esquinas. PEI liso limpio con alcohol. Pata de elefante 0,15 mm. Agujeros +0,1 mm. |
 | **PETG-MECÁNICA** (brazo, torre, cunas) | PETG | 240 / 80 °C | 0,20 mm | 4 | 5 / 5 | 40 % giroide | 40 % | Brim de 4 mm en los eslabones. Pegamento en barra si la cama es PEI liso. |
-| **PLA-SOPORTES** (cámaras, flujo, cara, anillo) | PLA | 210 / 60 °C | 0,20 mm | 3 | 4 / 4 | 25 % giroide | 100 % | Soportes tipo árbol solo en P03 y P14. |
+| **PLA-SOPORTES** (cámaras, flujo, cara, anillo) | PLA | 210 / 60 °C | 0,20 mm | 3 | 4 / 4 | 25 % giroide | 100 % | Soportes solo en las piezas de la lista de abajo. |
 | **TPU-PARACHOQUES** | TPU 95A | 225 / 45 °C | 0,24 mm | 3 | 4 / 4 | 30 % giroide | 50 % | Todo a 25 mm/s. Retracción de 0,8 mm o ninguna. Si no hay TPU, usa PETG con el perfil mecánico. |
 
 **Por qué las placas van en PLA y no en PETG.** El PLA es casi el doble de rígido (unos 3,5 GPa contra 2,1 GPa del PETG), y en una placa larga lo que importa es que no se flexione. El 40 % de giroide con 4 paredes y 5 capas arriba y abajo, más los nervios, deja una flecha menor a 0,1 mm con 2 kg encima. Las piezas que reciben golpes o torque (brazo y cunas de motor) van en PETG porque es más tenaz.
@@ -48,6 +57,22 @@ Los perfiles son para boquilla de 0,4 mm. Configúralos en el slicer como «proc
 - Las placas se imprimen con la cara superior contra la cama, nervios hacia arriba, sin soportes.
 - Los eslabones del brazo van de canto, para que las capas sigan el largo.
 - La torre (V2) va acostada, para que aguante un vuelco.
+
+**Qué piezas llevan soportes.** Todas las demás van sin soportes: desactívalos o usa «solo desde la cama».
+
+| Pieza | Bandeja | Soporte | Dónde |
+|---|---|---|---|
+| P14 · Cabeza de muñeca | B08-V1 | Árbol | Bajo el disco de la cara, que queda a 44 mm de la cama. |
+| P02 · Torre | B08-V2 | Normal | Bajo el tubo: acostada, queda a 14 mm de la cama. |
+| P03 · Cara en la torre | B09-V2 | Árbol | Bajo el disco. |
+| P12 · Anillo del parlante | B09-V2 | Árbol | Bajo el disco de 100 mm, que queda a 16 mm de la cama y solo se apoya en el cubo central. |
+| P18 · Cara frontal | B09-V3 | Árbol | Bajo el disco, que queda a 26 mm de la cama. |
+
+Dos zonas que **no** necesitan soporte:
+- **P06**, el soporte de flujo óptico: tiene un puente de 31 mm.
+- **P07**, la torreta: por dentro, el marco del servo vuela 7 mm. Puede colgar un poco, pero no se ve ni afecta el calce.
+
+**Al abrir una bandeja:** si el slicer avisa que alguna pieza se sale de la cama, o si el brim queda afuera, usa «Ordenar» (tecla A). Las piezas vienen a 3 o 6 mm de la esquina.
 
 ## Bandejas y tiempos
 
@@ -87,20 +112,20 @@ Con dos impresoras: la de cama grande saca las 3 placas y la otra todo lo demás
 
 | Uso | Cantidad |
 |---|---|
-| Columnas entre pisos | 8 varillas roscadas M3 × 100 mm + 32 tuercas, o 16 tornillos M3×50 + 16 tuercas |
+| Columnas entre pisos | 8 varillas roscadas M3 × 100 mm, o tornillos M3×100, que atraviesan los 3 pisos (92 mm), con una tuerca en cada punta: 16 tuercas, o 32 con contratuerca. **No sirven 16 M3×50:** la tuerca del piso de abajo quedaría justo bajo la columna del piso de arriba, porque las columnas de los dos pisos van en el mismo punto. |
 | Cunas de motor a la placa | 16 M3×10 + 16 tuercas |
-| Motores TT a la cuna (por las ranuras) | 8 M3×30 + 8 tuercas |
+| Motores TT a la cuna (por las ranuras) | 8 **M3×35** + 8 tuercas. De pared a pared la cuna mide 28,8 mm, así que un M3×30 deja solo 1,2 mm para la tuerca. |
 | Torreta del brazo | 4 M3×10 + 4 tuercas |
-| Soportes de cámara | 2 M3×8 por soporte |
-| Soportes de flujo óptico | 4 M3×8 por soporte |
-| Parachoques | 2 M3×10 |
-| Raspberry Pi 3B | 4 M2,5×10 + 4 separadores de 5 mm |
+| Soportes de cámara | 2 **M3×10** + 2 tuercas por soporte. La base de 3 mm más la placa de 4 mm suman 7 mm, así que un M3×8 no alcanza para la tuerca. |
+| Soportes de flujo óptico | 4 **M3×10** + 4 tuercas por soporte, por lo mismo. |
+| Parachoques | 2 **M3×12** + 2 tuercas, en la placa inferior en x = 140, y = ±60. La oreja de 4 mm más la placa de 4 mm suman 8 mm. |
+| Raspberry Pi 3B | 4 M2,5×16 + 4 tuercas + 4 separadores de 5 mm. **Ojo:** los agujeros de la Pi forman un rectángulo de 58 × 49 mm y no calzan con la rejilla de 10 mm. Abre 2 agujeros con broca o fíjala con 2 tornillos y una amarra. |
 | Servos (MG995 y MG90S) | Los tornillos del horn y de las orejas que trae cada servo (ítem 127). Se autoroscan en agujeros de 2,2 a 2,8 mm. |
 
 ## Armado
 
 1. **Placas:** saca el brim y repasa los agujeros con una broca de 3,4 mm a mano si alguno quedó cerrado.
-2. **Placa inferior:** atornilla las 4 cunas P24 por abajo, a ±80 mm en X y ±80 mm en Y. Mete cada motor TT con el eje hacia afuera y pasa 2 M3×30 por las ranuras y los agujeros del motor. Las ranuras tienen ±7 mm de juego para calzar donde caigan los agujeros. Después van las ruedas.
+2. **Placa inferior:** atornilla las 4 cunas P24 por abajo, a ±80 mm en X y ±80 mm en Y. Mete cada motor TT con el eje hacia afuera y pasa 2 M3×35 por las ranuras y los agujeros del motor. Las ranuras tienen ±7 mm de juego para calzar donde caigan los agujeros. Después van las ruedas.
 3. **Sensores de flujo:** los dos ADNS-3080 van en sus soportes P06, bajo la placa, a ±100 mm del centro. Desenrosca cada lente M12 unos 3 mm para que enfoque el suelo a unos 28 mm.
 4. **Piso 1:** los dos portapilas de 4×18650, el fusible y el interruptor. Pon las columnas de 40 mm en las 8 posiciones (±130 y ±20 en X, ±80 en Y) y encima la placa superior.
 5. **Piso 2:** la Pi junto al centro, para que el cable de la cámara de 1 m llegue al brazo. También van los PCA9685, los TB6612, el LM2596, el convertidor de servos, los ADS1115 y la MPU-6050 al centro. Después la segunda tanda de columnas y la cubierta.
@@ -110,5 +135,5 @@ Con dos impresoras: la de cama grande saca las 3 placas y la otra todo lo demás
 ## Lo que hay que medir antes de imprimir
 
 - **Agujeros de montaje del motor TT:** el modelo supone dos agujeros pasantes de 3 mm, paralelos al eje. Las ranuras de la cuna cubren entre 9 y 25 mm del eje del motor. Si tus motores tienen otro patrón, avisa y se regenera la cuna.
-- **Diámetro del parlante omnidireccional:** se supuso de 90 mm (anillo P12, solo en V2).
+- **Diámetro del parlante omnidireccional:** se supuso de 90 mm (anillo P12, solo en V2). El parlante del inventario (#130) es cuadrado, de 40 a 50 mm: si se elige V2, hay que regenerar P12.
 - **Alto del portapilas de 4 celdas:** se supuso de 21 mm. Hay 34 mm libres.

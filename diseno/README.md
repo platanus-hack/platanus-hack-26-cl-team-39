@@ -83,5 +83,5 @@ Después hay que copiar `/tmp/bicho/stl/*.stl` a `imprimir/STL/` y `/tmp/bicho/g
 ## Lo que hay que confirmar con el hardware
 
 - **Agujeros de montaje del motor TT:** las ranuras de la cuna P24 tienen ±7 mm de juego.
-- **Diámetro del parlante omnidireccional:** se supuso de 90 mm.
+- **Diámetro del parlante omnidireccional:** se supuso de 90 mm. El del inventario (#130) es cuadrado, de 40 a 50 mm.
 - **Lente del ADNS-3080 (M12, f = 8 mm):** de fábrica enfoca desde unos 30 cm. Hay que desenroscarla unos 3 mm para que enfoque el suelo.
