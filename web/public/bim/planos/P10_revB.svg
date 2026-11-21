@@ -1495,17 +1495,18 @@
 <text x='175.0' y='164.2' font-size='2.2' fill='#666'>PROYECTO</text>
 <text x='195.0' y='164.2' font-size='2.9' fill='#111'>Bicho · CRBRC · Platanus Hack 26</text>
 <text x='175.0' y='170.4' font-size='2.2' fill='#666'>MATERIAL</text>
-<text x='195.0' y='170.4' font-size='2.9' fill='#111'>PETG · 40 % giroide, 4 paredes</text>
+<text x='195.0' y='170.4' font-size='2.9' fill='#111'>PETG · </text>
 <text x='175.0' y='176.6' font-size='2.2' fill='#666'>IMPRESIÓN</text>
-<text x='195.0' y='176.6' font-size='2.9' fill='#111'>De canto: las capas siguen el largo</text>
+<text x='195.0' y='176.6' font-size='2.9' fill='#111'></text>
 <text x='175.0' y='182.8' font-size='2.2' fill='#666'>ESTADO</text>
-<text x='195.0' y='182.8' font-size='2.9' fill='#111'>Impresión por confirmar (B07)</text>
+<text x='195.0' y='182.8' font-size='2.9' fill='#111'>Retirada: no imprimir</text>
 <text x='175.0' y='189.0' font-size='2.2' fill='#666'>ESCALA</text>
 <text x='195.0' y='189.0' font-size='2.9' fill='#111'>1:1 · mm · primer diedro (ISO E)</text>
 <line x1='173.0' y1='191.7' x2='291.0' y2='191.7' stroke='#111' stroke-width='.3'/>
 <text x='175.0' y='195.2' font-size='2.2' fill='#666'>REV · FECHA · CAMBIO</text>
 <text x='175.0' y='198.6' font-size='2.3' fill='#111'>A · 2026-11-21 · Primera versión: 90 mm, 5 × 16 mm, alojamiento del MG90S de la muñeca</text>
 <text x='175.0' y='201.8' font-size='2.3' fill='#111'>B · 2026-11-21 · El alojamiento del MG90S parte al ras de la cama (quedaba 0,5 mm flotando)</text>
+<text x='175.0' y='205.0' font-size='2.3' fill='#111'>B · 2026-11-21 · Reemplazada por el brazo v4: no se podía armar</text>
 <rect x='265.0' y='152.0' width='26' height='12' fill='#e9a400'/>
 <text x='278.0' y='157.0' font-size='2.4' text-anchor='middle' fill='#231800'>REV</text>
 <text x='278.0' y='162.5' font-size='5.5' font-weight='700' text-anchor='middle' fill='#231800'>B</text>

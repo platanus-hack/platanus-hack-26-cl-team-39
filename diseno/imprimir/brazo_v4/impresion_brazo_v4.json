@@ -1,0 +1,401 @@
+{
+ "bandejas": [
+  {
+   "id": "B10",
+   "titulo": "Torreta",
+   "archivo": "B10_torreta.3mf",
+   "piezas": [
+    [
+     "P07",
+     1
+    ]
+   ],
+   "gramos": 90,
+   "perfil": "PETG 4 paredes, 40 % giroide. SOPORTES ÁRBOL solo bajo la placa del servo (interior)."
+  },
+  {
+   "id": "B11",
+   "titulo": "Plataforma y cuna del hombro",
+   "archivo": "B11_plataforma_y_cuna_del_hombro.3mf",
+   "piezas": [
+    [
+     "P08",
+     1
+    ]
+   ],
+   "gramos": 52,
+   "perfil": "PETG 4 paredes, 40 % giroide. Sin soportes."
+  },
+  {
+   "id": "B12",
+   "titulo": "Placas de los eslabones",
+   "archivo": "B12_placas_de_los_eslabones.3mf",
+   "piezas": [
+    [
+     "P09A",
+     1
+    ],
+    [
+     "P09B",
+     1
+    ],
+    [
+     "P10A",
+     1
+    ],
+    [
+     "P10B",
+     1
+    ]
+   ],
+   "gramos": 68,
+   "perfil": "PETG 4 paredes, 5/5 capas, 40 % giroide. Planas, sin soportes, brim 4 mm."
+  },
+  {
+   "id": "B13",
+   "titulo": "Cuna del codo, palma, contraplaca y separadores",
+   "archivo": "B13_cuna_del_codo_palma_contraplaca_y_separadores.3mf",
+   "piezas": [
+    [
+     "P30",
+     1
+    ],
+    [
+     "P34",
+     1
+    ],
+    [
+     "P35",
+     1
+    ],
+    [
+     "P36",
+     2
+    ],
+    [
+     "P37",
+     1
+    ]
+   ],
+   "gramos": 97,
+   "perfil": "PETG 4 paredes, 40 % giroide. Sin soportes."
+  },
+  {
+   "id": "B14",
+   "titulo": "Dedos y bujes (100 %)",
+   "archivo": "B14_dedos_y_bujes_100_.3mf",
+   "piezas": [
+    [
+     "P31",
+     1
+    ],
+    [
+     "P32",
+     1
+    ],
+    [
+     "P33",
+     1
+    ]
+   ],
+   "gramos": 26,
+   "perfil": "PETG 100 % de relleno (dedos y bujes macizos). Sin soportes."
+  }
+ ],
+ "piezas": [
+  {
+   "id": "P07",
+   "nombre": "Torreta",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "Sí (árbol, bajo la placa del servo)",
+   "notas": "Centrada en el eje del giro. 4 M3 a la cubierta en (±30, ±40). Anillo anti-vuelco a 1 mm de la plataforma",
+   "volumen_cm3": 87.2,
+   "gramos": 90.3,
+   "horas": 5.09,
+   "medidas_mm": [
+    100,
+    100,
+    64
+   ],
+   "stl": "P07_torreta.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P08",
+   "nombre": "Plataforma y cuna del hombro",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No",
+   "notas": "Disco al horn del giro (4 tornillos del horn a r = 7). Cuna: 4 M3 + tuerca en las orejas; eje loco M3 coaxial atrás",
+   "volumen_cm3": 56.5,
+   "gramos": 51.8,
+   "horas": 2.98,
+   "medidas_mm": [
+    84,
+    84,
+    70
+   ],
+   "stl": "P08_plataforma_y_cuna_del_hombro.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P09A",
+   "nombre": "Eslabón 1 · placa del horn",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (plana, cara exterior arriba)",
+   "notas": "Al horn del hombro (4 tornillos del horn); ventana Ø16 y rebaje Ø26 para el horn del codo",
+   "volumen_cm3": 20.4,
+   "gramos": 20.5,
+   "horas": 1.27,
+   "medidas_mm": [
+    136,
+    36,
+    5
+   ],
+   "stl": "P09A_eslabon_1_·_placa_del_horn.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P09B",
+   "nombre": "Eslabón 1 · placa loca",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (plana)",
+   "notas": "Gira sobre el buje P33 y un M3×12 coaxial con el hombro; recibe el eje loco del codo",
+   "volumen_cm3": 22.5,
+   "gramos": 21.6,
+   "horas": 1.33,
+   "medidas_mm": [
+    136,
+    36,
+    5
+   ],
+   "stl": "P09B_eslabon_1_·_placa_loca.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P36",
+   "nombre": "Separador del eslabón 1 (54,1 mm)",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (de pie)",
+   "notas": "Varilla M3 de 66 mm + 2 tuercas: queda comprimido",
+   "volumen_cm3": 5.6,
+   "gramos": 5.4,
+   "horas": 0.45,
+   "medidas_mm": [
+    12,
+    12,
+    54
+   ],
+   "stl": "P36_separador_del_eslabon_1_(54,1_mm).stl",
+   "cantidad_total": 2,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P35",
+   "nombre": "Cuna del codo",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (de pie sobre la placa trasera)",
+   "notas": "Entre las placas del eslabón 1 con 4 varillas M3; 4 M3 + tuerca en las orejas; eje loco del codo atrás",
+   "volumen_cm3": 63.8,
+   "gramos": 52.0,
+   "horas": 2.99,
+   "medidas_mm": [
+    60,
+    35,
+    54
+   ],
+   "stl": "P35_cuna_del_codo.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P10A",
+   "nombre": "Eslabón 2 · placa del horn",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (plana)",
+   "notas": "Al horn del codo (4 tornillos del horn)",
+   "volumen_cm3": 12.6,
+   "gramos": 12.8,
+   "horas": 0.85,
+   "medidas_mm": [
+    92,
+    32,
+    5
+   ],
+   "stl": "P10A_eslabon_2_·_placa_del_horn.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P10B",
+   "nombre": "Eslabón 2 · placa loca",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (plana)",
+   "notas": "Gira sobre el buje P33 y un M3×20 coaxial con el codo",
+   "volumen_cm3": 13.4,
+   "gramos": 13.0,
+   "horas": 0.86,
+   "medidas_mm": [
+    92,
+    32,
+    5
+   ],
+   "stl": "P10B_eslabon_2_·_placa_loca.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P37",
+   "nombre": "Separador del eslabón 2 (65,9 mm)",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (de pie)",
+   "notas": "Varilla M3 de 78 mm + 2 tuercas",
+   "volumen_cm3": 6.8,
+   "gramos": 6.6,
+   "horas": 0.51,
+   "medidas_mm": [
+    12,
+    12,
+    66
+   ],
+   "stl": "P37_separador_del_eslabon_2_(65,9_mm).stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P30",
+   "nombre": "Palma de la pinza",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (palma contra la cama)",
+   "notas": "Entre las placas del eslabón 2 con 2 varillas M3; MG90S por debajo; pivote del dedo conducido",
+   "volumen_cm3": 16.6,
+   "gramos": 17.2,
+   "horas": 1.09,
+   "medidas_mm": [
+    45,
+    66,
+    21
+   ],
+   "stl": "P30_palma_de_la_pinza.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P34",
+   "nombre": "Contraplaca de los dedos",
+   "material": "PETG",
+   "relleno": 40,
+   "soportes": "No (plana)",
+   "notas": "Segundo apoyo de los dos pivotes: el dedo conducido queda en corte doble y el motriz no carga el eje del MG90S",
+   "volumen_cm3": 10.2,
+   "gramos": 10.8,
+   "horas": 0.74,
+   "medidas_mm": [
+    43,
+    66,
+    5
+   ],
+   "stl": "P34_contraplaca_de_los_dedos.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P31",
+   "nombre": "Dedo motriz",
+   "material": "PETG",
+   "relleno": 100,
+   "soportes": "No (plano)",
+   "notas": "Va sobre el horn de un brazo del MG90S; engranaje m 1,5 z 16 de 10 mm; cuello fusible 6 × 6 a 26 mm del eje",
+   "volumen_cm3": 10.1,
+   "gramos": 12.9,
+   "horas": 0.85,
+   "medidas_mm": [
+    77,
+    27,
+    19
+   ],
+   "stl": "P31_dedo_motriz.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P32",
+   "nombre": "Dedo conducido",
+   "material": "PETG",
+   "relleno": 100,
+   "soportes": "No (plano)",
+   "notas": "Gira sobre el buje P33 y un M3×30 en corte doble (palma abajo, contraplaca arriba)",
+   "volumen_cm3": 10.0,
+   "gramos": 12.7,
+   "horas": 0.84,
+   "medidas_mm": [
+    77,
+    27,
+    19
+   ],
+   "stl": "P32_dedo_conducido.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P33",
+   "nombre": "Bujes (hombro, codo y dedo)",
+   "material": "PETG",
+   "relleno": 100,
+   "soportes": "No (de pie)",
+   "notas": "Ø8 × 5,4 en las placas locas P09B y P10B; Ø6 × 10,8 en el dedo conducido. Al 100 %",
+   "volumen_cm3": 0.7,
+   "gramos": 0.8,
+   "horas": 0.2,
+   "medidas_mm": [
+    31,
+    8,
+    11
+   ],
+   "stl": "P33_bujes_(hombro,_codo_y_dedo).stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  }
+ ]
+}

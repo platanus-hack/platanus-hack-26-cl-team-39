@@ -1,5 +1,7 @@
 # Bicho · estructura de 32 × 20 cm, lista para imprimir
 
+> **⚠️ 21-nov, 18:30 · El brazo cambió.** No imprimas B07 ni B08: el brazo v3 no se podía armar (servos sin apoyo de orejas, horn del hombro dentro de la pared, codo sin ventana). Las piezas definitivas están en [`brazo_v4/`](brazo_v4/IMPRIMIR_BRAZO_V4.md): bandejas B10 a B14, unos 333 g de PETG. El resto de esta guía (placas, columnas, cunas y parachoques) sigue igual.
+
 Equipo CRBRC · Platanus Hack 26 · versión v3.2 (32 × 20 cm, placas enteras), 21-nov-2026. Cada placa es una sola pieza rígida, sin junta ni empalme.
 
 ## Qué hay en esta carpeta
