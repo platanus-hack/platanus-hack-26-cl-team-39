@@ -18,10 +18,14 @@ import { SensorStore } from './lib/sensors'
 const Simulador = lazy(() => import('./sim/Simulador').then((m) => ({ default: m.Simulador })))
 // la vista Brazo también trae three.js: misma idea
 const Brazo = lazy(() => import('./brazo/Brazo').then((m) => ({ default: m.Brazo })))
+// gemelo digital (chasis + brazo v4 + sensores en vivo) y la demo de las manos
+const Gemelo = lazy(() => import('./gemelo/Gemelo').then((m) => ({ default: m.Gemelo })))
+const Manos = lazy(() => import('./gemelo/Manos').then((m) => ({ default: m.Manos })))
+import { puente } from './lib/puente'
 
-type Vista = 'bicho' | 'inventario' | 'simulador' | 'brazo'
-const vistaDelHash = (): Vista =>
-  location.hash === '#inventario' ? 'inventario' : location.hash === '#simulador' ? 'simulador' : location.hash === '#brazo' ? 'brazo' : 'bicho'
+type Vista = 'bicho' | 'inventario' | 'simulador' | 'brazo' | 'gemelo' | 'manos'
+const VISTAS_HASH: Vista[] = ['inventario', 'simulador', 'brazo', 'gemelo', 'manos']
+const vistaDelHash = (): Vista => VISTAS_HASH.find((v) => location.hash === `#${v}`) ?? 'bicho'
 
 const MAX_LINES = 600
 // Bicho por defecto de este computador: VITE_BICHO_HOST en web/.env.local (no va al repo).
@@ -268,6 +272,7 @@ export default function App() {
         }
       },
       onMessage: (m) => {
+        puente.emitir(m as Record<string, unknown>)
         // El relé avisa cuando esta conexión no tiene la clave del equipo (o no es la correcta).
         if (m.t === 'log' && typeof m.msg === 'string' && m.msg.includes('falta la clave')) setClaveRechazada(true)
         if (m.t === 's' && m.d && typeof m.d === 'object') store.push(m.d as Record<string, unknown>)
@@ -696,6 +701,14 @@ export default function App() {
               <Icon.Brazo />
               <span>Brazo</span>
             </a>
+            <a href="#gemelo" aria-current={view === 'gemelo' ? 'true' : undefined}>
+              <Icon.Bicho />
+              <span>Gemelo 3D</span>
+            </a>
+            <a href="#manos" aria-current={view === 'manos' ? 'true' : undefined}>
+              <Icon.Sparkle />
+              <span>Manos</span>
+            </a>
           </nav>
 
           <nav className="nav nav-inv" aria-label="Equipo">
@@ -745,13 +758,21 @@ export default function App() {
         </aside>
 
         {/* ── contenido ── */}
-        <main className={`main ${scrolled ? 'scrolled' : ''} ${view === 'brazo' ? 'fija' : ''}`} ref={mainRef}>
+        <main className={`main ${scrolled ? 'scrolled' : ''} ${view === 'brazo' || view === 'gemelo' || view === 'manos' ? 'fija' : ''}`} ref={mainRef}>
           <div className="main-inner">
             {view === 'inventario' ? (
               <Inventario toast={toast} />
             ) : view === 'simulador' ? (
               <Suspense fallback={<p className="notice">Cargando el simulador…</p>}>
                 <Simulador />
+              </Suspense>
+            ) : view === 'gemelo' ? (
+              <Suspense fallback={<p className="notice">Armando el gemelo…</p>}>
+                <Gemelo store={store} conectado={connected && !sinBicho} imagenes={imagenes} enviar={(l) => void send(l)} />
+              </Suspense>
+            ) : view === 'manos' ? (
+              <Suspense fallback={<p className="notice">Cargando la demo…</p>}>
+                <Manos />
               </Suspense>
             ) : view === 'brazo' ? (
               <Suspense fallback={<p className="notice">Cargando el brazo…</p>}>

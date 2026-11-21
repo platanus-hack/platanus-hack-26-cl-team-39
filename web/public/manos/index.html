@@ -1,0 +1,868 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Manos del Bicho</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: la piel de bicho·dev («Cristal claro»: papel cálido, manchas de color, vidrio). Arriba el ensayo de la demo
+   (bicho 3D + lo que ve su cámara + enseñar), después el sistema real en diagramas, y al final cómo conectarlo.
+   Un solo tema claro, a propósito: es la marca del Bicho. */
+:root{
+  color-scheme:light;
+  --ink:#1d1d1f; --ink-2:rgba(60,60,67,.76); --ink-3:rgba(60,60,67,.52); --hair:rgba(60,60,67,.13); --fill:rgba(118,118,128,.12);
+  --blue:#007aff; --blue-ink:#0058c7; --blue-soft:rgba(0,122,255,.12);
+  --banana:#ffc700; --banana-ink:#7a5600; --banana-soft:rgba(255,199,0,.22);
+  --green:#34c759; --green-ink:#1c7a36; --red:#ff3b30; --red-ink:#b3261e; --violet:#8e5cff;
+  --paper:#f7f2ee; --cam:#11161c; --cam-ink:#9fe8d8;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r-card:24px; --r-tile:16px;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:14px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+.wall{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.wall i{position:absolute;border-radius:50%;filter:blur(8px)}
+.wall .b1{width:62vw;height:54vw;left:-16vw;top:-20vw;background:radial-gradient(closest-side,#ffc6a0,#ffc6a000)}
+.wall .b2{width:46vw;height:40vw;left:30vw;top:-18vw;background:radial-gradient(closest-side,#ffe57a,#ffe57a00)}
+.wall .b3{width:54vw;height:50vw;right:-18vw;top:14vh;background:radial-gradient(closest-side,#b4dbff,#b4dbff00)}
+.wall .b4{width:56vw;height:46vw;left:2vw;bottom:-24vw;background:radial-gradient(closest-side,#d8c8ff,#d8c8ff00)}
+.glass{position:relative;background:linear-gradient(180deg,#ffffffad,#ffffff75);-webkit-backdrop-filter:blur(34px) saturate(1.9);backdrop-filter:blur(34px) saturate(1.9);border-radius:var(--r-card);
+  box-shadow:0 0 0 .5px #281e4612,0 1px 2px #281e460d,0 10px 28px -10px #46326429,0 30px 70px -30px #4632643d,inset 0 1px #fffffff2}
+.wrap{max-width:1360px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 64px;display:grid;gap:18px}
+h1,h2,h3{text-wrap:balance;margin:0;letter-spacing:-.015em}
+h1{font-size:clamp(26px,4vw,36px);line-height:1.08;font-weight:750}
+h2{font-size:19px;font-weight:700}
+h3{font-size:15px;font-weight:650}
+p{margin:0}
+.sub{color:var(--ink-2);max-width:68ch;margin-top:6px;font-size:15px}
+.lab{font:650 11px var(--font);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3)}
+.hint{color:var(--ink-3);font-size:12.5px}
+a{color:var(--blue-ink)}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid rgba(0,122,255,.42);outline-offset:2px}
+code,.mono{font-family:var(--mono);font-size:12.5px}
+
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.top .eyebrow{display:inline-flex;gap:8px;align-items:center;margin-bottom:8px}
+.icon-sq{width:28px;height:28px;border-radius:8px;background:var(--banana);display:grid;place-items:center;box-shadow:0 0 0 .5px #7a560033}
+.status{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;gap:7px;align-items:center;border-radius:999px;padding:6px 12px;background:#ffffffc8;box-shadow:0 0 0 .5px #281e4614;font-size:12.5px;font-weight:600;white-space:nowrap}
+.chip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.chip.ok i{background:var(--green)} .chip.wait i{background:var(--banana)} .chip.no i{background:var(--red)}
+
+/* ---- ensayo */
+.rig{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);gap:18px}
+@media (max-width:1000px){.rig{grid-template-columns:1fr}}
+.stage{position:relative;overflow:hidden;min-height:440px;aspect-ratio:16/11;max-width:100%}
+.stage>canvas{position:absolute;inset:0;width:100%;height:100%;display:block;border-radius:var(--r-card);touch-action:none}
+.ov{position:absolute;z-index:3;display:flex;gap:8px;align-items:center}
+.ov.tl{left:14px;top:14px;flex-wrap:wrap;right:14px}
+.ov.br{right:14px;bottom:14px;flex-wrap:wrap;justify-content:flex-end}
+.badge{display:inline-flex;gap:7px;align-items:center;background:#ffffffe0;border-radius:999px;padding:6px 12px;font-weight:650;box-shadow:0 0 0 .5px #281e4614;font-size:13px}
+.badge .dot{width:9px;height:9px;border-radius:50%;background:var(--green)}
+.say{position:absolute;z-index:2;left:0;top:0;max-width:min(300px,46%);background:#fff;border-radius:16px;padding:8px 12px;font-size:13.5px;font-weight:600;line-height:1.35;
+  box-shadow:0 8px 24px -8px #46326466,0 0 0 .5px #281e4618;transform:translate(-50%,calc(-100% - 10px));transition:opacity .25s;pointer-events:none}
+.say::after{content:"";position:absolute;left:50%;bottom:-7px;width:14px;height:14px;background:#fff;transform:translateX(-50%) rotate(45deg);box-shadow:3px 3px 6px -3px #4632643a}
+.say .who{display:block;font:700 10.5px var(--font);text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);margin-bottom:1px}
+.say.bot{background:#1d1d1f;color:#fff}.say.bot::after{background:#1d1d1f}.say.bot .who{color:var(--banana)}
+.say[data-off="1"]{opacity:0}
+.caption{position:absolute;z-index:3;left:50%;top:58px;transform:translateX(-50%);max-width:calc(100% - 28px);background:#1d1d1fd9;color:#fff;border-radius:12px;padding:7px 14px;font-size:13.5px;font-weight:550;text-align:center;transition:opacity .3s}
+.caption[data-off="1"]{opacity:0}
+.load{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-2);font-weight:600;z-index:1}
+.load[hidden]{display:none}
+.btn{border:0;border-radius:999px;padding:9px 15px;font-weight:650;font-size:13.5px;background:#ffffffd0;color:var(--blue-ink);box-shadow:0 0 0 .5px #281e4614,0 4px 14px -6px #4632643a;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.banana{background:var(--banana);color:#3a2900}
+.btn[aria-pressed="true"]{background:var(--blue);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+
+.side{display:grid;gap:14px;align-content:start;min-width:0}
+.card{padding:16px;display:grid;gap:12px;min-width:0;align-content:start}
+.camwrap{position:relative;border-radius:18px;overflow:hidden;background:var(--cam);aspect-ratio:4/3;max-width:100%}
+.camwrap canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:0;border-radius:999px;padding:6px 11px;font-size:12.5px;font-weight:600;background:#ffffffb8;box-shadow:0 0 0 .5px #281e4614;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--blue-soft);color:var(--blue-ink);box-shadow:0 0 0 1px #007aff55}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.teach{display:flex;gap:8px;flex-wrap:wrap}
+.teach input{flex:1 1 200px;min-width:0;border:0;border-radius:12px;padding:10px 12px;font:15px var(--font);background:#fff;box-shadow:0 0 0 .5px #281e4626}
+.mic{width:40px;height:40px;border-radius:50%;border:0;background:#fff;box-shadow:0 0 0 .5px #281e4626;cursor:pointer;display:grid;place-items:center}
+.mic[data-on="1"]{background:var(--red);color:#fff}
+.quick{display:flex;gap:6px;flex-wrap:wrap}
+.quick button{border:0;border-radius:10px;padding:6px 10px;font-size:12.5px;background:#ffffff9c;box-shadow:0 0 0 .5px #281e4614;cursor:pointer;color:var(--ink)}
+.learned{display:flex;gap:6px;flex-wrap:wrap;min-height:28px}
+.learned .chip{background:var(--banana-soft);color:var(--banana-ink)}
+.learned .chip.hit{background:var(--banana);color:#3a2900}
+
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:800px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:460px){.steps{grid-template-columns:1fr}}
+.step{padding:14px;border-radius:var(--r-tile);background:#ffffff8c;box-shadow:0 0 0 .5px #281e460f;display:grid;gap:6px;align-content:start;transition:background .3s, box-shadow .3s}
+.step .n{font:700 12px var(--mono);color:var(--blue-ink)}
+.step p{color:var(--ink-2);font-size:13px}
+.step.on{background:#fff;box-shadow:0 0 0 2px var(--blue),0 10px 24px -12px #46326466}
+.step svg{width:100%;height:auto;max-height:84px}
+
+.log{font:12px/1.55 var(--mono);background:var(--cam);color:#d7e3ea;border-radius:16px;padding:10px 12px;height:170px;overflow:auto}
+.log div{white-space:pre-wrap;word-break:break-word}
+.log .in{color:var(--cam-ink)} .log .out{color:#ffd75e} .log .note{color:#8796a3}
+
+.embed header.top{display:none}
+.embed .wrap{padding-block:8px 40px}
+/* ---- sistema */
+.diagram{overflow-x:auto}
+.diagram svg{display:block;min-width:860px;width:100%;height:auto}
+.node rect{fill:#fff;stroke:#281e461f;stroke-width:1}
+.node text{fill:var(--ink);font:600 13px var(--font)}
+.node .s{fill:var(--ink-2);font:500 11px var(--font)}
+.node.pc rect{fill:#fffbe6;stroke:#ffc70088}
+.edge{fill:none;stroke:#3c3c4340;stroke-width:2}
+.edge.cmd{stroke:#ff9f0a99}
+.elab{fill:var(--ink-2);font:600 11px var(--mono)}
+.pulse{fill:var(--blue);opacity:0}
+.on .edge{stroke:var(--blue);stroke-width:3}
+.on.node rect{stroke:var(--blue);stroke-width:2.5}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i{width:22px;height:3px;border-radius:2px;display:inline-block}
+
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+.fp{width:100%;height:180px;display:block}
+.timeline{overflow-x:auto}
+.timeline svg{display:block;min-width:640px;width:100%;height:auto}
+
+.checks{display:grid;gap:10px}
+.check{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 14px;border-radius:var(--r-tile);background:#ffffff8c;box-shadow:0 0 0 .5px #281e460f}
+.check .st{font:700 11px var(--font);text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;border-radius:999px;white-space:nowrap}
+.check .st.ok{background:#34c75926;color:var(--green-ink)} .check .st.todo{background:var(--banana-soft);color:var(--banana-ink)} .check .st.risk{background:#ff3b3020;color:var(--red-ink)}
+.check .who{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.check p{color:var(--ink-2);font-size:13px;margin-top:2px}
+@media (max-width:640px){.check{grid-template-columns:1fr}.check .who{white-space:normal}}
+.code{position:relative;background:var(--cam);color:#e9f1f5;border-radius:14px;padding:12px 14px;font:12.5px/1.6 var(--mono);overflow-x:auto;white-space:pre}
+.code .c{color:#8796a3}
+.copy{position:absolute;right:8px;top:8px;border:0;border-radius:999px;padding:4px 10px;font:600 11.5px var(--font);background:#ffffff26;color:#fff;cursor:pointer}
+.phases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.phases{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.phases{grid-template-columns:1fr}}
+.phase{padding:14px;border-radius:var(--r-tile);background:#ffffff8c;box-shadow:0 0 0 .5px #281e460f;display:grid;gap:6px;align-content:start}
+.phase .h{font:700 12px var(--mono);color:var(--ink-3)}
+.phase ul{margin:0;padding-left:18px;color:var(--ink-2);font-size:13px;display:grid;gap:3px}
+.safety{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.safety{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.layer{padding:12px;border-radius:var(--r-tile);background:#ffffff8c;box-shadow:0 0 0 .5px #281e460f;font-size:13px;color:var(--ink-2)}
+.layer b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:2px}
+.layer .k{font:700 11px var(--mono);color:var(--red-ink)}
+@media (prefers-reduced-motion:reduce){.bubble,.step{transition:none}}
+</style>
+
+<div class="wall" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
+<div class="wrap">
+  <script>if(window.self!==window.top)document.documentElement.classList.add("embed")</script>
+
+  <header class="top">
+    <div>
+      <div class="eyebrow"><span class="icon-sq" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="#fff" stroke="#1d1d1f" stroke-width="1.6"/><circle cx="12" cy="12" r="3.6" fill="#1d1d1f"/><rect x="13" y="3.5" width="9" height="4" rx="2" transform="rotate(35 17 5.5)" fill="#f5c9a8" stroke="#7a5600" stroke-width=".8"/></svg></span><span class="lab">bicho · hand tracking · Platanus Hack 26</span></div>
+      <h1>Manos del Bicho</h1>
+      <p class="sub">Llamas al bicho por su nombre, viene hacia ti y levanta su cámara. Le muestras la palma y le dices «esta seña significa para»: la aprende en ese momento, y la próxima vez que la ve, se detiene. Mira la demo completa, hazla tú con la voz, y mira cómo se conecta con el bicho real.</p>
+    </div>
+    <div class="status" aria-label="Estado de la integración">
+      <span class="chip ok"><i></i>Servicio de señas probado</span>
+      <span class="chip ok"><i></i>Relé y oído en vivo</span>
+      <span class="chip wait"><i></i>Falta: clave + cámara encendida</span>
+      <span class="chip no"><i></i>Motores: todavía no</span>
+    </div>
+  </header>
+
+  <!-- ===================== ENSAYO ===================== -->
+  <section class="rig">
+    <div class="glass stage" id="stage">
+      <div class="load" id="load">Cargando el bicho…</div>
+      <div class="say" id="sayP" data-off="1"><span class="who">Tú</span><span class="t"></span></div>
+      <div class="say bot" id="sayB" data-off="1"><span class="who">Bicho</span><span class="t"></span></div>
+      <div class="ov tl"><span class="badge"><span class="dot" id="dot"></span><span id="estado">Patrullando</span></span></div>
+      <div class="caption" id="caption" data-off="1"></div>
+      <div class="ov br">
+        <button class="btn" id="bVoz" aria-pressed="false" hidden>Con voz</button>
+        <button class="btn banana" id="bDemo"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.5v9l8-4.5z" fill="currentColor"/></svg>Ver la demo</button>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="glass card">
+        <div class="row" style="justify-content:space-between"><h2>Cámara del bicho</h2><span class="hint">lo que ve y cómo lo interpreta</span></div>
+        <div class="camwrap"><canvas id="pov" width="640" height="480" aria-label="Imagen de la cámara del bicho"></canvas><canvas id="povHud" width="640" height="480" aria-label="Interpretación de MediaPipe: mano, 21 puntos y seña"></canvas></div>
+      </div>
+
+      <div class="glass card">
+        <h2>Haz tú la demo</h2>
+        <div class="quick" aria-label="Frases para decirle">
+          <button data-say="¡Bicho, ven acá!">«¡Bicho, ven acá!»</button>
+          <button data-say="Necesito que aprendas esta seña: significa para">«Esta seña significa para»</button>
+          <button data-say="Bicho, sigue patrullando">«Sigue patrullando»</button>
+        </div>
+        <form class="teach" id="fTeach">
+          <button type="button" class="mic" id="bMic" aria-label="Hablarle con el micrófono" hidden><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5" fill="currentColor"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></button>
+          <input id="iFrase" value="¡Bicho, ven acá!" aria-label="Lo que le dices al bicho">
+          <button class="btn primary" type="submit">Decirle</button>
+        </form>
+        <div class="row" style="justify-content:space-between">
+          <button class="btn" id="bMano" aria-pressed="false">Levantar la mano</button>
+          <div class="seg" id="presets" role="group" aria-label="Seña que haces con la mano">
+            <button data-p="palma" aria-pressed="true">Palma</button><button data-p="puno">Puño</button><button data-p="victoria">V</button><button data-p="indice">Índice</button><button data-p="pulgar">Pulgar</button>
+          </div>
+        </div>
+        <div class="row" style="justify-content:space-between">
+          <div class="learned" id="learned"><span class="hint">Todavía no sabe ninguna seña.</span></div>
+          <span class="row"><button class="btn" id="bOidoReal" aria-pressed="false" hidden>Oído del bicho real</button><button class="btn" id="bSeguir">Que siga</button></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="glass card">
+    <div class="row" style="justify-content:space-between;align-items:flex-end">
+      <div><h2>La demo en cuatro momentos</h2><p class="hint">Se iluminan a medida que pasan en la escena de arriba. Así se cuenta en el pitch, en menos de 60 s.</p></div>
+    </div>
+    <div class="steps" id="steps">
+      <div class="step" data-k="llama"><span class="n">1 · LO LLAMAS</span>
+        <svg viewBox="0 0 160 70" aria-hidden="true"><rect x="6" y="14" width="148" height="42" rx="21" fill="#fff" stroke="#281e4626"/><text x="80" y="40" text-anchor="middle" font-size="13" font-weight="600" fill="#1d1d1f" font-family="-apple-system,system-ui,sans-serif">«¡Bicho, ven acá!»</text></svg>
+        <h3>Por su nombre</h3><p>Su oído (ReSpeaker) escucha la frase y de dónde viene. Responde «¡voy para allá!».</p></div>
+      <div class="step" data-k="mira"><span class="n">2 · VIENE Y TE MIRA</span>
+        <svg viewBox="0 0 160 70" aria-hidden="true"><rect x="14" y="34" width="56" height="20" rx="6" fill="#1d1d1f"/><circle cx="26" cy="58" r="7" fill="#3a3a3c"/><circle cx="58" cy="58" r="7" fill="#3a3a3c"/><path d="M42 34l10-16" stroke="#1d1d1f" stroke-width="5" stroke-linecap="round"/><circle cx="54" cy="15" r="6" fill="#2bf7d4"/><path d="M60 13l60-8M60 17l60 22" stroke="#2bf7d4" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="134" cy="16" r="8" fill="#e9b892"/><rect x="126" y="25" width="16" height="32" rx="7" fill="#3a6ea5"/></svg>
+        <h3>Llega y levanta la cámara</h3><p>Se para frente a ti y apunta su cámara a tu cara y tus manos.</p></div>
+      <div class="step" data-k="aprende"><span class="n">3 · LE ENSEÑAS</span>
+        <svg viewBox="0 0 160 70" aria-hidden="true"><rect x="4" y="6" width="80" height="60" rx="8" fill="#11161c"/><rect x="24" y="14" width="40" height="44" rx="4" fill="none" stroke="#2bf7d4" stroke-width="1.5"/><path d="M36 50V30m6 20V24m6 26V26m6 24V32" stroke="#2bf7d4" stroke-width="2.5" stroke-linecap="round"/><g fill="#ffc700"><rect x="96" y="40" width="7" height="16"/><rect x="106" y="30" width="7" height="26"/><rect x="116" y="22" width="7" height="34"/><rect x="126" y="34" width="7" height="22"/><rect x="136" y="26" width="7" height="30"/><rect x="146" y="38" width="7" height="18"/></g></svg>
+        <h3>Muestras la seña y se la explicas</h3><p>«Esta seña significa para». En su cámara se ve tu mano, sus 21 puntos y cómo junta 8 muestras.</p></div>
+      <div class="step" data-k="obedece"><span class="n">4 · OBEDECE</span>
+        <svg viewBox="0 0 160 70" aria-hidden="true"><rect x="30" y="22" width="80" height="30" rx="8" fill="#1d1d1f"/><circle cx="46" cy="56" r="9" fill="#3a3a3c"/><circle cx="94" cy="56" r="9" fill="#3a3a3c"/><circle cx="70" cy="16" r="10" fill="#ff3b30"/><rect x="118" y="20" width="30" height="30" rx="6" fill="#ff3b30"/><rect x="127" y="29" width="12" height="12" fill="#fff"/></svg>
+        <h3>Ve la seña y se detiene</h3><p>Más tarde, mientras anda, le muestras la palma: la reconoce, frena y prende la luz roja.</p></div>
+    </div>
+    <div class="log" id="log" aria-live="polite" aria-label="Mensajes que viajan por el relé"><div class="note">// Aquí aparecen los mismos mensajes que viajan por el relé en el bicho real.</div></div>
+  </section>
+
+  <!-- ===================== SISTEMA ===================== -->
+  <section class="glass card">
+    <div><h2>Cómo funciona de verdad</h2><p class="hint">El mismo camino que acabas de ensayar, en el hardware del equipo. El servicio de señas corre en un computador porque MediaPipe no anda bien en la Raspberry Pi 3, y habla con el bicho por el relé como un cliente más.</p></div>
+    <div class="diagram">
+      <svg viewBox="0 0 1080 430" id="flow" role="img" aria-label="Diagrama: cámara y oído del bicho, relé, servicio de señas, bicho·dev y Unity">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3c3c4380"/></marker>
+          <marker id="ahc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ff9f0a"/></marker></defs>
+        <!-- columna bicho -->
+        <text x="20" y="26" class="elab" style="font-family:-apple-system,system-ui,sans-serif;font-weight:700;letter-spacing:.06em" fill="#3c3c4399">EL BICHO · RASPBERRY PI 3</text>
+        <g class="node" data-s="ver"><rect x="20" y="44" width="220" height="64" rx="14"/><text x="38" y="72">Cámara CSI ov5647</text><text x="38" y="92" class="s">comando camara → 1 imagen por segundo</text></g>
+        <g class="node" data-s="oir"><rect x="20" y="128" width="220" height="64" rx="14"/><text x="38" y="156">Oído ReSpeaker XVF3800</text><text x="38" y="176" class="s">frases + ángulo de la voz</text></g>
+        <g class="node" data-s="actuar"><rect x="20" y="212" width="220" height="64" rx="14"/><text x="38" y="240">bichod · comandos</text><text x="38" y="260" class="s">stop · no (rojo) · si (verde) · responder</text></g>
+        <g class="node" data-s="actuar"><rect x="20" y="296" width="220" height="64" rx="14"/><text x="38" y="324">Motores (por cablear)</text><text x="38" y="344" class="s">2 TB6612 · freno solo a los 0,5 s</text></g>
+        <!-- relé -->
+        <g class="node"><rect x="360" y="44" width="200" height="316" rx="18"/><text x="380" y="74">Relé</text><text x="380" y="94" class="s">servicio del equipo en EDITH</text><text x="380" y="112" class="s">túnel cloudflare · wss</text>
+          <text x="380" y="150" class="s">reparte imágenes y frases</text><text x="380" y="168" class="s">transcribe con Whisper (Groq)</text><text x="380" y="186" class="s">comandos solo con la clave</text>
+          <text x="380" y="226" class="s">medido hoy:</text><text x="380" y="244" class="s">· conecta en 0,45 s</text><text x="380" y="262" class="s">· responde en 0,08 s</text><text x="380" y="280" class="s">· sensores a 20 Hz</text><text x="380" y="298" class="s">· frase lista en ~0,5 s</text></g>
+        <!-- servicio -->
+        <text x="660" y="26" class="elab" style="font-family:-apple-system,system-ui,sans-serif;font-weight:700;letter-spacing:.06em" fill="#3c3c4399">EL COMPUTADOR DE LA DEMO</text>
+        <g class="node pc" data-s="ver"><rect x="660" y="44" width="200" height="64" rx="14"/><text x="678" y="72">MediaPipe Hands</text><text x="678" y="92" class="s">21 puntos por mano</text></g>
+        <g class="node pc" data-s="aprender"><rect x="660" y="128" width="200" height="64" rx="14"/><text x="678" y="156">Memoria de señas</text><text x="678" y="176" class="s">huella de 21 rasgos · senas.json</text></g>
+        <g class="node pc" data-s="oir"><rect x="660" y="212" width="200" height="64" rx="14"/><text x="678" y="240">Oye la frase</text><text x="678" y="260" class="s">«esta seña significa X»</text></g>
+        <g class="node pc" data-s="actuar"><rect x="660" y="296" width="200" height="64" rx="14"/><text x="678" y="324">Reconoce y actúa</text><text x="678" y="344" class="s">2 imágenes seguidas → acción</text></g>
+        <rect x="644" y="36" width="232" height="336" rx="22" fill="none" stroke="#ffc700" stroke-dasharray="6 6" stroke-width="1.5"/>
+        <text x="660" y="392" class="elab">tracker/senas.py</text>
+        <!-- salidas -->
+        <g class="node" data-s="aprender"><rect x="920" y="100" width="148" height="76" rx="14"/><text x="936" y="128">bicho·dev</text><text x="936" y="148" class="s">Cerebro: «aprendí</text><text x="936" y="164" class="s">la seña para»</text></g>
+        <g class="node" data-s="ver"><rect x="920" y="236" width="148" height="64" rx="14"/><text x="936" y="264">Unity</text><text x="936" y="284" class="s">gemelo + mano (UDP)</text></g>
+        <!-- aristas -->
+        <g data-s="ver"><path class="edge" d="M240 76H360" marker-end="url(#ah)"/><path class="edge" d="M560 76H660" marker-end="url(#ah)"/><text x="572" y="68" class="elab">imagen jpeg</text></g>
+        <g data-s="oir"><path class="edge" d="M240 160H360" marker-end="url(#ah)"/><path class="edge" d="M560 160C610 160 610 244 660 244" marker-end="url(#ah)"/><text x="566" y="150" class="elab">oido · texto</text></g>
+        <g data-s="aprender"><path class="edge" d="M760 108V128" marker-end="url(#ah)"/><path class="edge" d="M760 212V192" marker-end="url(#ah)"/><path class="edge" d="M860 160H920" marker-end="url(#ah)"/></g>
+        <g data-s="actuar"><path class="edge cmd" d="M660 328C600 328 600 244 560 244" marker-end="url(#ahc)"/><path class="edge cmd" d="M360 244H240" marker-end="url(#ahc)"/><path class="edge cmd" d="M130 276V296" marker-end="url(#ahc)"/><text x="248" y="234" class="elab">stop · no</text><path class="edge" d="M760 192V296" stroke-dasharray="4 5"/></g>
+        <g data-s="ver"><path class="edge" d="M860 76C900 76 890 268 920 268" stroke-dasharray="4 5" marker-end="url(#ah)"/></g>
+      </svg>
+    </div>
+    <div class="legend"><span><i style="background:#3c3c4366"></i>lo que ve y oye</span><span><i style="background:#ff9f0a"></i>comandos al bicho (con la clave)</span><span><i style="background:transparent;border-top:2px dashed #3c3c4366;height:0"></i>opcional</span><span><i style="background:var(--banana)"></i>lo nuevo: servicio de señas</span></div>
+  </section>
+
+  <section class="two">
+    <div class="glass card">
+      <div><h2>La huella de una mano</h2><p class="hint">Cada imagen se resume en 21 números: cuánto se dobla cada dedo, qué tan lejos queda cada punta y cuánto se abren. No importa lo cerca que estés de la cámara. Azul: la mano de ahora. Amarillo: la seña más parecida que sabe.</p></div>
+      <canvas class="fp" id="fp" width="900" height="360" aria-label="Gráfico de barras con los 21 rasgos de la mano actual y de la seña aprendida"></canvas>
+      <div class="legend"><span><i style="background:var(--blue)"></i>mano de ahora</span><span><i style="background:var(--banana)"></i>seña aprendida más parecida</span><span id="fpTxt" class="mono"></span></div>
+    </div>
+    <div class="glass card">
+      <div><h2>Cuánto tarda, de punta a punta</h2><p class="hint">Medido hoy contra el relé en vivo, salvo lo marcado como estimado.</p></div>
+      <div class="timeline">
+        <svg viewBox="0 0 640 230" role="img" aria-label="Línea de tiempo: terminar la frase, transcripción, aprender, mostrar la seña, reconocerla y frenar">
+          <g font-family="-apple-system,system-ui,sans-serif" font-size="11.5">
+            <line x1="40" y1="40" x2="620" y2="40" stroke="#3c3c4333"/>
+            <g fill="#3c3c4399" font-family="SF Mono,ui-monospace,Menlo,monospace" font-size="10.5">
+              <text x="40" y="30" text-anchor="middle">0 s</text><text x="185" y="30" text-anchor="middle">1 s</text><text x="330" y="30" text-anchor="middle">2 s</text><text x="475" y="30" text-anchor="middle">3 s</text><text x="620" y="30" text-anchor="middle">4 s</text></g>
+            <g stroke="#3c3c4322"><line x1="185" y1="36" x2="185" y2="210"/><line x1="330" y1="36" x2="330" y2="210"/><line x1="475" y1="36" x2="475" y2="210"/></g>
+            <text x="40" y="66" font-weight="700" fill="#1d1d1f">Al enseñar</text>
+            <rect x="40" y="74" width="70" height="20" rx="6" fill="#8e5cff"/><text x="116" y="88" fill="#1d1d1f">transcripción 0,48 s</text>
+            <rect x="110" y="74" width="4" height="20" fill="#ffc700"/><text x="256" y="88" fill="#3c3c43bb">guarda la seña + luz verde (&lt; 0,1 s)</text>
+            <text x="40" y="128" font-weight="700" fill="#1d1d1f">Al reconocer</text>
+            <rect x="40" y="136" width="145" height="20" rx="6" fill="#007aff"/><text x="62" y="150" fill="#fff" font-weight="600">imagen 1</text>
+            <rect x="185" y="136" width="145" height="20" rx="6" fill="#007aff" opacity=".75"/><text x="207" y="150" fill="#fff" font-weight="600">imagen 2 · confirma</text>
+            <rect x="330" y="136" width="12" height="20" rx="3" fill="#ff9f0a"/><text x="350" y="150" fill="#1d1d1f">stop por el relé 0,08 s</text>
+            <text x="40" y="186" fill="#3c3c43bb">La cámara del bicho manda 1 imagen por segundo: reaccionar toma ~2 s. Con la cámara del</text>
+            <text x="40" y="203" fill="#3c3c43bb">computador (30 por segundo, plan B) baja a ~0,3 s. Subir el bicho a 5 por segundo es lo siguiente.</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CONECTAR ===================== -->
+  <section class="glass card" id="conectar">
+    <div><h2>Qué falta para que funcione con el bicho real</h2><p class="hint">El código ya está en la rama dev del repo del equipo (<code>handtracking/tracker/senas.py</code>). Lo probé de punta a punta con el relé del equipo corriendo en local y un bicho falso que mandaba imágenes de los videos del proceso: aprendió «para» con la palma, no se confundió con el puño y mandó <code>stop</code> + <code>no</code> al volver a ver la palma.</p></div>
+    <div class="checks">
+      <div class="check"><span class="st ok">Hecho</span><div><b>Servicio de señas</b><p>Aprende con la frase del oído o con el teclado, guarda las señas en <code>senas.json</code>, anuncia en bicho·dev y manda los comandos. Prende la cámara del bicho cada vez que este se conecta.</p></div><span class="who">ya en dev</span></div>
+      <div class="check"><span class="st ok">Hecho</span><div><b>Unity entra por el relé</b><p>URL del relé + clave; los gestos prenden luces y el manejo parte apagado. El servicio de señas también le pasa la mano a Unity por UDP.</p></div><span class="who">ya en dev</span></div>
+      <div class="check"><span class="st todo">Falta</span><div><b>Correrlo con la clave del equipo</b><p>En el computador de la demo, una línea (abajo). Sin clave solo mira: no puede prender la cámara ni mandar comandos.</p></div><span class="who">quien opere la demo</span></div>
+      <div class="check"><span class="st todo">Falta</span><div><b>Que el cerebro no se confunda con la frase</b><p>El cerebro también oye «esta seña significa para» y podría ponerse a escribir código. Basta con que ignore las frases que dicen «seña».</p></div><span class="who">Walls / Cristian · 1 línea en cerebro.mjs</span></div>
+      <div class="check"><span class="st todo">Falta</span><div><b>Ir hacia quien lo llama</b><p>El oído ya entrega el ángulo de la voz (<code>oido.angulo</code>). Con motores, «Bicho, ven acá» es: girar hacia ese ángulo, avanzar hasta ver una persona en la cámara y frenar a 1 m. Mientras no haya motores, en la demo se acerca quien presenta.</p></div><span class="who">Carlos · después de los motores</span></div>
+      <div class="check"><span class="st todo">Falta</span><div><b>Confirmar el comando de la cámara</b><p>El servicio manda <code>{"cmd":"camara","on":true}</code>. Si el bicho lo pide distinto, se cambia con <code>--camara-on</code>. Se ve con el comando <code>ayuda</code>.</p></div><span class="who">Carlos · 5 min</span></div>
+      <div class="check"><span class="st risk">Riesgo</span><div><b>Freno real</b><p>Hoy <code>stop</code> llega pero el bicho no tiene motores: frena el gemelo y se prende la luz roja. Con motores, el freno tiene que vivir en el código base, con watchdog de 0,5 s.</p></div><span class="who">Carlos + Renate · plan en ROADMAP.md</span></div>
+    </div>
+    <div class="code" id="cmdRun"><button class="copy" data-copy="cmdRun">Copiar</button><span class="c"># en el computador de la demo, desde la carpeta handtracking del repo</span>
+./correr.sh senas --rele https://promotional-precision-lincoln-david.trycloudflare.com --clave &lt;clave del equipo&gt; --ver
+
+<span class="c"># plan B: la cámara del computador en vez de la del bicho (30 imágenes por segundo)</span>
+./correr.sh senas --rele https://promotional-precision-lincoln-david.trycloudflare.com --clave &lt;clave&gt; --fuente cam --ver
+
+<span class="c"># ensayo sin bicho ni relé: escribe «e para» y Enter para enseñarle la mano que tengas a la vista</span>
+./correr.sh senas --sin-rele --fuente cam --ver</div>
+  </section>
+
+  <section class="two">
+    <div class="glass card">
+      <div><h2>Rumbo a la demo</h2><p class="hint">Del roadmap que armaron ORBI, el desarrollador XR y el desarrollador web (<code>handtracking/ROADMAP.md</code>).</p></div>
+      <div class="phases">
+        <div class="phase"><span class="h">FASE 0 · SÁB 20:00</span><b>Lo mínimo</b><ul><li>Rescatar el código vivo 0.11.0 al repo</li><li>Señas con la clave en la cámara real</li><li>Consola sin avisos repetidos</li></ul></div>
+        <div class="phase"><span class="h">FASE 1 · DOM 00:30</span><b>La demo A</b><ul><li>El cerebro ignora «seña»</li><li>Ensayo 3 de 3 desde el parche publicado</li><li>Manos en bicho·dev</li></ul></div>
+        <div class="phase"><span class="h">FASE 2 · DOM 04:00</span><b>Opcional</b><ul><li>Motores con freno en el núcleo</li><li>Palma = joystick</li><li>Corte a la 01:00 si no hay motores</li></ul></div>
+        <div class="phase"><span class="h">FASE 3 · DOM 06:00</span><b>Congelar</b><ul><li>Video de 60 s a las 07:30</li><li>Plan B en el otro computador</li><li>Ensayo en el escenario 08:30</li></ul></div>
+      </div>
+    </div>
+    <div class="glass card">
+      <div><h2>Cinco frenos, de afuera hacia adentro</h2><p class="hint">Si uno falla, el siguiente frena. Ninguno depende de que el cerebro haga bien su trabajo.</p></div>
+      <div class="safety">
+        <div class="layer"><span class="k">1</span><b>Interruptor</b>Corta la batería de los motores, aparte del Pi.</div>
+        <div class="layer"><span class="k">2</span><b>Watchdog 0,5 s</b>Sin órdenes, el Pi frena solo.</div>
+        <div class="layer"><span class="k">3</span><b>Tope 40 %</b>Velocidad máxima fijada en el Pi.</div>
+        <div class="layer"><span class="k">4</span><b>Seña o puño</b>«Para» y el puño frenan.</div>
+        <div class="layer"><span class="k">5</span><b>Sin mano</b>0,3 s sin mano o pestaña oculta: stop.</div>
+      </div>
+    </div>
+  </section>
+
+  <p class="hint" style="text-align:center">Modelo 3D: la versión V1 del <a href="https://claude.ai/artifact/EVKma9DkW9tp2xa4Zq7xeD" target="_blank" rel="noopener">Taller 3D del bicho</a> · Código: <a href="https://github.com/platanus-hack/platanus-hack-26-cl-team-39/tree/dev/handtracking" target="_blank" rel="noopener">handtracking/ en la rama dev</a> · El reconocimiento de esta página usa exactamente el mismo cálculo que <code>senas.py</code>.</p>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const V3 = (x,y,z)=>new THREE.Vector3(x,y,z);
+const Y = V3(0,1,0), Zax = V3(0,0,1);
+
+/* =====================================================================
+   1. La mano de la persona: modelo cinemático a tamaño real → 21 puntos
+   ===================================================================== */
+const FINGERS = [
+  {i:5,  base:[-0.031,0.085], L:[0.040,0.025,0.022], a:12},
+  {i:9,  base:[-0.008,0.091], L:[0.045,0.028,0.024], a:2},
+  {i:13, base:[ 0.015,0.086], L:[0.042,0.026,0.022], a:-8},
+  {i:17, base:[ 0.035,0.075], L:[0.032,0.020,0.019], a:-18},
+];
+const PRESETS = {
+  palma:   {c:[ 5, 0, 0, 0, 0], spread:1},
+  puno:    {c:[80,100,100,100,100], spread:.3},
+  indice:  {c:[78, 0,100,100,100], spread:.4},
+  victoria:{c:[78, 0, 0,100,100], spread:1.4},
+  pulgar:  {c:[ 0,100,100,100,100], spread:.3},
+};
+const hand = {c:PRESETS.palma.c.slice(), spread:1, shape:'palma'};
+function buildHand(h, t){
+  const P = new Array(21);
+  const j = k => reduce ? 0 : Math.sin(t*1.7 + k*1.3)*1.6 + Math.sin(t*3.1+k)*0.7;
+  P[0] = V3(0,0,0);
+  FINGERS.forEach((f,fi)=>{
+    const curl = (h.c[fi+1]+j(fi))/100, a = THREE.MathUtils.degToRad(f.a*h.spread);
+    const d0 = V3(-Math.sin(a), Math.cos(a), 0);
+    const ang = [curl*88, curl*102, curl*72].map(THREE.MathUtils.degToRad);
+    let p = V3(f.base[0], f.base[1], 0); P[f.i] = p.clone(); let phi = 0;
+    for(let s=0;s<3;s++){ phi += ang[s]; const dir = d0.clone().multiplyScalar(Math.cos(phi)).addScaledVector(Zax, Math.sin(phi)); p = p.clone().addScaledVector(dir, f.L[s]); P[f.i+s+1] = p; }
+  });
+  const tc = Math.max(0,(h.c[0]+j(7))/100);
+  const d0 = V3(-0.82,0.57,0).normalize(), n = V3(0.62,0.12,0.78).normalize();
+  const ang = [tc*38, tc*46, tc*58].map(THREE.MathUtils.degToRad), L=[0.036,0.031,0.026];
+  let p = V3(-0.020,0.024,0); P[1] = p.clone(); let phi = 0;
+  for(let s=0;s<3;s++){ phi += ang[s]; const dir = d0.clone().multiplyScalar(Math.cos(phi)).addScaledVector(n, Math.sin(phi)).normalize(); p = p.clone().addScaledVector(dir, L[s]); P[2+s] = p; }
+  return P;
+}
+
+/* =====================================================================
+   2. Lo mismo que tracker/senas.py: rasgos, forma básica y memoria
+   ===================================================================== */
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], nrm=a=>Math.hypot(a[0],a[1],a[2]), dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+function ang(a,b,c){const u=sub(b,a),v=sub(c,b),nu=nrm(u),nv=nrm(v);if(nu<1e-6||nv<1e-6)return 0;return Math.acos(Math.max(-1,Math.min(1,dot(u,v)/(nu*nv))))*180/Math.PI}
+function rasgos(w,img){
+  const palma=Math.max(1e-4,nrm(sub(w[9],w[0]))), f=[];
+  for(const m of [1,5,9,13,17]){f.push(ang(w[m],w[m+1],w[m+2])/90);f.push(ang(w[m+1],w[m+2],w[m+3])/90)}
+  for(const t of [4,8,12,16,20])f.push(nrm(sub(w[t],w[0]))/palma/2);
+  for(const [a,b] of [[4,8],[8,12],[12,16],[16,20]])f.push(nrm(sub(w[a],w[b]))/palma);
+  const dx=img[9][0]-img[0][0],dy=img[9][1]-img[0][1],n=Math.hypot(dx,dy)||1;f.push(.6*dx/n,.6*dy/n);
+  return f;
+}
+function gestoBasico(w){
+  const est=m=>ang(w[m],w[m+1],w[m+3])<75&&nrm(sub(w[m+3],w[0]))>nrm(sub(w[m+1],w[0]));
+  const [i,m,r,p]=[5,9,13,17].map(est),n=i+m+r+p;
+  if(i&&m&&r)return'palma';if(n===0)return'puno';if(i&&!(m||r||p))return'indice';if(i&&m&&!(r||p))return'victoria';return'otra';
+}
+const GESTO_TXT={palma:'palma',puno:'puño',indice:'índice',victoria:'V',otra:'otra forma'};
+const senas={};
+const UMBRAL=.5;
+function reconocer(f,g){
+  const mejor=[];
+  for(const [nombre,s] of Object.entries(senas)){
+    if(g&&s.gesto!=='otra'&&g!==s.gesto)continue;
+    let d=Infinity,best=null;for(const m of s.muestras){const e=Math.hypot(...f.map((x,k)=>x-m[k]));if(e<d){d=e;best=m}}
+    mejor.push([d/Math.sqrt(f.length)*4,nombre,best]);
+  }
+  if(!mejor.length)return{nombre:null,d:null,ref:null};
+  mejor.sort((a,b)=>a[0]-b[0]);const [d,nombre,ref]=mejor[0];
+  if(d>UMBRAL||(mejor.length>1&&mejor[1][0]-d<.08))return{nombre:null,d,ref};
+  return{nombre,d,ref};
+}
+const ACCIONES={para:['stop','no'],alto:['stop','no'],detente:['stop','no'],stop:['stop','no'],hola:['si'],saluda:['si'],bien:['si'],celebra:['responder'],no:['no']};
+const QUE_HACE={para:'me detengo',alto:'me detengo',detente:'me detengo',stop:'me detengo',hola:'te saludo',saluda:'te saludo',bien:'prendo la luz verde',celebra:'celebro con las luces',no:'prendo la luz roja'};
+const NORMALIZA={pares:'para',parar:'para',detengas:'detente',detenerte:'detente',saludes:'saluda',saludar:'saluda',celebres:'celebra',celebrar:'celebra'};
+const norm=t=>t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ñ/g,'n');
+const FRASE=/(?:esta|esa|la|una)\s+sen(?:a|al)\s*[:,.]?\s*(?:significa|quiere\s+decir|es|sera|va\s+a\s+ser)\s+(?:que\s+)?(?:te\s+)?([a-z]+(?:\s+[a-z]+)?)|aprende\s+(?:esta|esa)\s+sen(?:a|al)\s*[:,]?\s*([a-z]+)/;
+function nombreDeFrase(t){const m=norm(t).match(FRASE);if(!m)return null;const w=(m[1]||m[2]||'').split(/\s+/)[0];return w?(NORMALIZA[w]||w):null}
+
+/* =====================================================================
+   3. Escena: patio, bicho (modelo V1 del Taller 3D) y una persona de 1,70 m
+   ===================================================================== */
+const stage=$('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+const env=new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(renderer),.04).texture;scene.environment=env;
+const cam=new THREE.PerspectiveCamera(36,1,.02,60);cam.position.set(-1.1,1.85,3.6);cam.layers.enable(1);cam.layers.enable(2);
+const orbit=new OrbitControls(cam,renderer.domElement);orbit.enableDamping=true;orbit.target.set(.4,.6,-.3);orbit.maxPolarAngle=Math.PI*.48;orbit.minDistance=.5;orbit.maxDistance=9;
+const sun=new THREE.DirectionalLight(0xfff3e2,2.3);sun.position.set(2.5,4.5,1.8);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-3,right:3,top:3,bottom:-3,near:.5,far:12});sun.shadow.bias=-.0004;sun.shadow.camera.layers.enableAll();scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xfff6ec,0xcfd8c9,.6));
+const ROOM=2.4;
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM*2,ROOM*2),new THREE.MeshStandardMaterial({color:0xdfe6d3,roughness:.95}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+const grid=new THREE.GridHelper(ROOM*2,24,0xbcc8b0,0xcdd6c2);grid.position.y=.0005;scene.add(grid);
+const wood=new THREE.MeshStandardMaterial({color:0xb8895a,roughness:.8});
+function box(w,h,d,m,x,y,z){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=b.receiveShadow=true;scene.add(b);return b}
+for(let s=-1;s<=1;s+=2){for(const y of [.25,.6]){box(ROOM*2,.05,.03,wood,0,y,s*ROOM);box(.03,.05,ROOM*2,wood,s*ROOM,y,0)}
+  for(let i=-6;i<=6;i++){box(.06,.8,.06,wood,i*ROOM/6,.4,s*ROOM);box(.06,.8,.06,wood,s*ROOM,.4,i*ROOM/6)}}
+// una maceta y una caja para dar escala
+const pot=new THREE.Mesh(new THREE.CylinderGeometry(.16,.12,.3,24),new THREE.MeshStandardMaterial({color:0xc4673e,roughness:.8}));pot.position.set(-1.7,.15,-1.6);pot.castShadow=true;scene.add(pot);
+const bush=new THREE.Mesh(new THREE.SphereGeometry(.26,20,14),new THREE.MeshStandardMaterial({color:0x5f8f4e,roughness:.9}));bush.position.set(-1.7,.5,-1.6);bush.castShadow=true;scene.add(bush);
+box(.45,.32,.38,new THREE.MeshStandardMaterial({color:0xd9b98a,roughness:.9}),1.6,.16,1.5);
+
+/* ---- la persona */
+const skin=new THREE.MeshStandardMaterial({color:0xe2ad86,roughness:.55});
+const shirt=new THREE.MeshStandardMaterial({color:0x3f74ad,roughness:.75});
+const pants=new THREE.MeshStandardMaterial({color:0x2b3442,roughness:.85});
+const hair=new THREE.MeshStandardMaterial({color:0x3a2a20,roughness:.9});
+const shoe=new THREE.MeshStandardMaterial({color:0xf2f2f2,roughness:.6});
+const person=new THREE.Group();scene.add(person);
+const PPOS=V3(1.4,0,-1.3);person.position.copy(PPOS);
+const PFWD=V3(-PPOS.x,0,-PPOS.z).normalize();person.rotation.y=Math.atan2(PFWD.x,PFWD.z);
+function part(geo,mat,x,y,z){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;person.add(m);return m}
+function limb(r,mat){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.92,1,14),mat);m.castShadow=true;person.add(m);return m}
+function place(m,a,b){m.position.copy(a).add(b).multiplyScalar(.5);const d=b.clone().sub(a);m.scale.set(1,d.length(),1);m.quaternion.setFromUnitVectors(Y,d.normalize())}
+for(const x of [-.1,.1]){place(limb(.068,pants),V3(x,.88,0),V3(x,.08,.01));const s=part(new THREE.BoxGeometry(.11,.07,.26),shoe,x,.035,.05)}
+part(new THREE.BoxGeometry(.36,.16,.22),pants,0,.92,0);
+const torso=part(new THREE.CapsuleGeometry(.175,.36,6,16),shirt,0,1.2,0);torso.scale.z=.68;
+place(limb(.05,skin),V3(0,1.44,0),V3(0,1.52,0));
+const head=part(new THREE.SphereGeometry(.105,24,18),skin,0,1.61,.01);head.scale.set(.92,1.08,1);
+const hairM=part(new THREE.SphereGeometry(.112,24,12,0,Math.PI*2,0,Math.PI*.55),hair,0,1.63,-.005);hairM.scale.set(.95,1.05,1.02);
+for(const x of [-.036,.036])part(new THREE.SphereGeometry(.011,10,8),new THREE.MeshStandardMaterial({color:0x1d1d1f}),x,1.625,.098);
+// brazo izquierdo colgando
+const SHL=V3(.215,1.43,0),ELL=V3(.25,1.14,.02),WRL=V3(.26,.88,.05);
+place(limb(.048,shirt),SHL,ELL);place(limb(.04,skin),ELL,WRL);part(new THREE.SphereGeometry(.045,14,10),skin,WRL.x,WRL.y-.05,WRL.z).scale.set(.7,1.2,.5);
+// brazo derecho (el que hace la seña): IK de dos huesos
+const SHR=V3(-.215,1.43,0),L1=.30,L2=.27;
+const upperR=limb(.048,shirt),foreR=limb(.04,skin);
+part(new THREE.SphereGeometry(.058,14,10),shirt,SHR.x,SHR.y,SHR.z);
+const elbowBall=part(new THREE.SphereGeometry(.045,12,10),shirt,0,0,0);
+function solveArm(target){
+  const d=target.clone().sub(SHR);let len=d.length();len=Math.min(len,L1+L2-1e-3);const dn=d.normalize();
+  const a=(L1*L1-L2*L2+len*len)/(2*len),h=Math.sqrt(Math.max(0,L1*L1-a*a));
+  const pole=V3(-.55,-1,-.25);const perp=pole.sub(dn.clone().multiplyScalar(pole.dot(dn))).normalize();
+  const elbow=SHR.clone().addScaledVector(dn,a).addScaledVector(perp,h);const wrist=SHR.clone().addScaledVector(dn,len);
+  place(upperR,SHR,elbow);place(foreR,elbow,wrist);elbowBall.position.copy(elbow);return wrist;
+}
+// la mano derecha, a tamaño real (palma de ~9 cm)
+const handG=new THREE.Group();person.add(handG);
+const joints=[],bones=[];
+const BONES=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[0,17],[17,18],[18,19],[19,20]];
+for(let k=0;k<21;k++){const m=new THREE.Mesh(new THREE.SphereGeometry([4,8,12,16,20].includes(k)?.0082:.0095,12,10),skin);m.castShadow=true;handG.add(m);joints.push(m)}
+BONES.forEach(([a,b])=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(a===0&&b===1?.016:.0088,a===0&&b===1?.016:.0088,1,10),skin);m.castShadow=true;handG.add(m);bones.push(m)});
+{const P0=buildHand(hand,0);const sh=new THREE.Shape();const ids=[0,1,5,9,13,17];sh.moveTo(P0[0].x,P0[0].y);ids.slice(1).forEach(i=>sh.lineTo(P0[i].x,P0[i].y));sh.closePath();
+  const g=new THREE.ExtrudeGeometry(sh,{depth:.024,bevelEnabled:true,bevelSize:.006,bevelThickness:.006,bevelSegments:2});g.translate(0,0,-.012);
+  const palm=new THREE.Mesh(g,skin);palm.castShadow=true;handG.add(palm)}
+const arm={state:'abajo',wave:0,target:V3(-.25,.86,.06),cur:V3(-.25,.86,.06)};
+const ARM_POS={abajo:V3(-.25,.86,.06),llamar:V3(-.36,1.78,.12),muestra:V3(-.13,1.27,.36)};
+let handP=buildHand(hand,0);
+
+/* ---- el bicho */
+let R=null,wheels=[],J={},camObj=null;
+const robot={x:-1.2,z:.7,h:-.3,v:0,mode:'patrulla',wp:0,goal:null,armPose:'frente'};
+const WAYPOINTS=[V3(-1.6,0,1.0),V3(-.2,0,1.7),V3(1.0,0,1.1),V3(.3,0,-.2),V3(-1.0,0,-1.2),V3(-1.8,0,-.2)];
+const ring=new THREE.Group(),leds=[];
+for(let i=0;i<24;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.0042,10,8),new THREE.MeshBasicMaterial({color:0x2a2a2e}));const a=i/24*Math.PI*2;m.position.set(0,Math.cos(a)*.026,Math.sin(a)*.026);m.layers.set(1);ring.add(m);leds.push(m)}
+const ledLight=new THREE.PointLight(0xffffff,0,.8);ring.add(ledLight);scene.add(ring);
+let ledMode='off',ledUntil=0;
+function setLeds(mode,ms=2200){ledMode=mode;ledUntil=performance.now()+ms}
+function toGLB(js){const s=atob(js.buffers[0].uri.split(',')[1]);const bin=new Uint8Array(s.length);for(let i=0;i<s.length;i++)bin[i]=s.charCodeAt(i);
+  delete js.buffers[0].uri;js.buffers[0].byteLength=bin.length;const jb=new TextEncoder().encode(JSON.stringify(js));const jl=Math.ceil(jb.length/4)*4,bl=Math.ceil(bin.length/4)*4;
+  const out=new ArrayBuffer(28+jl+bl),dv=new DataView(out),u8=new Uint8Array(out);dv.setUint32(0,0x46546C67,true);dv.setUint32(4,2,true);dv.setUint32(8,out.byteLength,true);
+  dv.setUint32(12,jl,true);dv.setUint32(16,0x4E4F534A,true);u8.fill(0x20,20,20+jl);u8.set(jb,20);dv.setUint32(20+jl,bl,true);dv.setUint32(24+jl,0x004E4942,true);u8.set(bin,28+jl);return out}
+function fallbackBicho(){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(.32,.09,.2),new THREE.MeshStandardMaterial({color:0x1d1d1f,roughness:.5}));body.position.y=.09;body.castShadow=true;g.add(body);
+  for(const x of [-.1,.1])for(const z of [-.11,.11]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.0325,.0325,.026,24),new THREE.MeshStandardMaterial({color:0x2c2c2e}));w.rotation.x=Math.PI/2;w.position.set(x,.0325,z);w.userData.rueda=1;g.add(w)}
+  const hd=new THREE.Object3D();hd.position.set(.14,.26,0);hd.userData.sensor='camara';hd.name='cam_pi';g.add(hd);return g}
+const POSES={frente:{giro:0,hombro:55,codo:-85,muneca:20},mira:{giro:0,hombro:82,codo:-38,muneca:42}};
+const armCur={...POSES.frente};
+async function loadBicho(){
+  let root;
+  try{root=(await new GLTFLoader().loadAsync('../modelos/bicho_V1.glb')).scene;await montarBrazoV4(root)}
+  catch(e){console.warn(e);root=fallbackBicho()}
+  root.traverse(o=>{o.layers.set(1);if(o.isMesh){o.castShadow=true;o.receiveShadow=true}
+    if(/^R_V/.test(o.name))R=o; if(o.userData.rueda)wheels.push(o)});
+  camObj=root.getObjectByName('S_cam_esp1')||root.getObjectByName('cam_pi');   // cámara CSI en el soporte frontal (bandeja B15)
+  if(!R)R=root;scene.add(root);$('load').hidden=true;
+}
+// Brazo v4 definitivo (web/public/bim/brazo.glb + registro.json, el mismo de la vista Brazo)
+function formula(txt){const s=txt.replace(/\s+/g,'').replace(/°/g,'');const m=s.match(/^(?:(-?\d+(?:\.\d+)?)([+-]))?(-)?deg(?:([+-])(\d+(?:\.\d+)?))?$/);if(!m)return null;
+  const pre=m[1]?+m[1]:0;let a=m[3]?-1:1;if(m[2]==='-')a=-a;const post=m[4]?(m[4]==='-'?-1:1)*+m[5]:0;return d=>pre+a*d+post}
+function ejeDe(t){t=t.trim().toUpperCase();const s=t.startsWith('-')?-1:1,c=t.replace(/[+-]/g,'');return V3(c==='X'?s:0,c==='Y'?s:0,c==='Z'?s:0)}
+const JV4={};
+async function montarBrazoV4(chasis){
+  chasis.updateMatrixWorld(true);const viejo=chasis.getObjectByName('G_brazo'),jg=chasis.getObjectByName('J_giro');const base=V3();
+  if(viejo){base.y=new THREE.Box3().setFromObject(viejo).min.y;viejo.visible=false}
+  if(jg){const w=jg.getWorldPosition(V3());base.x=w.x;base.z=w.z}
+  const [g,reg]=await Promise.all([new GLTFLoader().loadAsync('../bim/brazo.glb'),fetch('../bim/registro.json').then(r=>r.json())]);
+  const b=g.scene,cb=new THREE.Box3().setFromObject(b);b.position.set(base.x,base.y-cb.min.y,base.z);(chasis.getObjectByName('R_V1')||chasis).add(b);
+  for(const a of reg.articulaciones){const o=b.getObjectByName(a.nodo),f=formula(a.angulo_nodo);if(!o||!f)continue;const e=a.espejo?b.getObjectByName(a.espejo):null;
+    JV4[a.nodo]={o,base:o.quaternion.clone(),eje:ejeDe(a.eje_gltf),f,e,baseE:e?e.quaternion.clone():null,cur:a.inicio}}
+}
+function servo(nodo,deg){const j=JV4[nodo];if(!j)return;j.cur=deg;const r=THREE.MathUtils.degToRad(j.f(deg));j.o.quaternion.copy(j.base).multiply(new THREE.Quaternion().setFromAxisAngle(j.eje,r));
+  if(j.e)j.e.quaternion.copy(j.baseE).multiply(new THREE.Quaternion().setFromAxisAngle(j.eje,-r))}
+const POSES_V4={frente:{J_giro:90,J_hombro:90,J_codo:90,J_pinza_a:84},mira:{J_giro:90,J_hombro:78,J_codo:150,J_pinza_a:96}};
+let saludoHasta=0;
+function applyArm(dt){const p=POSES_V4[robot.armPose];const t=performance.now();
+  for(const k in p){let d=p[k];if(k==='J_giro'&&t<saludoHasta)d=90+Math.sin(t/160)*25;const j=JV4[k];if(j)servo(k,j.cur+(d-j.cur)*Math.min(1,dt*4))}}
+function applyArmViejo(dt){const p=POSES[robot.armPose];for(const k in p){armCur[k]+=(p[k]-armCur[k])*Math.min(1,dt*3);const j=J[k];if(j)j.quaternion.setFromAxisAngle(k==='giro'?Y:Zax,THREE.MathUtils.degToRad(armCur[k]))}}
+loadBicho();
+// rayo de la cámara del bicho hacia la mano (solo en la vista general)
+const seeLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([V3(),V3()]),new THREE.LineDashedMaterial({color:0x00b5a0,dashSize:.04,gapSize:.03}));seeLine.layers.set(2);scene.add(seeLine);
+
+/* ---- la cámara del bicho: otra cámara three.js puesta en su cabeza (ov5647: 54° × 41°) */
+// Se dibuja con el mismo renderer (misma luz y entorno) en una esquina del lienzo y se copia al panel.
+const povCtx=$('pov').getContext('2d');const SKY=new THREE.Color(0xd6e3ec);
+const povCam=new THREE.PerspectiveCamera(41,4/3,.03,30);povCam.layers.set(0);
+const lookAt=V3(0,.5,0);
+const hud=$('povHud').getContext('2d');
+
+/* =====================================================================
+   4. Lo que pasa: diálogo, mensajes del relé y reacciones
+   ===================================================================== */
+const log=$('log');
+function addLog(dir,txt){const d=document.createElement('div');d.className=dir;d.textContent=(dir==='in'?'← ':dir==='out'?'→ ':'// ')+txt;log.append(d);while(log.children.length>80)log.firstChild.remove();log.scrollTop=log.scrollHeight}
+function cmd(c){addLog('out',JSON.stringify({cmd:c}))}
+const bubbles={P:{el:$('sayP'),until:0},B:{el:$('sayB'),until:0}};
+let tts=null,voz=false,dict=null,dictOn=false;
+async function speak(text,who){if(!voz||!tts)return;try{await tts.speak(text,{voice:who==='B'?'glassy':'rounded',language:'es'})}catch(e){}}
+function bubble(who,text,ms){const b=bubbles[who];b.el.querySelector('.t').textContent=text;b.el.dataset.off='0';b.until=performance.now()+(ms||Math.max(2600,text.length*70));speak(text,who)}
+function bot(text,ms){bubble('B',text,ms);addLog('out',JSON.stringify({t:'cerebro',tipo:'responde',texto:text}))}
+function estado(t,color){$('estado').textContent=t;$('dot').style.background=color||'var(--green)'}
+let capT=0;function caption(t,ms=4200){const c=$('caption');c.textContent=t;c.dataset.off=t?'0':'1';capT=t?performance.now()+ms:0}
+const LIGHT={llama:['oir'],mira:['ver'],aprende:['ver','oir','aprender'],obedece:['actuar']};
+const lt={};
+function light(k,ms=3200){const els=[...document.querySelectorAll(`.step[data-k="${k}"]`),...LIGHT[k].flatMap(s=>[...document.querySelectorAll(`#flow [data-s="${s}"]`)])];
+  els.forEach(e=>e.classList.add('on'));clearTimeout(lt[k]);lt[k]=setTimeout(()=>els.forEach(e=>e.classList.remove('on')),ms)}
+function dist2(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
+const APPROACH=PPOS.clone().addScaledVector(PFWD,1.8);
+function setArm(s){arm.state=s;$('bMano').setAttribute('aria-pressed',s==='muestra');$('bMano').textContent=s==='muestra'?'Bajar la mano':'Levantar la mano'}
+
+function hablar(texto){
+  texto=texto.trim();if(!texto)return;
+  bubble('P',texto);
+  const angulo=Math.round((Math.atan2(PPOS.x-robot.x,-(PPOS.z-robot.z))*180/Math.PI+360)%360);
+  addLog('in',JSON.stringify({t:'oido',angulo,texto,estado:'listo',ms:480}));
+  const t=norm(texto);
+  setTimeout(()=>responder(texto,t),520);   // lo que tarda la transcripción en el relé real
+}
+function responder(texto,t){
+  const nombre=nombreDeFrase(texto);
+  if(nombre){light('aprende');return ensenar(nombre)}
+  if(/\b(sigue|segui|patrull|continua|anda)\b/.test(t)){robot.mode='patrulla';robot.goal=null;robot.armPose='frente';estado('Patrullando');setLeds('off',0);bot('¡Sigo patrullando!');return}
+  if(/\b(ven|venga|aca|aqui|vente)\b/.test(t)){
+    light('llama');
+    if(robot.mode==='atiende'||robot.mode==='aprende'){bot('Aquí estoy. ¿Qué necesitas?');return}
+    if(arm.state!=='muestra'){setArm('llamar');setTimeout(()=>{if(arm.state==='llamar')setArm('abajo')},1800)}
+    robot.mode='va';robot.goal=APPROACH.clone();robot.armPose='frente';estado('Va hacia ti','var(--blue)');setLeds('azul',1500);
+    bot('¡Voy para allá!');addLog('note','gira hacia el ángulo de la voz y avanza');return}
+  bot(`Te escuché: «${texto}». No es una orden que conozca.`);
+}
+
+/* ---- aprender una seña con lo que ve la cámara */
+let det=null,lastDet=null,lastDetAt=-1e9;   // la última detección de la cámara del bicho
+let learning=null;          // {nombre, muestras, gestos, t0}
+function ensenar(nombre){
+  if(!(robot.mode==='atiende'||robot.mode==='parado')||dist2(robot,PPOS)>2.4){bot('No te veo bien. Llámame primero: «Bicho, ven acá».');return}
+  if(!det&&performance.now()-lastDetAt>1500){bot(`Te escuché («${nombre}»), pero no veo tu mano. Muéstramela frente a mi cámara.`);return}
+  learning={nombre,muestras:[],gestos:[],t0:performance.now(),next:0};robot.mode='aprende';estado(`Aprendiendo «${nombre}»`,'var(--banana)');setLeds('azul',2000);
+  addLog('out',JSON.stringify({t:'cerebro',tipo:'paso',texto:`Empiezo a aprender: la seña «${nombre}»`}));
+}
+function tickLearning(now){
+  if(!learning)return;
+  if(!det){if(now-lastDetAt>900){bot('Perdí tu mano. Vuelve a mostrármela y dímelo otra vez.');learning=null;robot.mode='atiende';estado('Te escucha')}return}
+  if(now>=learning.next){learning.muestras.push(det.f.slice());learning.gestos.push(det.g);learning.next=now+200}
+  if(learning.muestras.length>=8){
+    const {nombre,muestras,gestos}=learning;const g=[...new Set(gestos)].sort((a,b)=>gestos.filter(x=>x===b).length-gestos.filter(x=>x===a).length)[0];
+    senas[nombre]={gesto:g,muestras};learning=null;robot.mode='atiende';estado('Te escucha');
+    addLog('out',JSON.stringify({t:'cerebro',tipo:'aprendido',texto:`Aprendí la seña «${nombre}»: cuando la vea, ${QUE_HACE[nombre]||'aviso al cerebro'}.`}));
+    cmd('si');setLeds('verde',2600);activa=nombre;lastFire=now;saludoHasta=performance.now()+2200;
+    bot(`¡Aprendido! Esta seña significa «${nombre}». Cuando la vea, ${QUE_HACE[nombre]||'le aviso al cerebro'}.`,5200);renderLearned();
+  }
+}
+let streak={n:0,name:null},activa=null,lastFire=0,lastRec=null;
+function tickRecognition(now){
+  if(!det||learning){streak={n:0,name:null};if(!det)activa=null;lastRec=null;return}
+  const r=reconocer(det.f,det.g);det.r=r;lastRec=r;
+  if(r.nombre===streak.name)streak.n++;else streak={n:1,name:r.nombre};
+  if(r.nombre&&streak.n>=18&&r.nombre!==activa&&now-lastFire>1500){activa=r.nombre;lastFire=now;act(r.nombre)}
+  if(!r.nombre&&streak.n>=15)activa=null;
+}
+function act(nombre){
+  const acc=ACCIONES[nombre]||[];light('obedece');
+  addLog('out',JSON.stringify({t:'cerebro',tipo:'responde',texto:`Vi la seña «${nombre}»`}));acc.forEach(cmd);
+  if(acc.includes('stop')){const ibaAndando=robot.v>.03;robot.mode='parado';robot.goal=null;estado(`Detenido por la seña «${nombre}»`,'var(--red)');setLeds('rojo',1e9);
+    bot(ibaAndando?`Vi la seña «${nombre}»: me detengo.`:`Vi la seña «${nombre}». Ya estoy detenido.`)}
+  else if(acc.includes('responder')){setLeds('arcoiris',3000);bot(`Vi la seña «${nombre}»: ¡a celebrar!`)}
+  else if(acc.includes('si')){setLeds('verde',2400);bot(`Vi la seña «${nombre}»: ${QUE_HACE[nombre]}.`)}
+  else if(acc.includes('no')){setLeds('rojo',2400);bot(`Vi la seña «${nombre}».`)}
+  else{setLeds('azul',1800);bot(`Vi la seña «${nombre}». Le aviso al cerebro.`)}
+  renderLearned(nombre);
+}
+function renderLearned(hit){
+  const el=$('learned');const ks=Object.keys(senas);
+  if(!ks.length){el.innerHTML='<span class="hint">Todavía no sabe ninguna seña.</span>';return}
+  el.innerHTML='';ks.forEach(k=>{const c=document.createElement('span');c.className='chip'+(k===hit?' hit':'');c.textContent=`«${k}» · ${GESTO_TXT[senas[k].gesto]}`;el.append(c)});
+}
+
+/* ---- controles */
+$('fTeach').addEventListener('submit',e=>{e.preventDefault();demoRun++;hablar($('iFrase').value)});
+document.querySelectorAll('.quick button').forEach(b=>b.addEventListener('click',()=>{demoRun++;$('iFrase').value=b.dataset.say;
+  if(/seña/.test(b.dataset.say)&&arm.state!=='muestra')setArm('muestra');hablar(b.dataset.say)}));
+function setPreset(p){const s=PRESETS[p];hand.c=s.c.slice();hand.spread=s.spread;hand.shape=p;document.querySelectorAll('#presets button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===p))}
+$('presets').addEventListener('click',e=>{const b=e.target.closest('button');if(b){setPreset(b.dataset.p);if(arm.state!=='muestra')setArm('muestra')}});
+$('bMano').addEventListener('click',()=>{demoRun++;setArm(arm.state==='muestra'?'abajo':'muestra')});
+$('bSeguir').addEventListener('click',()=>{demoRun++;hablar('Bicho, sigue patrullando')});
+(async()=>{
+  try{tts=await window.claude?.use?.('tts')}catch(e){}
+  if(tts){$('bVoz').hidden=false;$('bVoz').addEventListener('click',()=>{voz=!voz;$('bVoz').setAttribute('aria-pressed',voz);if(!voz)try{tts.stop()}catch(e){}})}
+  try{dict=await window.claude?.use?.('dictation')}catch(e){}
+  if(dict){const mic=$('bMic');mic.hidden=false;
+    dict.onFinal(({text})=>{if(text){$('iFrase').value=text;demoRun++;hablar(text)}});
+    dict.onPartial(({text})=>{if(text)$('iFrase').value=text});
+    dict.onState(({state})=>{dictOn=state==='listening';mic.dataset.on=dictOn?'1':'0'});
+    mic.addEventListener('click',()=>{if(dictOn){dict.stop().catch(()=>{})}else{$('iFrase').value='';dict.start().catch(()=>{mic.hidden=true})}})}
+})();
+
+/* ---- dentro de bicho·dev: escuchar al bicho real (lo que transcribe su oído) */
+let oidoReal=false;
+if(window.self!==window.top){const b=$('bOidoReal');b.hidden=false;b.addEventListener('click',()=>{oidoReal=!oidoReal;b.setAttribute('aria-pressed',oidoReal);
+  addLog('note',oidoReal?'lo que oye el bicho real ahora mueve esta demo':'oído real apagado')});
+  addEventListener('message',e=>{const d=e.data;if(!d||d.fuente!=='bicho-dev'||!d.m)return;const m=d.m;
+    if(m.t==='oido'&&m.estado==='listo'&&m.texto&&oidoReal){demoRun++;$('iFrase').value=m.texto;hablar(m.texto)}
+    else if(m.t==='cerebro'&&m.origen==='senas')addLog('in','bicho real · '+(m.texto||''))})}
+/* ---- la demo, de punta a punta */
+let demoRun=0;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function until(fn,ms,run){const t0=performance.now();while(performance.now()-t0<ms){if(run!==demoRun)return false;if(fn())return true;await wait(100)}return !!fn()}
+async function demo(){
+  const run=++demoRun,ok=()=>run===demoRun;
+  for(const k in senas)delete senas[k];renderLearned();learning=null;activa=null;setArm('abajo');setPreset('palma');
+  robot.x=-.9;robot.z=.7;robot.h=.1;robot.v=0;robot.wp=1;robot.mode='patrulla';robot.goal=null;robot.armPose='frente';setLeds('off',0);estado('Patrullando');
+  log.innerHTML='';addLog('note','demo: el bicho patrulla el patio y no conoce ninguna seña');
+  caption('El bicho patrulla el patio. Todavía no conoce ninguna seña.');await wait(3000);if(!ok())return;
+  caption('1 · Lo llamas por su nombre');$('iFrase').value='¡Bicho, ven acá!';hablar('¡Bicho, ven acá!');
+  if(!await until(()=>robot.mode==='atiende',22000,run)){if(!ok())return;robot.x=APPROACH.x;robot.z=APPROACH.z;robot.mode='girando';await until(()=>robot.mode==='atiende',4000,run)}
+  if(!ok())return;
+  light('mira');caption('2 · Llega frente a ti y levanta la cámara para verte');await wait(2600);if(!ok())return;
+  caption('3 · Le muestras la seña y se la explicas: mira su cámara, a la derecha');setArm('muestra');await wait(1400);if(!ok())return;
+  $('iFrase').value='Necesito que aprendas esta seña: significa para';hablar($('iFrase').value);
+  if(!await until(()=>senas.para,8000,run)){if(ok())caption('No alcanzó a aprender la seña. Vuelve a intentarlo.',6000);return}
+  await wait(3800);if(!ok())return;
+  setArm('abajo');await wait(700);hablar('Bien. Sigue patrullando.');caption('Vuelve a patrullar. Ya sabe lo que significa la palma.');
+  await wait(1500);if(!ok())return;
+  const lejos=PPOS.clone().addScaledVector(PFWD,3.6);robot.goal=lejos;          // da la vuelta y queda de frente, a 3 m
+  await until(()=>robot.goal===null,16000,run);if(!ok())return;
+  robot.goal=PPOS.clone().addScaledVector(PFWD,1.6);                               // y viene derecho hacia ti
+  caption('4 · Más tarde viene hacia ti: le muestras la palma, sin decir nada');await wait(900);if(!ok())return;setArm('muestra');
+  if(await until(()=>robot.mode==='parado',12000,run)){await wait(1400);if(ok())caption('Nadie programó esa seña: la aprendió en vivo, con la voz y la mano.',7000)}
+  else if(ok())caption('No alcanzó a ver la seña esta vez. Prueba de nuevo con «Ver la demo».',6000);
+}
+$('bDemo').addEventListener('click',demo);
+if(location.hash==='#demo')setTimeout(demo,1200);
+
+/* =====================================================================
+   5. Cada cuadro: mover, ver, interpretar, dibujar
+   ===================================================================== */
+const tmp=V3(),tmp2=V3(),headPos=V3();
+function stepRobot(dt,t){
+  let target=null,want=0;
+  if(robot.mode==='patrulla'){
+    target=robot.goal||WAYPOINTS[robot.wp];
+    if(!robot.goal&&dist2(robot,target)<.18)robot.wp=(robot.wp+1)%WAYPOINTS.length;
+    if(robot.goal&&dist2(robot,target)<.1){robot.goal=null}
+    want=.26;
+  }else if(robot.mode==='va'){
+    target=robot.goal;want=dist2(robot,target)<.3?.14:.4;
+    if(dist2(robot,target)<.06){robot.mode='girando'}
+  }
+  if(robot.mode==='girando'||robot.mode==='atiende'||robot.mode==='aprende'||robot.mode==='parado'&&dist2(robot,PPOS)<2.3){
+    const face=Math.atan2(-(PPOS.z-robot.z),PPOS.x-robot.x);let dh=Math.atan2(Math.sin(face-robot.h),Math.cos(face-robot.h));robot.h+=dh*Math.min(1,dt*3);
+    if(robot.mode==='girando'&&Math.abs(dh)<.05){robot.mode='atiende';robot.armPose='mira';estado('Te escucha');bot('Aquí estoy. ¿Qué necesitas?')}
+    want=0;
+  }
+  if(target&&want){const des=Math.atan2(-(target.z-robot.z),target.x-robot.x);let dh=Math.atan2(Math.sin(des-robot.h),Math.cos(des-robot.h));robot.h+=Math.sign(dh)*Math.min(Math.abs(dh),dt*2.2);if(Math.abs(dh)>1.2)want*=.3}
+  if(robot.mode==='parado')want=0;
+  robot.v+=(want-robot.v)*Math.min(1,dt*(want>robot.v?1.6:6));
+  robot.x+=Math.cos(robot.h)*robot.v*dt;robot.z-=Math.sin(robot.h)*robot.v*dt;
+  robot.x=Math.max(-ROOM+.3,Math.min(ROOM-.3,robot.x));robot.z=Math.max(-ROOM+.3,Math.min(ROOM-.3,robot.z));
+  if(R&&R.parent){R.position.set(robot.x,0,robot.z);R.rotation.y=robot.h;wheels.forEach(w=>{w.rotation.z-=robot.v*dt/.0325})}
+  robot.armPose=(robot.mode==='atiende'||robot.mode==='aprende'||robot.mode==='girando'||robot.mode==='parado'&&dist2(robot,PPOS)<2.3)?'mira':'frente';
+  applyArm(dt);
+}
+function stepPerson(dt,t){
+  arm.target.copy(ARM_POS[arm.state]);
+  if(arm.state==='llamar'&&!reduce)arm.target.x+=Math.sin(t*9)*.12;
+  arm.cur.lerp(arm.target,Math.min(1,dt*5));
+  const wrist=solveArm(arm.cur);
+  handG.position.copy(wrist);
+  if(arm.state==='abajo'&&arm.cur.y<1.0){handG.quaternion.setFromEuler(new THREE.Euler(Math.PI,0,0));handG.scale.set(-1,1,1)}
+  else{handG.quaternion.setFromEuler(new THREE.Euler(arm.state==='llamar'?-.2:-.08,0,arm.state==='llamar'&&!reduce?Math.sin(t*9)*.35:0));handG.scale.set(-1,1,1)}
+  const shape=arm.state==='llamar'?PRESETS.palma:hand;handP=buildHand(shape,t);
+  joints.forEach((m,k)=>m.position.copy(handP[k]));
+  BONES.forEach(([a,b],k)=>{const m=bones[k],pa=handP[a],pb=handP[b];m.position.copy(pa).add(pb).multiplyScalar(.5);const d=pb.clone().sub(pa);m.scale.set(1,d.length(),1);m.quaternion.setFromUnitVectors(Y,d.normalize())});
+}
+function stepPov(dt){
+  if(camObj)camObj.getWorldPosition(headPos);else headPos.set(robot.x,.27,robot.z);
+  const fwd=tmp.set(Math.cos(robot.h),0,-Math.sin(robot.h));
+  let desired;
+  if(robot.armPose==='mira'){desired=person.localToWorld(tmp2.copy(arm.state==='muestra'?ARM_POS.muestra:V3(0,1.45,.1)).add(V3(0,arm.state==='muestra'?.1:0,0)))}
+  else desired=tmp2.copy(headPos).addScaledVector(fwd,2).add(V3(0,2*Math.tan(THREE.MathUtils.degToRad(16)),0));
+  {const d=desired.clone().sub(headPos),hz=Math.hypot(d.x,d.z)||1,maxUp=Math.tan(THREE.MathUtils.degToRad(32));if(d.y/hz>maxUp)desired=headPos.clone().add(V3(d.x,hz*maxUp,d.z))}
+  lookAt.lerp(desired,Math.min(1,dt*3.5));
+  povCam.position.copy(headPos).addScaledVector(fwd,.03);povCam.lookAt(lookAt);povCam.updateMatrixWorld();
+  // ¿ve la mano? se proyectan los 21 puntos en la imagen de su cámara (lo que entrega MediaPipe)
+  det=null;
+  if(arm.state!=='abajo'||arm.cur.y>1.05){
+    person.updateMatrixWorld(true);handG.updateMatrixWorld(true);
+    const img=[],wpos=[];let inside=0;
+    for(let k=0;k<21;k++){const p=handG.localToWorld(handP[k].clone());wpos.push(p);const q=p.clone().project(povCam);img.push([(q.x+1)/2,(1-q.y)/2,q.z]);if(q.z<1&&q.z>-1&&Math.abs(q.x)<.98&&Math.abs(q.y)<.98)inside++}
+    const d=wpos[0].distanceTo(povCam.position);
+    if(inside>=19&&d<3.4){const w=handP.map(p=>[p.x,-p.y,-p.z]);det={img,w,f:rasgos(w,img),g:gestoBasico(w),dist:d,wrist:wpos[9],score:.93+.05*Math.max(0,1-d/3.4)};lastDet=det;lastDetAt=performance.now()}
+  }
+  seeLine.visible=!!det;if(det){seeLine.geometry.setFromPoints([povCam.position,det.wrist]);seeLine.computeLineDistances()}
+}
+function drawHud(t,now){
+  const W=640,H=480;hud.clearRect(0,0,W,H);
+  const vg=hud.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*.85);vg.addColorStop(0,'#0000');vg.addColorStop(1,'#000a');hud.fillStyle=vg;hud.fillRect(0,0,W,H);
+  hud.strokeStyle='#ffffff30';hud.lineWidth=1;hud.beginPath();hud.moveTo(W/2-12,H/2);hud.lineTo(W/2+12,H/2);hud.moveTo(W/2,H/2-12);hud.lineTo(W/2,H/2+12);hud.stroke();
+  hud.font='600 13px "SF Mono",ui-monospace,Menlo,monospace';hud.fillStyle='#9fe8d8';hud.fillText('ov5647 · 640×480 → MediaPipe Hands',12,22);
+  hud.textAlign='right';hud.fillStyle=Math.sin(t*4)>0?'#ff3b30':'#ff3b3066';hud.fillText('● EN VIVO',W-12,22);hud.textAlign='left';
+  let panel=null;
+  if(det){
+    const P=det.img.map(p=>[p[0]*W,p[1]*H]);const xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);
+    const x0=Math.min(...xs)-18,y0=Math.min(...ys)-18,x1=Math.max(...xs)+18,y1=Math.max(...ys)+18;
+    const rec=det.r&&det.r.nombre,col=learning?'#ffc700':rec?'#ffc700':'#2bf7d4';
+    hud.strokeStyle=col;hud.lineWidth=2;const c=14;
+    for(const [x,y,dx,dy] of [[x0,y0,1,1],[x1,y0,-1,1],[x0,y1,1,-1],[x1,y1,-1,-1]]){hud.beginPath();hud.moveTo(x+dx*c,y);hud.lineTo(x,y);hud.lineTo(x,y+dy*c);hud.stroke()}
+    hud.strokeStyle='#2bf7d4';hud.lineWidth=2.4;for(const [a,b] of BONES){hud.beginPath();hud.moveTo(...P[a]);hud.lineTo(...P[b]);hud.stroke()}
+    for(let k=0;k<21;k++){const tip=[4,8,12,16,20].includes(k);hud.fillStyle=tip?'#ffc700':'#fff';hud.beginPath();hud.arc(P[k][0],P[k][1],tip?4.5:3.4,0,7);hud.fill()}
+    const tag=`mano derecha ${det.score.toFixed(2)} · ${GESTO_TXT[det.g]} · ${det.dist.toFixed(1).replace('.',',')} m`;
+    hud.font='600 13px -apple-system,system-ui,sans-serif';const tw=hud.measureText(tag).width+16;const ty=Math.max(30,y0-26);
+    hud.fillStyle=col;hud.fillRect(Math.min(W-tw-6,Math.max(6,x0)),ty,tw,22);hud.fillStyle='#11161c';hud.fillText(tag,Math.min(W-tw-6,Math.max(6,x0))+8,ty+15.5);
+    if(learning)panel={t:`Aprendiendo «${learning.nombre}»`,s:`muestra ${learning.muestras.length} de 8 · huella de 21 rasgos`,p:learning.muestras.length/8,c:'#ffc700'};
+    else if(rec)panel={t:`Seña «${det.r.nombre}» reconocida`,s:`distancia ${det.r.d.toFixed(2)} (umbral 0,50) · ${streak.n>=18?'confirmada':'confirmando…'}`,c:'#ffc700'};
+    else if(Object.keys(senas).length)panel={t:'No conozco esta seña',s:det.r&&det.r.d!=null?`la más parecida está a ${det.r.d.toFixed(2)}`:`forma ${GESTO_TXT[det.g]}: no se parece a ninguna`,c:'#2bf7d4'};
+    else panel={t:'Veo una mano',s:'todavía no sé ninguna seña: enséñamela',c:'#2bf7d4'};
+  }else panel={t:robot.mode==='atiende'?'Te veo. No veo manos levantadas':'Buscando manos…',s:'MediaPipe busca 21 puntos en cada imagen',c:'#ffffff55'};
+  hud.fillStyle='#11161ccc';hud.fillRect(0,H-58,W,58);hud.fillStyle=panel.c;hud.fillRect(0,H-58,5,58);
+  hud.font='700 17px -apple-system,system-ui,sans-serif';hud.fillStyle='#fff';hud.fillText(panel.t,16,H-33);
+  hud.font='500 12.5px -apple-system,system-ui,sans-serif';hud.fillStyle='#c9d6de';hud.fillText(panel.s,16,H-13);
+  if(panel.p!=null){for(let i=0;i<8;i++){hud.fillStyle=i<learning.muestras.length?'#ffc700':'#ffffff26';hud.fillRect(W-16-(8-i)*22,H-38,18,18)}}
+}
+function placeBubble(b,world,now){
+  if(!b.until)return;if(now>b.until){b.el.dataset.off='1';b.until=0;return}
+  const v=world.clone().project(cam),r=stage.getBoundingClientRect(),hw=b.el.offsetWidth/2+10,h=b.el.offsetHeight+16;
+  const x=Math.max(hw,Math.min(r.width-hw,(v.x+1)/2*r.width)),y=Math.max(h+(capT?44:0),Math.min(r.height-70,(1-v.y)/2*r.height));
+  b.el.style.left=x+'px';b.el.style.top=y+'px';
+}
+
+/* ---- huella (barras) */
+const fp=$('fp'),fx=fp.getContext('2d');
+function drawFP(){
+  const W=fp.width,H=fp.height,n=21,pad=28,bw=(W-pad*2)/n;fx.clearRect(0,0,W,H);
+  fx.strokeStyle='rgba(60,60,67,.14)';fx.lineWidth=1;for(let i=0;i<=4;i++){const y=pad+(H-pad*2-40)*i/4;fx.beginPath();fx.moveTo(pad,y);fx.lineTo(W-pad,y);fx.stroke()}
+  const base=H-pad-40,hh=H-pad*2-40,sc=v=>Math.max(0,Math.min(1,(v+.6)/2.6));
+  const groups=[[0,2,'pulgar'],[2,10,'flexión de los dedos'],[10,15,'puntas'],[15,19,'abanico'],[19,21,'dirección']];
+  fx.font='600 15px -apple-system,system-ui,sans-serif';fx.textAlign='center';
+  groups.forEach(([a,b,l])=>{fx.fillStyle='rgba(60,60,67,.6)';fx.fillText(l,pad+bw*(a+b)/2,H-12);fx.fillStyle='rgba(60,60,67,.12)';fx.fillRect(pad+bw*a+3,base+8,bw*(b-a)-6,2)});
+  const f=det?det.f:null,ref=det&&det.r?det.r.ref:null;
+  const draw=(v,col,off)=>{if(!v)return;fx.fillStyle=col;v.forEach((x,i)=>{const h=sc(x)*hh;fx.fillRect(pad+bw*i+off,base-h,bw*.38,h)})};
+  draw(f,'#007aff',bw*.1);draw(ref,'#ffc700',bw*.52);
+  $('fpTxt').textContent=!f?'levanta la mano frente a la cámara del bicho':(Object.keys(senas).length?'':'enséñale una seña para ver su huella');
+}
+
+function renderPov(){
+  const el=renderer.domElement,pr=renderer.getPixelRatio(),cw=el.width,ch=el.height;
+  const pw=Math.max(64,Math.min(640,cw,Math.floor(ch*4/3))),ph=Math.floor(pw*.75);
+  scene.background=SKY;renderer.setScissorTest(true);renderer.setScissor(0,0,pw/pr,ph/pr);renderer.setViewport(0,0,pw/pr,ph/pr);
+  renderer.render(scene,povCam);
+  povCtx.drawImage(el,0,ch-ph,pw,ph,0,0,640,480);
+  scene.background=null;renderer.setScissorTest(false);renderer.setViewport(0,0,el.width/pr,el.height/pr);
+}
+let last=performance.now();
+function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage);resize();
+const camTarget=V3();
+function frame(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;const t=now/1000;
+  stepRobot(dt,t);stepPerson(dt,t);stepPov(dt);tickLearning(now);tickRecognition(now);
+  if(camObj){camObj.getWorldPosition(tmp);ring.position.copy(tmp);ring.rotation.set(0,robot.h,0)}else ring.position.set(robot.x,.27,robot.z);
+  if(ledMode!=='off'&&now>ledUntil)ledMode='off';
+  leds.forEach((m,i)=>{let c=0x2a2a2e;
+    if(ledMode==='verde')c=(i+Math.floor(t*12))%3?0x34c759:0x0f3d1c;else if(ledMode==='rojo')c=Math.sin(t*6)>0?0xff3b30:0x5a1410;
+    else if(ledMode==='arcoiris')c=new THREE.Color().setHSL(((i/24)+t*.8)%1,1,.55).getHex();else if(ledMode==='azul')c=(i+Math.floor(t*16))%4?0x007aff:0x0a2a55;
+    m.material.color.setHex(c)});
+  ledLight.intensity=ledMode==='off'?0:.8;ledLight.color.setHex(ledMode==='verde'?0x34c759:ledMode==='rojo'?0xff3b30:ledMode==='azul'?0x007aff:0xffffff);
+  placeBubble(bubbles.P,person.localToWorld(V3(0,1.95,0)),now);placeBubble(bubbles.B,V3(robot.x,.42,robot.z),now);
+  if(capT&&now>capT){$('caption').dataset.off='1';capT=0}
+  camTarget.set((robot.x+PPOS.x)/2,.55,(robot.z+PPOS.z)/2);orbit.target.lerp(camTarget,.02);orbit.update();
+  renderPov();renderer.render(scene,cam);drawHud(t,now);drawFP();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+setPreset('palma');renderLearned();estado('Patrullando');
+
+/* ---- copiar */
+document.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',async()=>{const el=$(b.dataset.copy);const txt=[...el.childNodes].filter(n=>n!==b).map(n=>n.textContent).join('');
+  try{await navigator.clipboard.writeText(txt.trim());b.textContent='Copiado'}catch(e){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selecciona y copia'}setTimeout(()=>b.textContent='Copiar',1600)}));
+</script>
+</body></html>
