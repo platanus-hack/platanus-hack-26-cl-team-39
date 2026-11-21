@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.24.0",
+      "date": "2026-11-21T23:02:23.627Z",
+      "author": "gutybv",
+      "notes": "Se expresa con luz y sonido (expresar), anillo de 12 LEDs del ReSpeaker (anillo), volumen del parlante (speaker volumen) y todo lo que aprendió solo hasta la 0.22 (cámara, flujo óptico, gesto, oído con luz, speaker, vibrar). Es la misma versión que corre en el Pi.",
+      "package": "0.24.0/bicho-0.24.0.tar.gz",
+      "size": 84290
+    },
+    {
       "version": "0.5.0",
       "date": "2026-11-21T11:00:25.770Z",
       "author": "TesslaRay",

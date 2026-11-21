@@ -13,8 +13,17 @@ import random
 import time
 from pathlib import Path
 
+import camara
+import flujo
+import flujo2
+import gesto
+import luces
 import luz
 import oido
+import oido_luz
+import respeaker
+import speaker
+import vibrar
 
 SIMULAR = os.environ.get("BICHO_SIMULAR") == "1"
 _t0 = time.time()
@@ -65,9 +74,27 @@ def leer() -> dict:
     if w is not None:
         d["wifi_dbm"] = w
     d["luz"] = luz.prendida()
+    d["verde"] = luces.prendida("verde")  # luz del "sí" (GPIO 27)
+    d["rojo"] = luces.prendida("rojo")  # luz del "no" (GPIO 22)
+    d["camara"] = camara.activa()  # solo un booleano: no toca la cámara
+    g = gesto.datos()  # dedo del medio a la vista y cuántas veces: solo copia variables
+    if g:
+        d["gesto"] = g
     o = oido.estado()  # ReSpeaker: de qué ángulo viene la voz y si hay alguien hablando
     if o:
         d["oido"] = o
+    d["oido_luz"] = oido_luz.activa()  # la luz del micrófono sigue a la voz: solo un booleano
+    r = respeaker.datos()  # monitor del chip del micrófono (comando mic): energía de voz y haces; solo copia
+    if r:
+        d["respeaker"] = r
+    d["speaker"] = speaker.sonando()  # hay una prueba del speaker sonando: solo un booleano
+    d["vibrar"] = vibrar.activa()  # está vibrando (tono grave por el parlante): solo un booleano
+    f = flujo.datos()  # ADNS-3080: solo copia lo último que leyó su hilo (si está prendido)
+    if f:
+        d["flujo"] = f
+    f2 = flujo2.datos()  # segundo ADNS-3080 (spidev0.1): igual, solo copia
+    if f2:
+        d["flujo2"] = f2
 
     if SIMULAR:
         s = time.time() - _t0

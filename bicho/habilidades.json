@@ -7,7 +7,9 @@
       "nombre": "Prender su luz",
       "que_hace": "Prende, apaga y hace parpadear la luz del GPIO 17.",
       "pidele": "bicho, prende la luz",
-      "comandos": ["luz"],
+      "comandos": [
+        "luz"
+      ],
       "origen": "equipo",
       "version": "0.2.0"
     },
@@ -78,7 +80,10 @@
       "nombre": "Ver con su cámara",
       "que_hace": "Prende su cámara (ov5647) y manda una imagen por segundo a bicho·dev, o saca una foto suelta.",
       "pidele": "bicho, ¿qué ves?",
-      "comandos": ["camara", "foto"],
+      "comandos": [
+        "camara",
+        "foto"
+      ],
       "origen": "solo",
       "a_mas_tardar": "2026-11-21T12:08:11-03:00"
     },
@@ -88,7 +93,14 @@
       "nombre": "Responder con luces de colores",
       "que_hace": "Prende, apaga y hace parpadear una luz verde (GPIO 27) y una roja (GPIO 22), y con ellas contesta que sí o que no.",
       "pidele": "bicho, contéstame con tus luces",
-      "comandos": ["verde", "rojo", "si", "no", "responder", "luces"],
+      "comandos": [
+        "verde",
+        "rojo",
+        "si",
+        "no",
+        "responder",
+        "luces"
+      ],
       "origen": "solo",
       "a_mas_tardar": "2026-11-21T12:08:11-03:00"
     },
@@ -98,14 +110,20 @@
       "nombre": "Sentir cuánto se mueve",
       "que_hace": "Lee un sensor de flujo óptico ADNS-3080 (como el de un mouse) por SPI: cuánto se movió y qué tan bien ve la superficie.",
       "pidele": "bicho, prende el sensor de flujo",
-      "comandos": ["flujo"],
+      "comandos": [
+        "flujo"
+      ],
       "origen": "solo",
       "version": "0.9.0",
       "pedido": "Agrega un sensor de flujo óptico ADNS-3080 en spidev0.0, modo SPI 3, 500 kHz.",
       "canal": "web",
       "inicio": "2026-11-21T13:31:41-03:00",
       "cuando": "2026-11-21T13:33:39-03:00",
-      "archivos": { "flujo.py": 205, "comandos.py": 152, "sensores.py": 89 },
+      "archivos": {
+        "flujo.py": 205,
+        "comandos.py": 152,
+        "sensores.py": 89
+      },
       "intentos": 1
     },
     {
@@ -114,15 +132,58 @@
       "nombre": "Usar dos sensores de flujo",
       "que_hace": "Lee un segundo ADNS-3080 en el pin 26 (spidev0.1) y los dos a la vez.",
       "pidele": "bicho, prende los dos sensores de flujo",
-      "comandos": ["flujo2", "flujos"],
+      "comandos": [
+        "flujo2",
+        "flujos"
+      ],
       "origen": "solo",
       "version": "0.10.0",
       "pedido": "puedes aprender a conectar el otro sensor andas-3080 pero en el otro pin 26?",
       "canal": "web",
       "inicio": "2026-11-21T13:42:37-03:00",
       "cuando": "2026-11-21T13:44:22-03:00",
-      "archivos": { "flujo2.py": 195, "comandos.py": 176, "sensores.py": 93 },
+      "archivos": {
+        "flujo2.py": 195,
+        "comandos.py": 176,
+        "sensores.py": 93
+      },
       "intentos": 1
+    },
+    {
+      "id": "volumen",
+      "icono": "🔊",
+      "nombre": "Subir el volumen del parlante",
+      "que_hace": "Ve y fija el volumen de ALSA de su salida de audio (en el ReSpeaker, el PCM-1 que venía bajo) y lo repone al arrancar.",
+      "pidele": "bicho, sube tu volumen al máximo",
+      "comandos": [
+        "speaker"
+      ],
+      "origen": "equipo",
+      "version": "0.21.0"
+    },
+    {
+      "id": "anillo",
+      "icono": "⭕",
+      "nombre": "Manejar su anillo de luz",
+      "que_hace": "Muestra en los 12 LEDs del ReSpeaker la luz de cualquier estado de su idioma, patrones, efectos del chip y LED por LED (este último con el firmware 2.0.7+).",
+      "pidele": "bicho, pon tu anillo en modo alerta",
+      "comandos": [
+        "anillo"
+      ],
+      "origen": "equipo",
+      "version": "0.23.0"
+    },
+    {
+      "id": "expresar",
+      "icono": "🎭",
+      "nombre": "Expresarse con luz y sonido",
+      "que_hace": "Muestra un estado de su idioma con luz y sonido a la vez, igual que el simulador, o una escena completa.",
+      "pidele": "bicho, muéstrame cómo te pones contento",
+      "comandos": [
+        "expresar"
+      ],
+      "origen": "equipo",
+      "version": "0.24.0"
     }
   ]
 }
