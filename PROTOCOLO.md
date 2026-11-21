@@ -1,61 +1,55 @@
-# Protocolo bicho ↔ web
+# Protocolo bicho ↔ web · harness
 
-Cada mensaje es **una línea JSON** terminada en `\n`. Es el mismo formato por los dos canales:
+El bicho es un **Raspberry Pi 3** que corre `bichod` ([`bicho/`](bicho/)). Todo pasa por **un solo puerto, 8080**:
 
-| Canal | Dónde | Para qué |
+| Qué | Dónde | Para qué |
 |---|---|---|
-| USB | Serial a **115200** baudios | Monitor y flasheo por cable (Web Serial + esptool-js) |
-| WiFi | WebSocket `ws://<bicho>:81/` | Monitor inalámbrico |
-| WiFi | HTTP `http://<bicho>/update` (POST multipart, campo `firmware`) | Actualización OTA |
-| WiFi | HTTP `http://<bicho>/info` | Lo mismo que el mensaje `info`, para probar con curl |
+| WebSocket | `ws://<bicho>:8080/ws` | Info, sensores, logs y comandos (líneas JSON) |
+| HTTP GET | `http://<bicho>:8080/info` | La misma info, para probar con curl |
+| HTTP POST | `http://<bicho>:8080/update` | Instalar una versión nueva (cuerpo: el `.tar.gz`) |
 
-`<bicho>` es `bicho.local` (mDNS) o la IP que el bicho reporta en `info`.
+`<bicho>` es `bicho.local` (si se instaló con `--hostname bicho`) o la IP del Pi. Cada mensaje del WebSocket es un objeto JSON en una línea.
 
 ## Bicho → web
 
 ### `info`: versión y qué hace
 
-Se manda al arrancar, cuando se conecta un cliente, cuando se pide con `{"cmd":"info"}` y cada 10 s.
+Se manda al conectarse, cuando se pide con `{"cmd":"info"}` y cada 10 s.
 
 ```json
-{"t":"info","name":"bicho","fw":"0.1.0","desc":"Qué hace esta versión","chip":"ESP32-S3","build":"Nov 21 2026 03:12:00","ip":"192.168.1.50","mac":"AA:BB:CC:DD:EE:FF","uptime":42,"heap":201234}
+{"t":"info","name":"bicho","fw":"0.1.0","desc":"Qué hace esta versión","chip":"Raspberry Pi 3 Model B Rev 1.2","build":"2026-11-21 03:12","ip":"192.168.1.50","mac":"B8:27:EB:12:34:56","uptime":42,"heap":512000000,"python":"3.11.2"}
 ```
 
-- `fw` (obligatorio): versión **X.Y.Z**. La web la compara con las versiones publicadas.
-- `desc`: el "qué hace" que se muestra en la web. Sin comillas dobles adentro.
-- El resto es opcional y se muestra si viene.
+- `fw` (obligatorio): versión **X.Y.Z**, sacada de `bicho/version.json`. La web la compara con las versiones publicadas.
+- `desc`: el "qué hace" que muestra la web.
+- `heap`: memoria libre en bytes. `uptime`: segundos desde que arrancó el agente.
 
-### `s`: frame de sensores
+### `s`: lecturas de sensores
 
 ```json
-{"t":"s","ms":12345,"d":{"mic":0.42,"imu":{"pitch":3.1,"roll":-0.4},"servo":[90,45,10],"boton":true}}
+{"t":"s","ms":12345,"d":{"temp_cpu":48.3,"mic":0.42,"imu":{"pitch":3.1,"roll":-0.4},"servo":[90,45],"boton":true}}
 ```
 
-- `d` acepta cualquier cosa. La web aplana objetos y arrays (`imu.pitch`, `servo[0]`) y grafica todo lo numérico o booleano.
-- No hay que registrar nada en la web: si agregas un sensor nuevo al firmware, aparece solo.
-- Por defecto va a 20 Hz.
+- `d` es lo que devuelve `leer()` en `bicho/sensores.py`. La web aplana objetos y listas (`imu.pitch`, `servo[0]`) y grafica todo lo numérico o booleano. No hay que registrar nada en la web.
+- Por defecto va a 20 Hz, y solo mientras haya alguien conectado.
 
 ### `log`: mensajes para la consola
 
 ```json
-{"t":"log","lvl":"info","msg":"WiFi conectado: 192.168.1.50"}
+{"t":"log","lvl":"info","msg":"v0.2.0 instalada, reiniciando"}
 ```
-
-Las líneas que no son JSON (por ejemplo `Serial.println("hola")` o los mensajes de arranque del ESP32) también aparecen en la consola. No rompen nada.
 
 ## Web → bicho
 
 | Comando | Efecto |
 |---|---|
 | `{"cmd":"info"}` | Responde con `info` |
-| `{"cmd":"rate","hz":50}` | Cambia la frecuencia de los frames de sensores (de 1 a 100 Hz) |
-| `{"cmd":"reboot"}` | Reinicia el bicho |
+| `{"cmd":"rate","hz":50}` | Cambia la frecuencia de las lecturas (de 1 a 100 Hz) |
+| `{"cmd":"reboot"}` | Reinicia el agente (no el Pi) |
+| cualquier otro | Lo resuelve `manejar()` en `bicho/comandos.py`, p. ej. `{"cmd":"servo","i":0,"deg":90}` |
 
-Los comandos propios (actuadores, servos, LEDs) se agregan en `handleCustomCmd()` del firmware y se mandan desde la consola de la web. Por ejemplo: `{"cmd":"servo","i":0,"deg":90}`.
+## Versiones
 
-## Versiones de firmware
-
-1. Sube `FW_VERSION` (y `FW_DESC`) en `firmware/bicho/bicho.ino`.
-2. Compila exportando los binarios: en el Arduino IDE es **Sketch → Export Compiled Binary**; con la línea de comandos, `arduino-cli compile --export-binaries`.
-3. Publica la versión desde `web/`: `npm run release -- --version X.Y.Z --notes "..." --dir ../firmware/bicho/build`.
-4. En ~10 s la web la muestra como **disponible**. El botón **Actualizar** la graba por USB (imagen merged en 0x0) o por WiFi (OTA con el .bin de la app).
+1. Sube `version` (y `desc`) en `bicho/version.json`.
+2. Desde `web/`: `npm run release -- --notes "qué cambia"`. Crea `web/public/firmware/<versión>/bicho-<versión>.tar.gz` y lo agrega a `manifest.json`.
+3. bicho·dev la muestra como **disponible**. **Actualizar** hace `POST /update` con el paquete; `bichod` lo instala en `/opt/bicho/releases/<versión>`, apunta `/opt/bicho/current` a esa carpeta y se reinicia solo con la versión nueva. Si el paquete trae un `requirements.txt` distinto, instala esas dependencias antes de cambiar.

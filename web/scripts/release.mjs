@@ -1,19 +1,20 @@
 #!/usr/bin/env node
-// Publica una versión de firmware para que aparezca en la web como "disponible".
+// Publica una versión del bicho para que bicho·dev la muestre como disponible.
 //
-// Uso:
-//   npm run release -- --version 0.2.0 --notes "Qué hace esta versión" --dir ../firmware/bicho/build
-//   npm run release -- --version 0.2.0 --notes "..." --app ruta/bicho.ino.bin [--merged ruta/bicho.ino.merged.bin] [--author Carlos]
+// Uso (desde web/):
+//   npm run release -- --notes "Qué cambia en esta versión" [--author Carlos] [--force]
 //
-// Con --dir busca *.ino.bin y *.ino.merged.bin (lo que deja Arduino IDE con "Sketch > Export Compiled Binary"
-// o arduino-cli compile --export-binaries). Copia todo a public/firmware/<version>/ y actualiza manifest.json.
+// Toma la carpeta ../bicho, lee la versión de bicho/version.json (súbela antes de publicar),
+// la empaqueta como public/firmware/<versión>/bicho-<versión>.tar.gz y la agrega a manifest.json.
 
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { basename, dirname, join, resolve } from 'node:path'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const src = resolve(root, '..', 'bicho')
 const fwDir = join(root, 'public', 'firmware')
 const manifestPath = join(fwDir, 'manifest.json')
 
@@ -34,71 +35,52 @@ function fail(msg) {
   process.exit(1)
 }
 
-function findIn(dir, test) {
-  const hits = []
-  const walk = (d) => {
-    for (const f of readdirSync(d)) {
-      const p = join(d, f)
-      if (statSync(p).isDirectory()) walk(p)
-      else if (test(f)) hits.push(p)
-    }
-  }
-  walk(dir)
-  return hits.sort((x, y) => statSync(y).mtimeMs - statSync(x).mtimeMs)[0]
-}
-
 const o = args()
-const version = (o.version || '').replace(/^v/, '')
-if (!/^\d+\.\d+\.\d+([-.][\w.]+)?$/.test(version)) fail('Falta --version X.Y.Z (igual al FW_VERSION del firmware)')
-if (!o.notes) fail('Falta --notes "qué hace esta versión"')
-
-let app = o.app
-let merged = o.merged
-if (o.dir) {
-  const d = resolve(o.dir)
-  if (!existsSync(d)) fail(`No existe ${d}`)
-  merged ??= findIn(d, (f) => f.endsWith('.merged.bin'))
-  app ??= findIn(d, (f) => f.endsWith('.bin') && !/\.(merged|bootloader|partitions)\.bin$/.test(f) && f !== 'boot_app0.bin')
-}
-if (!app && !merged) fail('No encontré binarios. Usa --dir, --app o --merged')
-
-const buf = readFileSync(app ?? merged)
-if (app && buf[0] !== 0xe9) fail(`${app} no parece una app ESP32 (no empieza con 0xE9)`)
-
-// Avisar si el binario no contiene la versión declarada (FW_VERSION queda como string en el .bin)
-if (app && !buf.includes(Buffer.from(version))) {
-  console.warn(`⚠ El binario no contiene el texto "${version}". ¿Subiste FW_VERSION antes de compilar?`)
-}
+if (!existsSync(join(src, 'bichod.py'))) fail(`No encuentro ${src}/bichod.py`)
+const meta = JSON.parse(readFileSync(join(src, 'version.json'), 'utf8'))
+const version = String(meta.version || '')
+if (!/^\d+\.\d+\.\d+([-.][\w.]+)?$/.test(version)) fail(`Versión inválida en bicho/version.json: "${version}"`)
+if (o.version && o.version.replace(/^v/, '') !== version) fail(`--version ${o.version} no coincide con bicho/version.json (${version}). Sube la versión ahí.`)
+const notes = o.notes || meta.desc
+if (!notes) fail('Falta --notes "qué hace esta versión"')
 
 const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : { device: 'bicho', releases: [] }
-if (manifest.releases.some((r) => r.version === version) && o.force !== 'true') fail(`La versión ${version} ya existe. Usa otra o agrega --force`)
+if (manifest.releases.some((r) => r.version === version) && o.force !== 'true') {
+  fail(`La versión ${version} ya está publicada. Sube "version" en bicho/version.json (o usa --force para reemplazarla).`)
+}
 
 let author = o.author
 if (!author) {
   try {
-    author = execSync('git config user.name', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+    author = execFileSync('git', ['config', 'user.name'], { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
   } catch {
     author = process.env.USER
   }
 }
 
+// Copia limpia en un directorio temporal, con la fecha de publicación en version.json
+const stage = mkdtempSync(join(tmpdir(), 'bicho-release-'))
+cpSync(src, stage, {
+  recursive: true,
+  filter: (p) => !/(__pycache__|\.pyc$|\.venv|\.DS_Store|\/\.git(\/|$))/.test(p),
+})
+const built = new Date().toISOString().slice(0, 16).replace('T', ' ')
+writeFileSync(join(stage, 'version.json'), JSON.stringify({ ...meta, built }, null, 2) + '\n')
+
 const outDir = join(fwDir, version)
 mkdirSync(outDir, { recursive: true })
-const entry = { version, date: new Date().toISOString(), author, notes: o.notes }
-if (o.chip) entry.chip = o.chip
-if (app) {
-  copyFileSync(app, join(outDir, 'app.bin'))
-  entry.app = `${version}/app.bin`
-}
-if (merged) {
-  copyFileSync(merged, join(outDir, 'merged.bin'))
-  entry.merged = `${version}/merged.bin`
-}
+const file = `bicho-${version}.tar.gz`
+const out = join(outDir, file)
+// COPYFILE_DISABLE evita que el tar de macOS meta archivos ._ con atributos extendidos
+execFileSync('tar', ['-czf', out, '-C', stage, '.'], { env: { ...process.env, COPYFILE_DISABLE: '1' } })
+rmSync(stage, { recursive: true, force: true })
 
+const entry = { version, date: new Date().toISOString(), author, notes, package: `${version}/${file}`, size: statSync(out).size }
 manifest.releases = [entry, ...manifest.releases.filter((r) => r.version !== version)]
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 
-console.log(`✔ Publicada v${version}`)
-if (app) console.log(`  app:    ${basename(app)} → public/firmware/${entry.app}`)
-if (merged) console.log(`  merged: ${basename(merged)} → public/firmware/${entry.merged}`)
-console.log('  La web la muestra como disponible en ~10 s.')
+console.log(`✔ Publicada v${version} (${(entry.size / 1024).toFixed(1)} KB)`)
+console.log(`  public/firmware/${entry.package}`)
+console.log(`  "${notes}"`)
+console.log('  bicho·dev la muestra como disponible en ~10 s.')
+console.log(`  Recuerda hacer commit de public/firmware/ para que el resto del equipo la vea.`)

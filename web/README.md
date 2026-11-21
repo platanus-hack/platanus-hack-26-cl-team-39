@@ -1,13 +1,13 @@
 # bicho·dev
 
-Herramienta interna del equipo para el firmware del bicho:
+Herramienta interna del equipo para el software del bicho (un Raspberry Pi 3 con [`bichod`](../bicho/)):
 
-- muestra la **versión de firmware cargada** en el bicho y **qué hace**;
-- muestra la **versión disponible** y la **graba** por USB o WiFi;
+- muestra la **versión cargada** en el bicho y **qué hace**;
+- muestra la **versión disponible** y la **instala** por WiFi con un botón;
 - muestra la **versión de la web** (arriba a la derecha);
 - grafica los **sensores en tiempo real** (clic en uno para ampliarlo);
-- tiene una **consola** para leer el Serial y mandar comandos;
-- trae un **simulador** para trabajar sin el bicho enchufado.
+- tiene una **consola** para ver los mensajes del bicho y mandarle comandos;
+- trae un **simulador** para trabajar sin el bicho prendido.
 
 El bicho y la web se hablan con el contrato de [`../PROTOCOLO.md`](../PROTOCOLO.md).
 
@@ -17,22 +17,20 @@ El bicho y la web se hablan con el contrato de [`../PROTOCOLO.md`](../PROTOCOLO.
 npm install && npm run dev
 ```
 
-Abre <http://localhost:5173> en **Chrome o Edge**: Web Serial no existe en Safari ni en Firefox.
+Abre <http://localhost:5173>. En la barra lateral, en **Conexión**:
 
-En la barra lateral, en **Conexión**:
-
-- **USB:** enchufa el ESP32 y elige el puerto. Sirve para monitorear y para grabar, aunque el firmware esté roto. La próxima vez basta con **Reconectar al último USB**, y si lo enchufas con la web abierta aparece un aviso para conectar.
-- **WiFi:** escribe `bicho.local` o la IP. Solo funciona con la web en `localhost`, porque desde un sitio HTTPS el navegador bloquea `ws://`.
+- **WiFi:** escribe `bicho.local` o la IP del Pi (el puerto 8080 se agrega solo). Corre la web en `localhost`: desde un sitio HTTPS el navegador bloquea la conexión con el Pi.
 - **Simulador:** datos falsos para desarrollar la interfaz.
 
-Para grabar un `.bin` que tengas en tu computador, suéltalo en cualquier parte de la página.
+Para instalar un paquete `.tar.gz` que tengas en tu computador, suéltalo en cualquier parte de la página.
 
-## Publicar una versión de firmware
+## Publicar una versión del bicho
+
+1. Sube `version` en [`../bicho/version.json`](../bicho/version.json).
+2. Corre:
 
 ```bash
-npm run release -- --version 0.2.0 --notes "Agrega el micrófono" --dir ../firmware/bicho/build
+npm run release -- --notes "Agrega el micrófono"
 ```
 
-Copia los `.bin` a `public/firmware/<versión>/` y actualiza `manifest.json`. La web la muestra como disponible en unos 10 segundos y le avisa a quien la tenga abierta.
-
-Antes de compilar, sube `FW_VERSION` en el firmware: la web compara contra eso.
+El paquete queda en `public/firmware/<versión>/` y se agrega a `manifest.json`. La web lo muestra como disponible en unos 10 segundos y avisa a quien la tenga abierta. Haz commit de `public/firmware/` para que el resto del equipo también lo vea.

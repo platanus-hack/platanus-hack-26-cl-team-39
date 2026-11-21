@@ -1,0 +1,4 @@
+{
+  "version": "0.1.0",
+  "desc": "Agente base: manda los sensores del Raspberry por WiFi y acepta actualizaciones desde bicho·dev."
+}

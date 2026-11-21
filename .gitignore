@@ -19,5 +19,5 @@ __pycache__/
 !.env.example
 secrets.h
 
-# Binarios de compilación del firmware (los publicados viven en web/public/firmware/)
-firmware/**/build/
+# Paquetes de prueba del agente
+bicho/*.tar.gz

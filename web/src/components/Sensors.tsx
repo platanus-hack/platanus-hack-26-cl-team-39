@@ -12,11 +12,13 @@ const KNOWN: Record<string, [string, string]> = {
   'servo[1]': ['Servo 2', '°'],
   'servo[2]': ['Servo 3', '°'],
   temp_c: ['Temperatura', '°C'],
-  temp_chip: ['Temp. del chip', '°C'],
+  temp_cpu: ['Temp. CPU', '°C'],
+  carga: ['Carga CPU', ''],
+  wifi_dbm: ['Señal WiFi', 'dBm'],
   boton: ['Botón', ''],
-  pot: ['Potenciómetro', ''],
-  rssi: ['Señal WiFi', 'dBm'],
-  heap: ['Memoria libre', 'B'],
+  'imu.ax': ['Acel. X', 'g'],
+  'imu.ay': ['Acel. Y', 'g'],
+  'imu.az': ['Acel. Z', 'g'],
 }
 
 function fmt(v: unknown) {
@@ -138,7 +140,7 @@ export function Sensors({ store, connected, onRate }: { store: SensorStore; conn
                   El firmware tiene que mandar <code>{'{"t":"s","d":{…}}'}</code>. Cada campo nuevo aparece solo.
                 </>
               ) : (
-                'Conecta el bicho por USB o WiFi, o abre el simulador.'
+                'Conecta el bicho por WiFi o abre el simulador.'
               )}
             </p>
           </div>

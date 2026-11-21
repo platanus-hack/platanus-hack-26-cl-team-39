@@ -172,6 +172,14 @@ export function fmtAgo(iso?: string) {
   return d.toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+export function fmtBytes(n: number) {
+  if (!Number.isFinite(n)) return '—'
+  if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1)} GB`
+  if (n >= 1024 ** 2) return `${Math.round(n / 1024 ** 2)} MB`
+  if (n >= 1024) return `${Math.round(n / 1024)} KB`
+  return `${n} B`
+}
+
 export function fmtUptime(sec?: number) {
   if (sec == null || !Number.isFinite(sec)) return '—'
   const h = Math.floor(sec / 3600)

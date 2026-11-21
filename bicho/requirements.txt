@@ -1,0 +1,3 @@
+# Dependencias de pip para los sensores (bichod.py no necesita ninguna).
+# Si una versión nueva cambia este archivo, bichod las instala al actualizarse.
+# smbus2

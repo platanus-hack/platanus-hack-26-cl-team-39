@@ -1,25 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Console, type ConsoleLine } from './components/Console'
+import { Countdown } from './components/Countdown'
 import { Sensors } from './components/Sensors'
 import { Toasts, type Toast } from './components/Toasts'
-import { Icon, SparkDefs, fmtAgo, fmtUptime } from './components/ui'
-import {
-  cmpSemver,
-  fetchBin,
-  flashOta,
-  flashUsb,
-  loadManifest,
-  looksLikeApp,
-  looksLikeMerged,
-  usbParts,
-  type Manifest,
-  type Release,
-} from './lib/firmware'
-import { SerialLink, SimLink, WifiLink, type DeviceLink, type LineDir, type LinkHandlers, type LinkStatus } from './lib/links'
+import { Icon, SparkDefs, fmtAgo, fmtBytes, fmtUptime } from './components/ui'
+import { cmpSemver, fetchPackage, loadManifest, looksLikePackage, uploadPackage, type Manifest, type Release } from './lib/firmware'
+import { SimLink, WifiLink, normalizeHost, type DeviceLink, type LineDir, type LinkHandlers, type LinkStatus } from './lib/links'
 import { CMD, type DeviceInfo } from './lib/protocol'
 import { SensorStore } from './lib/sensors'
 
-const hasSerial = typeof navigator !== 'undefined' && 'serial' in navigator
 const MAX_LINES = 600
 
 type FlashPhase = 'idle' | 'preparing' | 'flashing' | 'rebooting' | 'done' | 'warn' | 'error'
@@ -32,7 +21,7 @@ const SIM_RELEASE: Release = {
   date: new Date().toISOString(),
   author: 'simulador',
   notes: '(simulada) Agrega detección de voz y baile de servos.',
-  app: 'sim',
+  package: 'sim',
 }
 
 const NAV = [
@@ -128,7 +117,6 @@ export default function App() {
   const [flash, setFlash] = useState<FlashState>({ phase: 'idle', pct: 0, log: [] })
   const [lines, setLines] = useState<ConsoleLine[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
-  const [knownPorts, setKnownPorts] = useState<SerialPort[]>([])
   const [dragging, setDragging] = useState(false)
 
   const store = useRef(new SensorStore()).current
@@ -137,14 +125,12 @@ export default function App() {
   const lineId = useRef(0)
   const dirty = useRef(false)
   const expect = useRef<{ version?: string; timer?: ReturnType<typeof setTimeout> } | null>(null)
-  const suppressDisconnect = useRef(false)
   const fileInput = useRef<HTMLInputElement>(null)
   const mainRef = useRef<HTMLElement>(null)
   const { active, scrolled, pick } = useScrollSpy(mainRef)
   const toastId = useRef(0)
   const prevStatus = useRef<LinkStatus>('disconnected')
   const userClosing = useRef(false)
-  const handlersRef = useRef<LinkHandlers | null>(null)
   const startFlashRef = useRef<(s: FlashSource) => void>(() => {})
   const busyRef = useRef(false)
 
@@ -158,11 +144,6 @@ export default function App() {
     },
     [closeToast],
   )
-
-  /* ---------- puertos USB ya autorizados ---------- */
-  const refreshPorts = useCallback(() => {
-    if (hasSerial) navigator.serial.getPorts().then(setKnownPorts).catch(() => {})
-  }, [])
 
   /* ---------- consola con buffer (las lecturas llegan a 20+ Hz) ---------- */
   const pushLine = useCallback((text: string, dir: LineDir) => {
@@ -192,19 +173,13 @@ export default function App() {
     () => ({
       onLine: pushLine,
       onStatus: (s, detail) => {
-        if (s === 'disconnected' && suppressDisconnect.current) return
         const prev = prevStatus.current
         prevStatus.current = s
         setStatus(s)
         setStatusDetail(detail)
         if (s === 'connected' && (prev === 'connecting' || prev === 'disconnected')) {
           const k = linkRef.current?.kind
-          toast(
-            k === 'sim'
-              ? { tone: 'ok', title: 'Simulador abierto', body: 'Datos simulados, sin hardware.' }
-              : { tone: 'ok', title: `Conectado por ${k === 'wifi' ? 'WiFi' : 'USB'}`, body: detail },
-            3000,
-          )
+          toast(k === 'sim' ? { tone: 'ok', title: 'Simulador abierto', body: 'Datos simulados, sin hardware.' } : { tone: 'ok', title: 'Conectado por WiFi', body: detail }, 3000)
         }
         if (s === 'disconnected') {
           if (!userClosing.current && prev !== 'disconnected') toast({ tone: 'warn', title: 'Se perdió la conexión', body: detail ?? 'El bicho dejó de responder.' })
@@ -229,7 +204,7 @@ export default function App() {
                 ...f,
                 phase: 'warn',
                 pct: 1,
-                msg: `Se grabó, pero el bicho dice v${i.fw} y esperábamos v${ex.version}. ¿Subieron FW_VERSION antes de compilar?`,
+                msg: `Se instaló, pero el bicho dice v${i.fw} y esperábamos v${ex.version}.`,
               }))
             }
           }
@@ -238,7 +213,6 @@ export default function App() {
     }),
     [pushLine, store, toast],
   )
-  handlersRef.current = handlers
 
   /* ---------- versiones publicadas ---------- */
   const refreshManifest = useCallback(async () => {
@@ -284,26 +258,13 @@ export default function App() {
     [pushLine, store],
   )
 
-  const connectUsb = async () => {
-    try {
-      const port = await navigator.serial.requestPort()
-      refreshPorts()
-      await attach(new SerialLink(port, handlers))
-    } catch (e) {
-      if ((e as Error).name !== 'NotFoundError') pushLine(`USB: ${(e as Error).message}`, 'sys')
-    }
-  }
-  /** Vuelve a abrir un puerto que ya se autorizó antes, sin el diálogo del navegador. */
-  const reconnectUsb = () => {
-    if (knownPorts[0]) attach(new SerialLink(knownPorts[0], handlers))
-  }
   const connectWifi = () => {
     try {
       localStorage.setItem('bicho.host', host)
     } catch {
       /* sin localStorage */
     }
-    attach(new WifiLink(host.trim(), handlers))
+    attach(new WifiLink(host, handlers))
   }
   const connectSim = () => attach(new SimLink(handlers))
   const disconnect = () => {
@@ -313,8 +274,8 @@ export default function App() {
 
   const send = (l: string) => linkRef.current?.sendLine(l).catch((e) => pushLine(`No se pudo enviar: ${e.message}`, 'sys'))
 
-  /* ---------- actualizar firmware ---------- */
-  const flashVia = link?.kind === 'wifi' ? 'WiFi' : link?.kind === 'sim' ? 'el simulador' : 'USB'
+  /* ---------- actualizar ---------- */
+  const flashVia = link?.kind === 'sim' ? 'el simulador' : 'WiFi'
   const busy = flash.phase === 'preparing' || flash.phase === 'flashing' || flash.phase === 'rebooting'
 
   const startFlash = async (src: FlashSource) => {
@@ -323,8 +284,10 @@ export default function App() {
     setFlash({ phase: 'preparing', pct: 0, target: label, via: flashVia, log: [] })
     const current = linkRef.current
     try {
+      if (!current) throw new Error('Conecta el bicho por WiFi para poder actualizarlo.')
+
       /* Simulador */
-      if (current?.kind === 'sim') {
+      if (current.kind === 'sim') {
         setFlash((f) => ({ ...f, phase: 'flashing' }))
         expect.current = { version: target }
         await (current as SimLink).simulateFlash(target ?? '0.0.0-local', src.kind === 'release' ? src.rel.notes : undefined, (p) =>
@@ -333,78 +296,40 @@ export default function App() {
         return
       }
 
-      /* Binarios */
-      let app: Uint8Array | undefined
-      let merged: Uint8Array | undefined
+      /* Paquete */
+      let pkg: Uint8Array
       if (src.kind === 'file') {
-        const bin = new Uint8Array(await src.file.arrayBuffer())
-        if (looksLikeMerged(bin)) merged = bin
-        else if (looksLikeApp(bin)) app = bin
-        else throw new Error('El archivo no parece un firmware ESP32 (.bin de la app o .merged.bin).')
-        flashLog(`${src.file.name}: ${merged ? 'imagen merged' : 'app'} de ${(bin.length / 1024).toFixed(0)} KB`)
+        pkg = new Uint8Array(await src.file.arrayBuffer())
+        if (!looksLikePackage(pkg)) throw new Error('El archivo no es un paquete .tar.gz del bicho.')
+        flashLog(`${src.file.name}: ${fmtBytes(pkg.length)}`)
       } else {
-        const wantMerged = current?.kind !== 'wifi' && src.rel.merged
-        if (wantMerged) merged = await fetchBin(src.rel.merged!)
-        else if (src.rel.app) app = await fetchBin(src.rel.app)
-        else throw new Error('Esta versión solo trae imagen merged; por WiFi se necesita el .bin de la app.')
-        flashLog(`Descargado ${wantMerged ? src.rel.merged : src.rel.app}`)
+        if (!src.rel.package) throw new Error('Esta versión no trae paquete.')
+        pkg = await fetchPackage(src.rel.package)
+        flashLog(`Descargado ${src.rel.package} (${fmtBytes(pkg.length)})`)
       }
 
-      /* WiFi OTA */
-      if (current?.kind === 'wifi') {
-        if (!app) throw new Error('Por WiFi solo se puede subir el .bin de la app, no la imagen merged. Usa USB para esa.')
-        const wl = current as WifiLink
-        setFlash((f) => ({ ...f, phase: 'flashing' }))
-        flashLog(`Subiendo a ${wl.httpBase}/update…`)
-        const res = await flashOta(wl.httpBase, app, (p) => setFlash((f) => ({ ...f, pct: p })))
-        flashLog(`Respuesta del bicho: ${res || 'OK'}`)
-        setFlash((f) => ({ ...f, phase: 'rebooting', pct: 1, msg: 'Reiniciando… esperando que vuelva a reportar su versión.' }))
-        expect.current = {
-          version: target,
-          timer: setTimeout(() => {
-            if (expect.current) {
-              expect.current = null
-              setFlash((f) => ({ ...f, phase: 'warn', msg: 'Subió, pero el bicho no volvió a conectarse en 30 s. Revisa la consola o el monitor serial.' }))
-            }
-          }, 30_000),
-        }
-        return
-      }
-
-      /* USB */
-      if (!hasSerial) throw new Error('Este navegador no tiene Web Serial. Usa Chrome o Edge.')
-      let port: SerialPort
-      if (current?.kind === 'serial') {
-        port = (current as SerialLink).port
-        suppressDisconnect.current = true
-        await current.close()
-      } else {
-        port = await navigator.serial.requestPort()
-      }
+      /* Subida al agente */
+      const wl = current as WifiLink
       setFlash((f) => ({ ...f, phase: 'flashing' }))
-      const parts = usbParts({ app, merged })
-      await flashUsb(port, parts, flashLog, (p) => setFlash((f) => ({ ...f, pct: p })))
-      suppressDisconnect.current = false
-      setFlash((f) => ({ ...f, phase: 'rebooting', msg: 'Grabado. Reabriendo el monitor serial…' }))
+      flashLog(`Subiendo a ${wl.httpBase}/update…`)
+      const res = await uploadPackage(wl.httpBase, pkg, (p) => setFlash((f) => ({ ...f, pct: p })))
+      flashLog(`Respuesta del bicho: ${res || 'OK'}`)
+      setFlash((f) => ({ ...f, phase: 'rebooting', pct: 1, msg: 'Reiniciando… esperando que vuelva a reportar su versión.' }))
       expect.current = {
         version: target,
         timer: setTimeout(() => {
           if (expect.current) {
             expect.current = null
-            setFlash((f) => ({ ...f, phase: 'warn', msg: 'Grabado, pero el bicho no reportó su versión en 15 s. ¿El firmware manda {"t":"info"} al arrancar?' }))
+            setFlash((f) => ({ ...f, phase: 'warn', msg: 'Se instaló, pero el bicho no volvió en 30 s. Revisa `journalctl -u bichod` en el Pi.' }))
           }
-        }, 15_000),
+        }, 30_000),
       }
-      await new Promise((r) => setTimeout(r, 300))
-      await attach(new SerialLink(port, handlers))
     } catch (e) {
-      suppressDisconnect.current = false
-      const msg = (e as Error).name === 'NotFoundError' ? 'Cancelado: no se eligió puerto.' : String((e as Error).message ?? e)
+      const msg = String((e as Error).message ?? e)
       flashLog(`✖ ${msg}`)
       setFlash((f) => ({ ...f, phase: 'error', msg }))
     }
   }
-
   startFlashRef.current = startFlash
   busyRef.current = busy
 
@@ -414,8 +339,8 @@ export default function App() {
   const cmp = info && latest ? cmpSemver(latest.version, info.fw) : null
   const fwState: FwState = busy ? 'flashing' : cmp === null ? 'unknown' : cmp > 0 ? 'outdated' : cmp === 0 ? 'uptodate' : 'newer'
   const runningRelease = info ? releases.find((r) => r.version === info.fw) : undefined
-  const kindLabel = link?.kind === 'serial' ? 'USB' : link?.kind === 'wifi' ? 'WiFi' : 'Simulador'
-  const canFlash = !busy && (!!link || hasSerial)
+  const kindLabel = link?.kind === 'sim' ? 'Simulador' : 'WiFi'
+  const canFlash = !busy && connected
 
   const statusText = busy
     ? `Actualizando · ${Math.round(flash.pct * 100)} %`
@@ -449,15 +374,15 @@ export default function App() {
     setFavicon(busy || fwState === 'newer' ? '#007aff' : !connected ? '#aeaeb2' : fwState === 'outdated' ? '#ff9f0a' : fwState === 'uptodate' ? '#34c759' : '#aeaeb2')
   }, [busy, flash.pct, info, connected, statusText, fwState])
 
-  /* ---------- avisos del grabado ---------- */
+  /* ---------- avisos de la actualización ---------- */
   const prevPhase = useRef<FlashPhase>('idle')
   useEffect(() => {
     const p = prevPhase.current
     prevPhase.current = flash.phase
     if (p === flash.phase) return
-    if (flash.phase === 'done') toast({ tone: 'ok', title: 'Firmware actualizado', body: flash.msg })
-    if (flash.phase === 'warn') toast({ tone: 'warn', title: 'Revisa el grabado', body: flash.msg }, 9000)
-    if (flash.phase === 'error') toast({ tone: 'err', title: 'No se pudo grabar', body: flash.msg }, 9000)
+    if (flash.phase === 'done') toast({ tone: 'ok', title: 'Bicho actualizado', body: flash.msg })
+    if (flash.phase === 'warn') toast({ tone: 'warn', title: 'Revisa la actualización', body: flash.msg }, 9000)
+    if (flash.phase === 'error') toast({ tone: 'err', title: 'No se pudo actualizar', body: flash.msg }, 9000)
   }, [flash.phase, flash.msg, toast])
 
   /* ---------- aviso cuando alguien publica una versión nueva ---------- */
@@ -471,33 +396,7 @@ export default function App() {
       toast({ tone: 'info', title: `Nueva versión publicada: v${v}`, body: [published?.author, published?.notes].filter(Boolean).join(' · ') }, 9000)
   }, [published?.version, published?.author, published?.notes, toast])
 
-  /* ---------- detectar el bicho al enchufarlo ---------- */
-  useEffect(() => {
-    if (!hasSerial) return
-    refreshPorts()
-    const onConnect = (e: Event) => {
-      refreshPorts()
-      const port = e.target as SerialPort
-      if (linkRef.current || !handlersRef.current) return
-      toast(
-        {
-          tone: 'info',
-          title: 'Bicho enchufado',
-          body: 'Se detectó por USB un puerto que ya usaste.',
-          action: { label: 'Conectar', onClick: () => attach(new SerialLink(port, handlersRef.current!)) },
-        },
-        12000,
-      )
-    }
-    navigator.serial.addEventListener('connect', onConnect)
-    navigator.serial.addEventListener('disconnect', refreshPorts)
-    return () => {
-      navigator.serial.removeEventListener('connect', onConnect)
-      navigator.serial.removeEventListener('disconnect', refreshPorts)
-    }
-  }, [refreshPorts, toast, attach])
-
-  /* ---------- soltar un .bin en cualquier parte ---------- */
+  /* ---------- soltar un paquete en cualquier parte ---------- */
   useEffect(() => {
     let depth = 0
     const hasFiles = (e: DragEvent) => !!e.dataTransfer && [...e.dataTransfer.types].includes('Files')
@@ -522,8 +421,8 @@ export default function App() {
       setDragging(false)
       const f = e.dataTransfer!.files[0]
       if (!f) return
-      if (!/\.bin$/i.test(f.name)) return toast({ tone: 'warn', title: 'Ese archivo no es un firmware', body: 'Suelta un .bin exportado desde Arduino.' })
-      if (busyRef.current) return toast({ tone: 'warn', title: 'Ya se está grabando', body: 'Espera a que termine.' })
+      if (!/\.(tar\.gz|tgz)$/i.test(f.name)) return toast({ tone: 'warn', title: 'Ese archivo no es un paquete del bicho', body: 'Suelta un .tar.gz hecho con npm run release.' })
+      if (busyRef.current) return toast({ tone: 'warn', title: 'Ya se está actualizando', body: 'Espera a que termine.' })
       startFlashRef.current({ kind: 'file', file: f })
     }
     addEventListener('dragenter', enter)
@@ -538,8 +437,14 @@ export default function App() {
     }
   }, [toast])
 
+  const onDeadlineAlert = useCallback(
+    (a: { title: string; body: string; urgent: boolean }) => toast({ tone: a.urgent ? 'err' : 'warn', title: a.title, body: a.body }, a.urgent ? 20000 : 12000),
+    [toast],
+  )
+
   const pickFile = () => fileInput.current?.click()
   const resetFlash = () => setFlash({ phase: 'idle', pct: 0, log: [] })
+  const startRelease = (r: Release) => startFlash({ kind: 'release', rel: r })
 
   return (
     <>
@@ -551,8 +456,8 @@ export default function App() {
             <span className="up-icon">
               <Icon.Download />
             </span>
-            <p className="drop-t">Suelta el .bin para grabarlo</p>
-            <p className="drop-s">{busy ? 'Espera: ya se está grabando.' : link ? `Se graba por ${flashVia}.` : 'Se graba por USB: te va a pedir el puerto.'}</p>
+            <p className="drop-t">Suelta el paquete para instalarlo</p>
+            <p className="drop-s">{busy ? 'Espera: ya se está actualizando.' : connected ? `Se instala por ${flashVia}.` : 'Primero conecta el bicho por WiFi.'}</p>
           </div>
         </div>
       )}
@@ -567,7 +472,7 @@ export default function App() {
       <input
         ref={fileInput}
         type="file"
-        accept=".bin"
+        accept=".gz,.tgz"
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0]
@@ -589,6 +494,8 @@ export default function App() {
             </div>
           </div>
 
+          <Countdown onAlert={onDeadlineAlert} />
+
           <nav className="nav" aria-label="Secciones">
             <p className="nav-label">Bicho</p>
             {NAV.map((n, i) => (
@@ -607,7 +514,7 @@ export default function App() {
               <span className="conn-dot" aria-hidden />
               <div className="conn-text">
                 <p className="conn-title">{connected ? `Conectado por ${kindLabel}` : conn === 'wait' ? 'Conectando…' : 'Sin conexión'}</p>
-                <p className="conn-host">{!link ? 'Elige cómo conectar' : link.kind === 'sim' ? 'Datos simulados' : (statusDetail ?? link.label)}</p>
+                <p className="conn-host">{!link ? 'Raspberry Pi por WiFi' : link.kind === 'sim' ? 'Datos simulados' : (statusDetail ?? link.label)}</p>
               </div>
             </div>
             {!link && (
@@ -618,26 +525,19 @@ export default function App() {
                   onChange={(e) => setHost(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && connectWifi()}
                   placeholder="bicho.local o IP"
-                  aria-label="Dirección del bicho por WiFi"
+                  aria-label="Dirección del bicho"
+                  title={`Se conecta a ${normalizeHost(host || 'bicho.local')}`}
                 />
               </div>
             )}
-            <div className="seg" role="group" aria-label="Conectar por">
-              <button type="button" aria-pressed={link?.kind === 'serial'} disabled={!hasSerial || busy} onClick={connectUsb} title={hasSerial ? 'Conectar por cable USB' : 'Necesitas Chrome o Edge'}>
-                USB
-              </button>
-              <button type="button" aria-pressed={link?.kind === 'wifi'} disabled={busy} onClick={connectWifi} title={`Conectar a ${host}`}>
+            <div className="seg two" role="group" aria-label="Conectar por">
+              <button type="button" aria-pressed={link?.kind === 'wifi'} disabled={busy} onClick={connectWifi} title={`Conectar a ${normalizeHost(host || 'bicho.local')}`}>
                 WiFi
               </button>
               <button type="button" aria-pressed={link?.kind === 'sim'} disabled={busy} onClick={connectSim} title="Datos simulados, sin hardware">
                 Simulador
               </button>
             </div>
-            {!link && knownPorts.length > 0 && (
-              <button type="button" className="btn-link conn-again" onClick={reconnectUsb} disabled={busy}>
-                Reconectar al último USB
-              </button>
-            )}
             {link && (
               <button type="button" className="btn-quiet" onClick={disconnect} disabled={busy}>
                 <Icon.Power /> Desconectar
@@ -649,327 +549,314 @@ export default function App() {
         {/* ── contenido ── */}
         <main className={`main ${scrolled ? 'scrolled' : ''}`} ref={mainRef}>
           <div className="main-inner">
-          <header className="toolbar">
-            <div className="tb-title">
-              <h1>{NAV[active].label}</h1>
-              <p>
-                {info?.name ?? 'bicho'} · {info?.chip ?? (connected ? 'esperando info' : 'sin conectar')}
+            <header className="toolbar">
+              <div className="tb-title">
+                <h1>{NAV[active].label}</h1>
+                <p>
+                  {info?.name ?? 'bicho'} · {info?.chip ?? (connected ? 'esperando info' : 'sin conectar')}
+                </p>
+              </div>
+              <div className="tb-actions">
+                <span className="capsule" title={`Versión de esta web · build ${__BUILD_TIME__}`}>
+                  Web <b>{frontendVersion()}</b>
+                </span>
+                <button type="button" className="capsule" disabled={!connected} onClick={() => send(CMD.info)} title="Pedir info al bicho">
+                  <Icon.Info /> Pedir info
+                </button>
+              </div>
+            </header>
+
+            {location.protocol === 'https:' && (
+              <p className="notice">
+                <Icon.Warning /> Estás en HTTPS: el navegador bloquea la conexión con el bicho. Corre la web en localhost.
               </p>
-            </div>
-            <div className="tb-actions">
-              <span className="capsule" title={`Versión de esta web · build ${__BUILD_TIME__}`}>
-                Web <b>{frontendVersion()}</b>
-              </span>
-              <button type="button" className="capsule" disabled={!connected} onClick={() => send(CMD.info)} title="Pedir info al bicho">
-                <Icon.Info /> Pedir info
-              </button>
-            </div>
-          </header>
+            )}
 
-          {!hasSerial && (
-            <p className="notice">
-              <Icon.Warning /> Este navegador no tiene Web Serial, así que el USB no va a funcionar. Abre la web en Chrome o Edge.
-            </p>
-          )}
-          {location.protocol === 'https:' && (
-            <p className="notice">
-              <Icon.Warning /> Estás en HTTPS: el navegador bloquea el WiFi hacia el bicho. Para usar WiFi corre la web en localhost; el USB funciona igual.
-            </p>
-          )}
-
-          {/* firmware + disponible */}
-          <section className="sec" id="firmware" aria-label="Firmware">
-            <div className="fw-grid">
-              <article className="card glass hero">
-                <span className="glow glow-y" aria-hidden />
-                <span className="glow glow-b" aria-hidden />
-                <span className="glow glow-g" aria-hidden />
-                <div className="hero-top">
-                  <p className="eyebrow">Firmware en el bicho</p>
-                  <span className="status">
-                    <i aria-hidden />
-                    {statusText}
-                  </span>
-                </div>
-
-                {info ? (
-                  <>
-                    <p className="version" key={info.fw}>
-                      <span className="v">v</span>
-                      {info.fw}
-                    </p>
-                    <p className="desc">
-                      {info.desc || runningRelease?.notes || <span className="muted">El firmware no mandó descripción (campo “desc”).</span>}
-                    </p>
-                    <dl className="meta">
-                      {[
-                        ['Chip', info.chip],
-                        ['Dirección IP', info.ip],
-                        ['Encendido hace', fmtUptime(info.uptime)],
-                        ['Compilado', info.build],
-                        ['Memoria libre', info.heap ? `${Math.round(info.heap / 1024)} KB` : undefined],
-                        ['MAC', info.mac],
-                      ].map(([k, v]) => (
-                        <div key={k}>
-                          <dt>{k}</dt>
-                          <dd>{v ?? '—'}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </>
-                ) : (
-                  <>
-                    <p className="version empty">{connected ? 'Esperando…' : conn === 'wait' ? 'Conectando…' : 'Sin bicho'}</p>
-                    <p className="desc">
-                      {connected
-                        ? 'Ya hay conexión, pero el bicho todavía no manda su versión.'
-                        : 'Enchúfalo por USB para ver qué firmware tiene, o abre el simulador para probar la web sin hardware.'}
-                    </p>
-                    <div className="hero-actions">
-                      {connected ? (
-                        <button type="button" className="btn-secondary" onClick={() => send(CMD.info)}>
-                          <Icon.Refresh /> Pedir versión
-                        </button>
-                      ) : (
-                        <>
-                          {knownPorts.length > 0 ? (
-                            <button type="button" className="btn-primary" onClick={reconnectUsb} disabled={busy}>
-                              Reconectar USB
-                            </button>
-                          ) : (
-                            <button type="button" className="btn-primary" onClick={connectUsb} disabled={!hasSerial || busy}>
-                              Conectar por USB
-                            </button>
-                          )}
-                          <button type="button" className="btn-secondary" onClick={connectSim} disabled={busy}>
-                            Abrir simulador
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </>
-                )}
-              </article>
-
-              <article className="card glass update">
-                <div className="up-head">
-                  <span className="up-icon" aria-hidden>
-                    <Icon.Download />
-                  </span>
-                  <div className="up-head-text">
-                    <p className="eyebrow">Versión disponible</p>
-                    <p className="up-by">{latest ? `Lista para grabar por ${flashVia}` : 'Nada publicado todavía'}</p>
+            {/* firmware + disponible */}
+            <section className="sec" id="firmware" aria-label="Firmware">
+              <div className="fw-grid">
+                <article className="card glass hero">
+                  <span className="glow glow-y" aria-hidden />
+                  <span className="glow glow-b" aria-hidden />
+                  <span className="glow glow-g" aria-hidden />
+                  <div className="hero-top">
+                    <p className="eyebrow">Firmware en el bicho</p>
+                    <span className="status">
+                      <i aria-hidden />
+                      {statusText}
+                    </span>
                   </div>
-                  {fwState === 'outdated' && <span className="chip-new">Nueva</span>}
-                </div>
 
-                {latest ? (
-                  <>
-                    <p className="up-version">
-                      <span className="v">v</span>
-                      {latest.version}
-                    </p>
-                    {latest.notes && <p className="up-notes">{latest.notes}</p>}
-                    <dl className="meta up-meta">
-                      <div>
-                        <dt>Autor</dt>
-                        <dd>{latest.author || '—'}</dd>
-                      </div>
-                      <div>
-                        <dt>Publicada</dt>
-                        <dd>{fmtAgo(latest.date) || '—'}</dd>
-                      </div>
-                    </dl>
-                  </>
-                ) : (
-                  <>
-                    <p className="up-empty">Nada publicado todavía.</p>
-                    <p className="up-empty-hint">
-                      {manifestErr ?? (
-                        <>
-                          Publica una versión con <code>npm run release</code> o graba un .bin desde tu computador.
-                        </>
-                      )}
-                    </p>
-                  </>
-                )}
-
-                <div className="up-action">
-                  {busy ? (
+                  {info ? (
                     <>
-                      <button type="button" className="btn-primary" disabled>
-                        <Icon.Download /> Actualizando…
-                      </button>
-                      <div className="progress">
-                        <div className="bar" style={{ '--p': flash.pct } as React.CSSProperties}>
-                          <span />
-                        </div>
-                        <div className="progress-meta">
-                          <span>
-                            {flash.phase === 'preparing'
-                              ? `Preparando ${flash.target}…`
-                              : flash.phase === 'rebooting'
-                                ? (flash.msg ?? 'Reiniciando…')
-                                : `Grabando ${flash.target} por ${flash.via}…`}
-                          </span>
-                          <b>{Math.round(flash.pct * 100)} %</b>
-                        </div>
-                        {flash.log.length > 0 && <pre className="flash-log">{flash.log.slice(-4).join('\n')}</pre>}
-                      </div>
+                      <p className="version" key={info.fw}>
+                        <span className="v">v</span>
+                        {info.fw}
+                      </p>
+                      <p className="desc">
+                        {info.desc || runningRelease?.notes || <span className="muted">El agente no mandó descripción (campo “desc” de version.json).</span>}
+                      </p>
+                      <dl className="meta">
+                        {[
+                          ['Placa', info.chip],
+                          ['Dirección IP', info.ip],
+                          ['Encendido hace', fmtUptime(info.uptime)],
+                          ['Publicado', info.build],
+                          ['Memoria libre', typeof info.heap === 'number' ? fmtBytes(info.heap) : undefined],
+                          ['MAC', info.mac],
+                        ].map(([k, v]) => (
+                          <div key={k}>
+                            <dt>{k}</dt>
+                            <dd title={v ?? undefined}>{v ?? '—'}</dd>
+                          </div>
+                        ))}
+                      </dl>
                     </>
                   ) : (
                     <>
-                      {(flash.phase === 'warn' || flash.phase === 'error') && (
-                        <div className={`ok ${flash.phase === 'error' ? 'err' : 'warn'}`}>
-                          <span className="ok-ic" aria-hidden>
-                            <Icon.Alert />
-                          </span>
-                          <div>
-                            <p className="ok-t">{flash.phase === 'error' ? 'No se pudo grabar' : 'Revisa esto'}</p>
-                            <p className="ok-s">{flash.msg}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {latest && fwState === 'outdated' && (
-                        <>
-                          <p className="up-diff">
-                            <span>v{info!.fw}</span>
-                            <Icon.Arrow />
-                            <b>v{latest.version}</b>
-                          </p>
-                          <button type="button" className="btn-primary" disabled={!canFlash} onClick={() => startFlash({ kind: 'release', rel: latest })}>
-                            <Icon.Download /> Actualizar a v{latest.version}
+                      <p className="version empty">{connected ? 'Esperando…' : conn === 'wait' ? 'Conectando…' : 'Sin bicho'}</p>
+                      <p className="desc">
+                        {connected
+                          ? 'Ya hay conexión, pero el bicho todavía no manda su versión.'
+                          : conn === 'wait'
+                            ? `Buscando el Raspberry en ${normalizeHost(host || 'bicho.local')}. ¿Está prendido y en la misma red?`
+                            : 'Prende el Raspberry y conéctate por WiFi, o abre el simulador para probar la web sin hardware.'}
+                      </p>
+                      <div className="hero-actions">
+                        {connected ? (
+                          <button type="button" className="btn-secondary" onClick={() => send(CMD.info)}>
+                            <Icon.Refresh /> Pedir versión
                           </button>
-                        </>
-                      )}
-
-                      {latest && fwState === 'uptodate' && (
-                        <div className="ok">
-                          <span className="ok-ic" aria-hidden>
-                            <Icon.Check />
-                          </span>
-                          <div>
-                            <p className="ok-t">El bicho está al día</p>
-                            <p className="ok-s">{flash.phase === 'done' && flash.msg ? flash.msg : 'Corre la última versión publicada.'}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {latest && fwState === 'newer' && (
-                        <>
-                          <div className="ok info">
-                            <span className="ok-ic" aria-hidden>
-                              <Icon.Info />
-                            </span>
-                            <div>
-                              <p className="ok-t">Corre algo más nuevo</p>
-                              <p className="ok-s">v{info!.fw} no está publicada. ¿Alguien grabó desde el IDE?</p>
-                            </div>
-                          </div>
-                          <button type="button" className="btn-primary" disabled={!canFlash} onClick={() => startFlash({ kind: 'release', rel: latest })}>
-                            <Icon.Download /> Grabar v{latest.version} publicada
-                          </button>
-                        </>
-                      )}
-
-                      {latest && fwState === 'unknown' && (
-                        <>
-                          <button type="button" className="btn-primary" disabled={!canFlash} onClick={() => startFlash({ kind: 'release', rel: latest })}>
-                            <Icon.Download /> Grabar v{latest.version}
-                          </button>
-                          <p className="off-hint">
-                            {link ? 'El bicho todavía no reporta su versión.' : hasSerial ? 'Sin conexión: se graba por USB y te pide el puerto.' : 'Conecta el bicho para poder actualizar.'}
-                          </p>
-                        </>
-                      )}
-
-                      <div className="links-row">
-                        {latest && fwState === 'uptodate' && (
-                          <button type="button" className="btn-link" disabled={!canFlash} onClick={() => startFlash({ kind: 'release', rel: latest })}>
-                            Volver a grabar v{latest.version}
-                          </button>
-                        )}
-                        <button type="button" className="btn-link" disabled={!canFlash} onClick={pickFile}>
-                          Grabar un .bin local
-                        </button>
-                        {(flash.phase === 'warn' || flash.phase === 'error' || flash.phase === 'done') && (
-                          <button type="button" className="btn-link" onClick={resetFlash}>
-                            Ocultar aviso
-                          </button>
+                        ) : (
+                          <>
+                            <button type="button" className="btn-primary" onClick={connectWifi} disabled={busy || conn === 'wait'}>
+                              Conectar a {host || 'bicho.local'}
+                            </button>
+                            <button type="button" className="btn-secondary" onClick={connectSim} disabled={busy}>
+                              Abrir simulador
+                            </button>
+                          </>
                         )}
                       </div>
                     </>
                   )}
-                </div>
-              </article>
-            </div>
-          </section>
+                </article>
 
-          <Sensors store={store} connected={connected} onRate={(hz) => send(CMD.rate(hz))} />
+                <article className="card glass update">
+                  <div className="up-head">
+                    <span className="up-icon" aria-hidden>
+                      <Icon.Download />
+                    </span>
+                    <div className="up-head-text">
+                      <p className="eyebrow">Versión disponible</p>
+                      <p className="up-by">{latest ? `Lista para instalar por ${flashVia}` : 'Nada publicado todavía'}</p>
+                    </div>
+                    {fwState === 'outdated' && <span className="chip-new">Nueva</span>}
+                  </div>
 
-          <div className="split">
-            <Console
-              lines={lines}
-              connected={connected}
-              linkLabel={kindLabel}
-              onSend={send}
-              onClear={() => {
-                lineBuf.current = []
-                setLines([])
-              }}
-            />
+                  {latest ? (
+                    <>
+                      <p className="up-version">
+                        <span className="v">v</span>
+                        {latest.version}
+                      </p>
+                      {latest.notes && <p className="up-notes">{latest.notes}</p>}
+                      <dl className="meta up-meta">
+                        <div>
+                          <dt>Autor</dt>
+                          <dd>{latest.author || '—'}</dd>
+                        </div>
+                        <div>
+                          <dt>Publicada</dt>
+                          <dd>{fmtAgo(latest.date) || '—'}</dd>
+                        </div>
+                      </dl>
+                    </>
+                  ) : (
+                    <>
+                      <p className="up-empty">Nada publicado todavía.</p>
+                      <p className="up-empty-hint">
+                        {manifestErr ?? (
+                          <>
+                            Publica una versión con <code>npm run release</code> o suelta aquí un paquete <code>.tar.gz</code>.
+                          </>
+                        )}
+                      </p>
+                    </>
+                  )}
 
-            <section className="sec" id="versiones" aria-label="Versiones">
-              <article className="card glass versions">
-                <header className="card-head">
-                  <div>
-                    <h2>Versiones</h2>
-                    <p>Historial publicado por el equipo</p>
-                  </div>
-                  <div className="head-actions">
-                    <button type="button" className="btn-secondary" onClick={refreshManifest} title="Recargar versiones" aria-label="Recargar versiones">
-                      <Icon.Refresh />
-                    </button>
-                  </div>
-                </header>
-                {releases.length === 0 ? (
-                  <div className="empty">
-                    <p className="empty-t">Sin versiones</p>
-                    <p className="empty-s">
-                      Publícalas con <code>npm run release</code>.
-                    </p>
-                  </div>
-                ) : (
-                  <ol className="releases">
-                    {releases.map((r) => {
-                      const current = info?.fw === r.version
-                      const isLatest = r === latest
-                      return (
-                        <li key={r.version} className="rel" data-current={current ? '' : undefined} data-latest={isLatest ? '' : undefined}>
-                          <span className="rel-dot" aria-hidden />
-                          <div>
-                            <div className="rel-head">
-                              <b>v{r.version}</b>
-                              {current && <span className="tag tag-cur">En el bicho</span>}
-                              {isLatest && <span className="tag tag-new">Última</span>}
-                            </div>
-                            {r.notes && <p>{r.notes}</p>}
-                            <span className="rel-by">
-                              {[r.author, fmtAgo(r.date), [r.app && 'app', r.merged && 'merged'].filter(Boolean).join(' + ')].filter(Boolean).join(' · ')}
-                            </span>
+                  <div className="up-action">
+                    {busy ? (
+                      <>
+                        <button type="button" className="btn-primary" disabled>
+                          <Icon.Download /> Actualizando…
+                        </button>
+                        <div className="progress">
+                          <div className="bar" style={{ '--p': flash.pct } as React.CSSProperties}>
+                            <span />
                           </div>
-                          <button type="button" className="btn-link" disabled={!canFlash} onClick={() => startFlash({ kind: 'release', rel: r })}>
-                            Grabar
+                          <div className="progress-meta">
+                            <span>
+                              {flash.phase === 'preparing'
+                                ? `Preparando ${flash.target}…`
+                                : flash.phase === 'rebooting'
+                                  ? (flash.msg ?? 'Reiniciando…')
+                                  : `Enviando ${flash.target} por ${flash.via}…`}
+                            </span>
+                            <b>{Math.round(flash.pct * 100)} %</b>
+                          </div>
+                          {flash.log.length > 0 && <pre className="flash-log">{flash.log.slice(-4).join('\n')}</pre>}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {(flash.phase === 'warn' || flash.phase === 'error') && (
+                          <div className={`ok ${flash.phase === 'error' ? 'err' : 'warn'}`}>
+                            <span className="ok-ic" aria-hidden>
+                              <Icon.Alert />
+                            </span>
+                            <div>
+                              <p className="ok-t">{flash.phase === 'error' ? 'No se pudo actualizar' : 'Revisa esto'}</p>
+                              <p className="ok-s">{flash.msg}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {latest && fwState === 'outdated' && (
+                          <>
+                            <p className="up-diff">
+                              <span>v{info!.fw}</span>
+                              <Icon.Arrow />
+                              <b>v{latest.version}</b>
+                            </p>
+                            <button type="button" className="btn-primary" disabled={!canFlash} onClick={() => startRelease(latest)}>
+                              <Icon.Download /> Actualizar a v{latest.version}
+                            </button>
+                          </>
+                        )}
+
+                        {latest && fwState === 'uptodate' && (
+                          <div className="ok">
+                            <span className="ok-ic" aria-hidden>
+                              <Icon.Check />
+                            </span>
+                            <div>
+                              <p className="ok-t">El bicho está al día</p>
+                              <p className="ok-s">{flash.phase === 'done' && flash.msg ? flash.msg : 'Corre la última versión publicada.'}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {latest && fwState === 'newer' && (
+                          <>
+                            <div className="ok info">
+                              <span className="ok-ic" aria-hidden>
+                                <Icon.Info />
+                              </span>
+                              <div>
+                                <p className="ok-t">Corre algo más nuevo</p>
+                                <p className="ok-s">v{info!.fw} no está publicada. ¿Alguien la copió a mano al Pi?</p>
+                              </div>
+                            </div>
+                            <button type="button" className="btn-primary" disabled={!canFlash} onClick={() => startRelease(latest)}>
+                              <Icon.Download /> Instalar v{latest.version} publicada
+                            </button>
+                          </>
+                        )}
+
+                        {latest && fwState === 'unknown' && (
+                          <>
+                            <button type="button" className="btn-primary" disabled={!canFlash} onClick={() => startRelease(latest)}>
+                              <Icon.Download /> Instalar v{latest.version}
+                            </button>
+                            <p className="off-hint">{connected ? 'El bicho todavía no reporta su versión.' : 'Conecta el bicho por WiFi para poder actualizarlo.'}</p>
+                          </>
+                        )}
+
+                        <div className="links-row">
+                          {latest && fwState === 'uptodate' && (
+                            <button type="button" className="btn-link" disabled={!canFlash} onClick={() => startRelease(latest)}>
+                              Reinstalar v{latest.version}
+                            </button>
+                          )}
+                          <button type="button" className="btn-link" disabled={!canFlash} onClick={pickFile} title="También puedes soltarlo en cualquier parte de la página">
+                            Instalar un paquete local
                           </button>
-                        </li>
-                      )
-                    })}
-                  </ol>
-                )}
-              </article>
+                          {(flash.phase === 'warn' || flash.phase === 'error' || flash.phase === 'done') && (
+                            <button type="button" className="btn-link" onClick={resetFlash}>
+                              Ocultar aviso
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </article>
+              </div>
             </section>
-          </div>
+
+            <Sensors store={store} connected={connected} onRate={(hz) => send(CMD.rate(hz))} />
+
+            <div className="split">
+              <Console
+                lines={lines}
+                connected={connected}
+                linkLabel={kindLabel}
+                onSend={send}
+                onClear={() => {
+                  lineBuf.current = []
+                  setLines([])
+                }}
+              />
+
+              <section className="sec" id="versiones" aria-label="Versiones">
+                <article className="card glass versions">
+                  <header className="card-head">
+                    <div>
+                      <h2>Versiones</h2>
+                      <p>Historial publicado por el equipo</p>
+                    </div>
+                    <div className="head-actions">
+                      <button type="button" className="btn-secondary" onClick={refreshManifest} title="Recargar versiones" aria-label="Recargar versiones">
+                        <Icon.Refresh />
+                      </button>
+                    </div>
+                  </header>
+                  {releases.length === 0 ? (
+                    <div className="empty">
+                      <p className="empty-t">Sin versiones</p>
+                      <p className="empty-s">
+                        Publícalas con <code>npm run release</code>.
+                      </p>
+                    </div>
+                  ) : (
+                    <ol className="releases">
+                      {releases.map((r) => {
+                        const current = info?.fw === r.version
+                        const isLatest = r === latest
+                        return (
+                          <li key={r.version} className="rel" data-current={current ? '' : undefined} data-latest={isLatest ? '' : undefined}>
+                            <span className="rel-dot" aria-hidden />
+                            <div>
+                              <div className="rel-head">
+                                <b>v{r.version}</b>
+                                {current && <span className="tag tag-cur">En el bicho</span>}
+                                {isLatest && <span className="tag tag-new">Última</span>}
+                              </div>
+                              {r.notes && <p>{r.notes}</p>}
+                              <span className="rel-by">{[r.author, fmtAgo(r.date), r.size ? fmtBytes(r.size) : ''].filter(Boolean).join(' · ')}</span>
+                            </div>
+                            <button type="button" className="btn-link" disabled={!canFlash} onClick={() => startRelease(r)}>
+                              Instalar
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ol>
+                  )}
+                </article>
+              </section>
+            </div>
           </div>
         </main>
       </div>

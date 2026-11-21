@@ -1,6 +1,6 @@
 # harness: el cerebro del bicho
 
-El harness es la capa de IA: lo que escucha, piensa y decide qué hace el bicho. El firmware solo expone sensores y actuadores; la personalidad y las decisiones viven acá.
+El harness es la capa de IA: lo que escucha, piensa y decide qué hace el bicho. El agente del bicho (`bicho/`) solo expone sensores y actuadores; la personalidad y las decisiones viven acá.
 
 ## Qué hace
 
@@ -12,11 +12,11 @@ El harness es la capa de IA: lo que escucha, piensa y decide qué hace el bicho.
 
 Usa el mismo contrato que la web, descrito en [`../PROTOCOLO.md`](../PROTOCOLO.md):
 
-- Se conecta a `ws://bicho.local:81/` (o a la IP que reporta `info`).
+- Se conecta a `ws://bicho.local:8080/ws` (o a la IP que reporta `info`).
 - Recibe los frames `{"t":"s",...}` con los sensores y los `{"t":"info",...}` con la versión.
-- Manda comandos `{"cmd":"..."}`. Los comandos propios del bicho (por ejemplo `{"cmd":"servo","i":0,"deg":90}`) se definen en `handleCustomCmd()` del firmware.
+- Manda comandos `{"cmd":"..."}`. Los comandos propios del bicho (por ejemplo `{"cmd":"servo","i":0,"deg":90}`) se definen en `manejar()` de `bicho/comandos.py`.
 
-Así el harness, la web y el firmware se pueden desarrollar por separado: si se respeta el protocolo, todo encaja.
+Así el harness, la web y el agente del bicho se pueden desarrollar por separado: si se respeta el protocolo, todo encaja.
 
 ## Estado
 
