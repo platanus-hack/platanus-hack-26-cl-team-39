@@ -57,7 +57,11 @@ export class WifiLink implements DeviceLink {
   readonly host: string
   /** true si se llega al bicho por el relé y no directo por la red local. */
   readonly rele: boolean
+  /** La dirección tal como se escribió, para volver a conectar igual. */
+  readonly direccion: string
   private readonly origen: string
+  /** Clave con que se abrió el WebSocket del relé ('' si fue sin clave). */
+  private claveUsada = ''
   private ws?: WebSocket
   private closed = false
   private retry = 0
@@ -67,6 +71,7 @@ export class WifiLink implements DeviceLink {
     host: string,
     private h: LinkHandlers,
   ) {
+    this.direccion = host.trim()
     this.host = normalizeHost(host)
     this.rele = esRele(host)
     this.origen = this.rele ? new URL(host.trim()).origin : `http://${this.host}`
@@ -81,9 +86,14 @@ export class WifiLink implements DeviceLink {
     return `${this.origen}/update`
   }
 
+  /** true si la conexión al relé se abrió con la clave que está guardada ahora (si cambió, hay que reconectar). */
+  get claveAlDia() {
+    return this.claveUsada !== '' && this.claveUsada === clave.get()
+  }
+
   private get wsUrl() {
     const url = `${this.origen.replace(/^http/, 'ws')}/ws`
-    const k = this.rele ? clave.get() : '' // el relé deja mirar a cualquiera; para mandar comandos pide la clave del equipo
+    const k = this.claveUsada // el relé deja mirar a cualquiera; para mandar comandos pide la clave del equipo
     return k ? `${url}?clave=${encodeURIComponent(k)}` : url
   }
 
@@ -93,6 +103,7 @@ export class WifiLink implements DeviceLink {
 
   private connect() {
     this.h.onStatus(this.retry ? 'reconnecting' : 'connecting', this.host)
+    this.claveUsada = this.rele ? clave.get() : ''
     const ws = new WebSocket(this.wsUrl)
     this.ws = ws
     ws.onopen = () => {

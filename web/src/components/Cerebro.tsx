@@ -12,6 +12,8 @@ export type Evento = {
   angulo?: number | null
   trabajo?: string
   version?: string | null
+  /** Lo escribió esta web y el relé todavía no confirma que lo recibió. */
+  pendiente?: boolean
 }
 
 export type Imagen = { nombre: string; url: string; ts: number }
@@ -33,15 +35,20 @@ export function Cerebro({
   eventos,
   imagenes,
   connected,
-  puedeMandar,
+  motivo,
+  onReconectar,
   onDecir,
 }: {
   eventos: Evento[]
   imagenes: Imagen[]
   connected: boolean
-  puedeMandar: boolean
+  /** Por qué no se le puede escribir ahora (null si se puede). */
+  motivo: string | null
+  /** Si volver a conectar lo arregla (por ejemplo, la clave cambió). */
+  onReconectar?: () => void
   onDecir: (texto: string) => void
 }) {
+  const puedeMandar = !motivo
   const [texto, setTexto] = useState('')
   const [verIgnoradas, setVerIgnoradas] = useState(false)
   const lista = [...eventos].reverse().filter((e) => verIgnoradas || e.tipo !== 'ignora')
@@ -87,15 +94,23 @@ export function Cerebro({
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 disabled={!connected || !puedeMandar}
-                placeholder={
-                  !connected ? 'Conecta el bicho para escribirle' : puedeMandar ? 'Escríbele al bicho, como si le hablaras' : 'Para escribirle, pon la clave del equipo en Equipo → Inventario'
-                }
+                placeholder={!connected ? 'Conecta el bicho para escribirle' : (motivo ?? 'Escríbele al bicho, como si le hablaras')}
                 aria-label="Escríbele al bicho"
               />
               <button type="submit" className="btn-secondary" disabled={!connected || !puedeMandar || !texto.trim()}>
                 Decir
               </button>
             </form>
+            {connected && motivo && (
+              <p className="cerebro-aviso" role="status">
+                {motivo}.
+                {onReconectar && (
+                  <button type="button" onClick={onReconectar}>
+                    Volver a conectar
+                  </button>
+                )}
+              </p>
+            )}
 
             {lista.length === 0 ? (
               <div className="empty">
@@ -105,8 +120,8 @@ export function Cerebro({
             ) : (
               <ol className="cerebro-eventos">
                 {lista.map((e) => (
-                  <li key={e.id} className={`ev ev-${e.tipo}`}>
-                    <span className="ev-tipo">{ETIQUETA[e.tipo] ?? e.tipo}</span>
+                  <li key={e.id} className={`ev ev-${e.tipo}${e.pendiente ? ' ev-pendiente' : ''}`}>
+                    <span className="ev-tipo">{e.pendiente ? 'Enviando…' : (ETIQUETA[e.tipo] ?? e.tipo)}</span>
                     <div className="ev-cuerpo">
                       {e.oido && <p className="ev-oido">«{e.oido}»{typeof e.angulo === 'number' ? ` · ${e.angulo}°` : ''}</p>}
                       <p className="ev-texto">{e.texto}</p>

@@ -276,7 +276,7 @@ function conectarBicho(c) {
 function conectarWeb(c, puedeMandar) {
   c.puedeMandar = puedeMandar
   E.webs.add(c)
-  c.enviar(linea({ t: 'rele', bicho: Boolean(E.bicho) }))
+  c.enviar(linea({ t: 'rele', bicho: Boolean(E.bicho), puedeMandar }))
   if (E.info) c.enviar(linea(E.info))
   for (const f of E.frases) c.enviar(linea(f))
   for (const x of E.cerebro) c.enviar(x)
@@ -295,7 +295,10 @@ function conectarWeb(c, puedeMandar) {
       // El cerebro es un cliente más, con la clave del equipo: lo que anuncia ({"t":"cerebro",...})
       // se reparte a todos los que miran y se guarda para quien llegue después.
       if (cmd === undefined && tipo === 'cerebro') {
-        if (!c.puedeMandar) continue
+        if (!c.puedeMandar) {
+          c.enviar(aviso('Para escribirle al cerebro falta la clave del equipo. Ponla en Equipo → Inventario y vuelve a conectar.'))
+          continue
+        }
         E.cerebro.push(l)
         if (E.cerebro.length > 60) E.cerebro.shift()
         aLasWebs(l)

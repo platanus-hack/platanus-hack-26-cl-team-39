@@ -137,6 +137,10 @@ export default function App() {
   // Lo que decide y aprende el cerebro, y las imágenes que manda el bicho (su cámara, si aprendió a usarla).
   const [eventos, setEventos] = useState<Evento[]>([])
   const [imagenes, setImagenes] = useState<Imagen[]>([])
+  // El relé no dejó mandar desde esta conexión (clave del equipo ausente o incorrecta).
+  const [claveRechazada, setClaveRechazada] = useState(false)
+  // Lo que esta web le escribió al cerebro y el relé todavía no devuelve.
+  const pendientes = useRef(new Set<string>())
   const [info, setInfo] = useState<DeviceInfo | null>(null)
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [manifestErr, setManifestErr] = useState<string>()
@@ -234,10 +238,15 @@ export default function App() {
         }
       },
       onMessage: (m) => {
+        // El relé avisa cuando esta conexión no tiene la clave del equipo (o no es la correcta).
+        if (m.t === 'log' && typeof m.msg === 'string' && m.msg.includes('falta la clave')) setClaveRechazada(true)
         if (m.t === 's' && m.d && typeof m.d === 'object') store.push(m.d as Record<string, unknown>)
         else if (m.t === 'cerebro') {
           const e = m as unknown as Evento
-          if (e.id && e.tipo) setEventos((prev) => (prev.some((x) => x.id === e.id) ? prev : [...prev, e].slice(-80)))
+          // Si lo escribió esta web, ya estaba en la lista como pendiente: el relé confirma que lo recibió.
+          if (e.id) pendientes.current.delete(e.id)
+          if (e.id && e.tipo)
+            setEventos((prev) => (prev.some((x) => x.id === e.id) ? prev.map((x) => (x.id === e.id ? { ...e, pendiente: false } : x)) : [...prev, e].slice(-80)))
         } else if (m.t === 'imagen') {
           const i = m as unknown as { nombre?: string; fmt?: string; b64?: string }
           if (i.nombre && i.b64) {
@@ -253,6 +262,7 @@ export default function App() {
           // El relé avisa si el bicho está conectado a él. Si no, la web espera sin mostrar datos viejos.
           const esta = Boolean((m as { bicho?: boolean }).bicho)
           setSinBicho(!esta)
+          if ((m as { puedeMandar?: boolean }).puedeMandar === false) setClaveRechazada(true)
           if (!esta) {
             setInfo(null)
             store.clear()
@@ -313,6 +323,7 @@ export default function App() {
       store.clear()
       setInfo(null)
       setSinBicho(false)
+      setClaveRechazada(false)
       setFrases([])
       setEventos([])
       setImagenes([])
@@ -354,6 +365,35 @@ export default function App() {
   }
 
   const send = (l: string) => linkRef.current?.sendLine(l).catch((e) => pushLine(`No se pudo enviar: ${e.message}`, 'sys'))
+
+  /* ---------- escribirle al cerebro ---------- */
+  // El cerebro escucha por el relé. El relé reparte lo escrito a todas las webs (también a esta): si en unos
+  // segundos no vuelve, no llegó, y casi siempre es porque el relé no aceptó la clave de esta conexión.
+  const relLink = link?.kind === 'wifi' && (link as WifiLink).rele ? (link as WifiLink) : null
+  const motivoCerebro = !relLink
+    ? 'El cerebro escucha por el relé: conéctate al relé para escribirle'
+    : !claveEquipo.get()
+      ? 'Para escribirle, pon la clave del equipo en Equipo → Inventario'
+      : !relLink.claveAlDia
+        ? 'Cambió la clave del equipo después de conectar: vuelve a conectar para usarla'
+        : claveRechazada
+          ? 'El relé no aceptó la clave del equipo. Revísala en Equipo → Inventario y vuelve a conectar'
+          : null
+  const reconectarRele = relLink && claveEquipo.get() && (!relLink.claveAlDia || claveRechazada) ? () => attach(new WifiLink(relLink.direccion, handlers)) : undefined
+  const decirAlCerebro = (texto: string) => {
+    const id = crypto.randomUUID()
+    const ts = Date.now()
+    pendientes.current.add(id)
+    setEventos((prev) => [...prev, { id, tipo: 'decir' as const, texto, ts, pendiente: true }].slice(-80))
+    send(JSON.stringify({ t: 'cerebro', id, tipo: 'decir', texto, ts }))
+    setTimeout(() => {
+      if (!pendientes.current.delete(id)) return // el relé ya lo devolvió
+      setClaveRechazada(true)
+      setEventos((prev) =>
+        prev.map((x) => (x.id === id ? { ...x, tipo: 'error' as const, pendiente: false, texto: `No llegó al cerebro: «${texto}». El relé no lo recibió; lo más probable es que no aceptó la clave del equipo de esta conexión.` } : x)),
+      )
+    }, 6000)
+  }
 
   /* ---------- actualizar ---------- */
   const flashVia = link?.kind === 'sim' ? 'el simulador' : 'WiFi'
@@ -914,8 +954,9 @@ export default function App() {
               eventos={eventos}
               imagenes={imagenes}
               connected={connected}
-              puedeMandar={Boolean(claveEquipo.get())}
-              onDecir={(texto) => send(JSON.stringify({ t: 'cerebro', id: crypto.randomUUID(), tipo: 'decir', texto, ts: Date.now() }))}
+              motivo={motivoCerebro}
+              onReconectar={reconectarRele}
+              onDecir={decirAlCerebro}
             />
 
             <div className="split">
