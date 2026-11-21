@@ -37,6 +37,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import comandos  # noqa: E402
+import oido  # noqa: E402
 import sensores  # noqa: E402
 
 PORT = int(os.environ.get("BICHO_PORT", "8080"))
@@ -645,6 +646,30 @@ async def sensor_loop() -> None:
         await asyncio.sleep(max(0.0, period - (time.monotonic() - t0)))
 
 
+async def oido_loop() -> None:
+    """Recoge las frases que escuchó el ReSpeaker. El audio va solo al relé, que lo transcribe."""
+    oido.partir()
+    n = 0
+    while True:
+        await asyncio.sleep(0.2)
+        for f in oido.frases():
+            n += 1
+            base = {"id": f"{int(START)}-{n}", "angulo": f["angulo"], "dur": f["dur"]}
+            log(f"oí una frase de {f['dur']} s desde {f['angulo']}°")
+            aviso = json.dumps({"t": "oido", **base}, ensure_ascii=False)
+            for ws in list(clients):  # conexiones directas: saben que se oyó algo, sin transcripción
+                if ws is not rele_ws:
+                    try:
+                        await ws.send(aviso)
+                    except Exception:
+                        clients.discard(ws)
+            if rele_ws:
+                try:
+                    await rele_ws.send(json.dumps({"t": "_voz", **base, "fmt": f["fmt"], "b64": base64.b64encode(f["audio"]).decode()}))
+                except Exception:
+                    pass
+
+
 async def info_loop() -> None:
     while True:
         await asyncio.sleep(10)
@@ -660,7 +685,7 @@ async def main() -> None:
     server = await asyncio.start_server(handle_conn, host="0.0.0.0", port=PORT, reuse_address=True)
     log(f"v{META['version']} escuchando en http://{_ip()}:{PORT} (WebSocket en /ws) · releases en {RELEASES}")
     async with server:
-        await asyncio.gather(server.serve_forever(), sensor_loop(), info_loop(), rele_loop())
+        await asyncio.gather(server.serve_forever(), sensor_loop(), info_loop(), rele_loop(), oido_loop())
 
 
 if __name__ == "__main__":

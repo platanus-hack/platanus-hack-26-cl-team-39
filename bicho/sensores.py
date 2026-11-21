@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 
 import luz
+import oido
 
 SIMULAR = os.environ.get("BICHO_SIMULAR") == "1"
 _t0 = time.time()
@@ -64,6 +65,9 @@ def leer() -> dict:
     if w is not None:
         d["wifi_dbm"] = w
     d["luz"] = luz.prendida()
+    o = oido.estado()  # ReSpeaker: de qué ángulo viene la voz y si hay alguien hablando
+    if o:
+        d["oido"] = o
 
     if SIMULAR:
         s = time.time() - _t0

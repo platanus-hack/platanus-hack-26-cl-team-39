@@ -67,6 +67,21 @@ El bicho no tiene dirección pública: desde otra red no se le puede "llamar". P
 - La web usa el relé de `web/src/lib/rele.json` (o `VITE_BICHO_RELE`). En "Conexión" también se puede escribir `https://<relé>` a mano.
 - La conexión directa (`ws://bicho.local:8080/ws`) sigue funcionando igual en la red local.
 
+## Oído: lo que le dicen al bicho y desde dónde
+
+Con un ReSpeaker XVF3800 por USB, `bichod` ([`bicho/oido.py`](bicho/oido.py)) hace dos cosas:
+
+- En los sensores manda `"oido": {"angulo": 282, "voz": true}`: el ángulo (0 a 359°) desde donde viene la voz, calculado por el propio micrófono, y si hay alguien hablando.
+- Corta el audio en frases. Cada frase va al relé, que la transcribe y le avisa a la web:
+
+```json
+{"t":"oido","id":"1795255000-3","angulo":282,"dur":2.4,"ts":1795255838703,"texto":"hola bicho","estado":"listo","ms":310}
+```
+
+- El mismo `id` llega dos veces: primero con `"estado":"transcribiendo"` y `texto` en `null`, después con el texto. Otros estados: `vacio` (no se entendió nada), `error` y `sin-transcriptor`.
+- El audio no llega a la web: solo viaja del bicho al relé. Quien se conecta recibe las últimas 40 frases.
+- El relé transcribe con Groq (`GROQ_API_KEY`) o con un servicio propio (`WHISPER_URL`). Conectado directo al bicho, sin relé, llega el aviso con el ángulo pero sin texto.
+
 ## Versiones
 
 1. Sube `version` (y `desc`) en `bicho/version.json`.

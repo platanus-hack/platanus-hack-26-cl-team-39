@@ -37,6 +37,20 @@ journalctl -u bichod -f
 
 Para los sensores I2C, activa I2C con `sudo raspi-config` (Interface Options → I2C).
 
+## Oído (ReSpeaker XVF3800 por USB)
+
+Con el ReSpeaker enchufado, el bicho dice desde qué ángulo le hablan y manda cada frase al relé para transcribirla. Se prepara una vez en el Pi:
+
+```bash
+sudo apt-get install -y python3-usb
+```
+
+```bash
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2886", ATTR{idProduct}=="001a", MODE="0660", GROUP="plugdev"' | sudo tee /etc/udev/rules.d/60-respeaker-xvf3800.rules && sudo udevadm control --reload && sudo udevadm trigger
+```
+
+La primera línea instala la librería para hablarle al micrófono; la segunda le da permiso al usuario del agente. Sin el ReSpeaker, `oido.py` no hace nada.
+
 ## Probar sin el Pi
 
 ```bash

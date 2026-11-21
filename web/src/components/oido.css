@@ -1,0 +1,37 @@
+/* Oído: dial con la dirección de la voz y las frases que escuchó el bicho */
+.oido{padding:22px 24px 24px;animation-delay:.32s}
+.oido .card-head{align-items:center}
+.oido-frases .empty{padding:36px 12px}
+.oido-cuerpo{display:grid;grid-template-columns:minmax(200px,250px) 1fr;gap:20px 32px;align-items:center}
+@media (max-width:760px){.oido-cuerpo{grid-template-columns:1fr}}
+
+.oido-dial{margin:0;text-align:center}
+.oido-dial svg{width:100%;max-width:280px;height:auto;display:block;margin:0 auto}
+.oido-dial figcaption{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.35}
+.oido-aro{fill:rgba(255,255,255,.55);stroke:var(--ink-4);stroke-width:1.2}
+.oido-marca{stroke:var(--ink-4);stroke-width:1.2;stroke-linecap:round}
+.oido-grado{font:500 10.5px var(--mono);fill:var(--ink-3)}
+.oido-rastro{fill:#007aff}
+.oido-cuna{fill:rgba(60,60,67,.16);transition:d .12s linear,fill .2s}
+.oido-cuna.habla{fill:rgba(0,122,255,.42)}
+.oido-centro{fill:#fff;stroke:var(--ink-4);stroke-width:1}
+.oido-valor{font:650 21px var(--display);fill:var(--ink);font-variant-numeric:tabular-nums}
+.oido-sub{font:500 10px var(--mono);fill:var(--ink-3)}
+
+.oido-frases{min-width:0;max-height:330px;overflow-y:auto}
+.oido-frases ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.oido-frases li{
+  display:grid;grid-template-columns:64px 1fr auto;gap:4px 12px;align-items:center;
+  padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.62);
+}
+.oido-frases li p{font-size:15px;line-height:1.35;color:var(--ink);overflow-wrap:anywhere}
+.oido-frases li.pendiente p{color:var(--ink-3);font-style:italic}
+.oido-de{display:flex;align-items:center;gap:6px;font:600 12.5px var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.oido-de svg{width:18px;height:18px;flex:none;fill:#007aff}
+.oido-de b{font-weight:600}
+.oido-cuando{font:11.5px var(--mono);color:var(--ink-3);white-space:nowrap}
+@media (max-width:520px){
+  .oido-frases li{grid-template-columns:64px 1fr}
+  .oido-cuando{grid-column:2}
+}
+#oido{margin-top:20px}

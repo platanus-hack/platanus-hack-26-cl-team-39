@@ -6,6 +6,7 @@ import { Sensors } from './components/Sensors'
 import { Toasts, type Toast } from './components/Toasts'
 import { Icon, SparkDefs, fmtAgo, fmtBytes, fmtUptime } from './components/ui'
 import { cmpSemver, fetchPackage, loadManifest, looksLikePackage, uploadPackage, type Manifest, type Release } from './lib/firmware'
+import { Oido, type Frase } from './components/Oido'
 import { clave as claveEquipo } from './lib/inventario'
 import releCfg from './lib/rele.json'
 import { SimLink, WifiLink, esRele, normalizeHost, type DeviceLink, type LineDir, type LinkHandlers, type LinkStatus } from './lib/links'
@@ -49,6 +50,7 @@ const SIM_RELEASE: Release = {
 const NAV = [
   { id: 'firmware', label: 'Firmware', icon: Icon.Chip },
   { id: 'sensores', label: 'Sensores', icon: Icon.Pulse },
+  { id: 'oido', label: 'Oído', icon: Icon.Sparkle },
   { id: 'consola', label: 'Consola', icon: Icon.Terminal },
   { id: 'versiones', label: 'Versiones', icon: Icon.History },
 ] as const
@@ -128,6 +130,8 @@ export default function App() {
   const [statusDetail, setStatusDetail] = useState<string>()
   // Por el relé: hay conexión con el relé, pero el bicho no está conectado a él (apagado o sin internet).
   const [sinBicho, setSinBicho] = useState(false)
+  // Frases que escuchó el bicho (ReSpeaker). El relé manda cada una dos veces: al oírla y ya transcrita.
+  const [frases, setFrases] = useState<Frase[]>([])
   const [info, setInfo] = useState<DeviceInfo | null>(null)
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [manifestErr, setManifestErr] = useState<string>()
@@ -226,7 +230,10 @@ export default function App() {
       },
       onMessage: (m) => {
         if (m.t === 's' && m.d && typeof m.d === 'object') store.push(m.d as Record<string, unknown>)
-        else if (m.t === 'rele') {
+        else if (m.t === 'oido') {
+          const f = m as unknown as Frase
+          setFrases((prev) => (prev.some((x) => x.id === f.id) ? prev.map((x) => (x.id === f.id ? { ...x, ...f } : x)) : [...prev, { ...f, ts: f.ts ?? Date.now() }].slice(-40)))
+        } else if (m.t === 'rele') {
           // El relé avisa si el bicho está conectado a él. Si no, la web espera sin mostrar datos viejos.
           const esta = Boolean((m as { bicho?: boolean }).bicho)
           setSinBicho(!esta)
@@ -290,6 +297,7 @@ export default function App() {
       store.clear()
       setInfo(null)
       setSinBicho(false)
+      setFrases([])
       linkRef.current = l
       setLink(l)
       try {
@@ -879,6 +887,8 @@ export default function App() {
             </section>
 
             <Sensors store={store} connected={connected} onRate={(hz) => send(CMD.rate(hz))} />
+
+            <Oido store={store} connected={connected} frases={frases} />
 
             <div className="split">
               <Console

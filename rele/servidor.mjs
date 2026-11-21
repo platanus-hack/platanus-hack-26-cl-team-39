@@ -18,6 +18,9 @@
 //   BICHO_RELE_TOKEN   secreto que comparte con el bicho. Obligatorio.
 //   CLAVE_EQUIPO       clave para mandar comandos y actualizar (la del inventario). Sin ella, cualquiera puede.
 //   RELE_PUERTO        puerto (8787 por defecto).     RELE_HOST   interfaz (127.0.0.1 por defecto).
+//   GROQ_API_KEY       para transcribir lo que oye el bicho con Groq (Whisper large v3 turbo, lo más rápido).
+//   WHISPER_URL        alternativa: un servicio propio que recibe el audio por POST y responde {"text": "..."}.
+//   OIDO_IDIOMA        idioma de lo que se le dice al bicho ("es" por defecto).
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import http from 'node:http'
@@ -160,6 +163,7 @@ class Conexion {
 /* ------------------------------------------------------------------ */
 
 const E = {
+  frases: [], // lo último que oyó el bicho: se le manda a quien abre la web
   bicho: null,
   info: null,
   desde: null,
@@ -245,6 +249,10 @@ function conectarBicho(c) {
         E.pendientes.get(String(m.id))?.listo({ ok: Boolean(m.ok), msg: String(m.msg ?? '') })
         continue
       }
+      if (m?.t === '_voz') {
+        oyo(m)
+        continue
+      }
       if (m?.t === 'info') E.info = m
       aLasWebs(l)
     }
@@ -267,6 +275,7 @@ function conectarWeb(c, puedeMandar) {
   E.webs.add(c)
   c.enviar(linea({ t: 'rele', bicho: Boolean(E.bicho) }))
   if (E.info) c.enviar(linea(E.info))
+  for (const f of E.frases) c.enviar(linea(f))
   c.alMensaje = (texto) => {
     for (const l of texto.split('\n')) {
       if (!l.trim()) continue
@@ -297,6 +306,62 @@ function conectarWeb(c, puedeMandar) {
     avisarEspectadores()
   }
   avisarEspectadores()
+}
+
+/* ------------------------------------------------------------------ */
+/* Oído: el bicho manda cada frase que escucha y el relé la transcribe  */
+/* ------------------------------------------------------------------ */
+
+const MAX_FRASES = 40
+
+async function transcribir(audio, fmt) {
+  const idioma = process.env.OIDO_IDIOMA || 'es'
+  if (process.env.GROQ_API_KEY) {
+    const cuerpo = new FormData()
+    cuerpo.append('file', new Blob([audio], { type: fmt === 'ogg' ? 'audio/ogg' : 'audio/wav' }), `frase.${fmt === 'ogg' ? 'ogg' : 'wav'}`)
+    cuerpo.append('model', process.env.GROQ_MODELO || 'whisper-large-v3-turbo')
+    cuerpo.append('language', idioma)
+    cuerpo.append('response_format', 'json')
+    cuerpo.append('temperature', '0')
+    const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+      body: cuerpo,
+      signal: AbortSignal.timeout(30_000),
+    })
+    if (!r.ok) throw new Error(`Groq respondió ${r.status}: ${(await r.text()).slice(0, 200)}`)
+    return String((await r.json()).text ?? '').trim()
+  }
+  if (process.env.WHISPER_URL) {
+    const r = await fetch(process.env.WHISPER_URL, { method: 'POST', body: audio, signal: AbortSignal.timeout(120_000) })
+    const j = await r.json()
+    if (j.error) throw new Error(String(j.error))
+    return String(j.text ?? '').trim()
+  }
+  return null // nadie configurado para transcribir
+}
+
+/** Llega {"t":"_voz","id","angulo","dur","fmt","b64"}; a la web sale {"t":"oido",...,"texto","estado"}. */
+function oyo(m) {
+  const frase = { t: 'oido', id: String(m.id), angulo: typeof m.angulo === 'number' ? m.angulo : null, dur: Number(m.dur) || 0, ts: Date.now(), texto: null, estado: 'transcribiendo' }
+  E.frases.push(frase)
+  if (E.frases.length > MAX_FRASES) E.frases.shift()
+  aLasWebs(linea(frase))
+  const t0 = Date.now()
+  transcribir(Buffer.from(String(m.b64 ?? ''), 'base64'), m.fmt)
+    .then((texto) => {
+      frase.texto = texto
+      frase.estado = texto === null ? 'sin-transcriptor' : texto ? 'listo' : 'vacio'
+      frase.ms = Date.now() - t0
+    })
+    .catch((e) => {
+      frase.estado = 'error'
+      log(`transcripción: ${e?.message ?? e}`)
+    })
+    .finally(() => {
+      log(`oído: ${frase.angulo}° ${frase.dur} s → ${frase.estado}${frase.texto ? ` «${frase.texto}»` : ''}`)
+      aLasWebs(linea(frase))
+    })
 }
 
 /* ------------------------------------------------------------------ */

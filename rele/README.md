@@ -19,6 +19,9 @@ Queda en `http://127.0.0.1:8787`. Para que sirva de algo tiene que estar publica
 | `BICHO_RELE_TOKEN` | Secreto que comparte con el bicho. Obligatorio: sin él, el bicho no puede conectarse. |
 | `CLAVE_EQUIPO` | Clave para mandar comandos y actualizar (la misma del inventario). Sin ella, cualquiera con la dirección puede. |
 | `RELE_PUERTO`, `RELE_HOST` | Puerto (8787) e interfaz (127.0.0.1). |
+| `GROQ_API_KEY` | Para transcribir lo que oye el bicho con Groq (`whisper-large-v3-turbo`). Es lo más rápido. |
+| `WHISPER_URL` | Alternativa a Groq: un servicio propio que recibe el audio por POST y responde `{"text": "…"}`. |
+| `OIDO_IDIOMA` | Idioma de lo que se le dice al bicho (`es` por defecto; solo lo usa Groq). |
 
 También se pueden poner en `rele/.env`, que no se sube al repo.
 

@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.4.0",
+      "date": "2026-11-21T10:10:37.629Z",
+      "author": "TesslaRay",
+      "notes": "Oído: el ReSpeaker XVF3800 da el ángulo de la voz y cada frase se manda al relé para transcribirla.",
+      "package": "0.4.0/bicho-0.4.0.tar.gz",
+      "size": 20462
+    },
+    {
       "version": "0.3.0",
       "date": "2026-11-21T09:17:39.414Z",
       "author": "TesslaRay",
