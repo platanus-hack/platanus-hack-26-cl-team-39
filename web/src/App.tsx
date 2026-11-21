@@ -57,9 +57,9 @@ const NAV = [
   { id: 'versiones', label: 'Versiones', icon: Icon.History },
 ] as const
 
-/** Ícono de la pestaña: la app con un punto del color del estado. */
+/** Ícono de la pestaña: el ojo de Bicho en el cuadrado amarillo, con un punto del color del estado. */
 function setFavicon(dot: string) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffe46b'/><stop offset='1' stop-color='#ffad00'/></linearGradient></defs><rect x='2' y='2' width='60' height='60' rx='15' fill='url(#g)'/><g transform='translate(5 4) scale(1.6)' fill='none' stroke='#3b2a00' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M8.5 26h12'/><path d='M13 25.5 10.6 17l7.4-5.2'/><path d='M16.2 9.4 23.8 7l1.6 6.8z' fill='#3b2a00'/></g><circle cx='50' cy='50' r='11' fill='${dot}' stroke='#fff' stroke-width='4'/></svg>`
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#ffe46b'/><stop offset='1' stop-color='#ffad00'/></linearGradient></defs><rect x='2' y='2' width='60' height='60' rx='15' fill='url(#g)'/><circle cx='27' cy='29' r='16' fill='none' stroke='#1d1d1f' stroke-width='5'/><circle cx='27' cy='29' r='7' fill='#1d1d1f'/><circle cx='27' cy='29' r='3' fill='#8fdcc4'/><rect x='-12' y='-4.5' width='24' height='9' rx='4.5' transform='translate(38.3 17.7) rotate(45)' fill='#f4996f' stroke='#fff' stroke-width='2' paint-order='stroke'/><circle cx='50' cy='50' r='11' fill='${dot}' stroke='#fff' stroke-width='4'/></svg>`
   let el = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
   if (!el) {
     el = document.createElement('link')
@@ -638,7 +638,7 @@ export default function App() {
         <aside className="sidebar glass" aria-label="Navegación y conexión">
           <div className="brand">
             <span className="appicon" aria-hidden>
-              <Icon.Bicho />
+              <Icon.Ojo />
             </span>
             <div>
               <p className="brand-name">bicho·dev</p>

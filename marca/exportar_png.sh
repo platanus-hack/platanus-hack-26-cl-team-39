@@ -27,6 +27,9 @@ cp ../project-logo.png logo/bicho-cuadrado.png
 png bicho-icono.svg 512 512 logo/bicho-icono-512.png
 png bicho-icono.svg 180 180 logo/apple-touch-icon.png
 png favicon.svg 32 32 logo/favicon-32.png
+# bicho·dev usa el mismo favicon y el ícono de Apple.
+cp logo/favicon.svg ../web/public/favicon.svg
+cp logo/apple-touch-icon.png ../web/public/apple-touch-icon.png
 # Para láminas y documentos (fondo transparente, el doble del tamaño del SVG).
 png bicho-horizontal-fondo-oscuro.svg 1554 480 logo/bicho-horizontal-fondo-oscuro.png
 png bicho-horizontal-fondo-claro.svg 1554 480 logo/bicho-horizontal-fondo-claro.png

@@ -142,7 +142,22 @@ export const Icon = {
       <path d="m10.8 12.2 7.7-7.7M15.5 7.5l2.5 2.5M17.8 5.2l1.8 1.8" />
     </svg>
   ),
-  /** Lámpara robótica: el ícono de la app. */
+  /** El ojo de Bicho con su curita: el ícono de la app, sobre el cuadrado amarillo (marca/MARCA.md). */
+  Ojo: (p: P) => (
+    <svg viewBox="0 0 240 240" fill="none" {...p}>
+      <g transform="translate(-6 6)">
+        <circle cx="120" cy="120" r="86" stroke="#1D1D1F" strokeWidth={20} />
+        <circle cx="120" cy="120" r="34" fill="#1D1D1F" />
+        <circle cx="120" cy="120" r="15" fill="#8FDCC4" />
+        <circle cx="126.5" cy="113.5" r="5" fill="#FFFFFF" />
+        <g transform="translate(180.81 59.19) rotate(45)">
+          <rect x="-60" y="-21" width="120" height="42" rx="21" fill="#F4996F" stroke="#FFFFFF" strokeWidth={7} paintOrder="stroke" />
+          <rect x="-20" y="-14" width="40" height="28" rx="6" fill="#FFD4BF" />
+        </g>
+      </g>
+    </svg>
+  ),
+  /** Brazo con lámpara: el ícono de la sección Cerebro. */
   Bicho: (p: P) => (
     <svg viewBox="0 0 32 32" fill="none" stroke="#3b2a00" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" {...p}>
       <path d="M8.5 26h12" />
