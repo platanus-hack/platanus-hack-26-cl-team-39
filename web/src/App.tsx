@@ -863,12 +863,14 @@ export default function App() {
                                 <Icon.Info />
                               </span>
                               <div>
-                                <p className="ok-t">Corre algo más nuevo</p>
-                                <p className="ok-s">v{info!.fw} no está publicada. ¿Alguien la copió a mano al Pi?</p>
+                                <p className="ok-t">Corre una versión que aprendió solo</p>
+                                <p className="ok-s">
+                                  v{info!.fw} la instaló su cerebro y no está publicada en el repo. Volver a v{latest.version} le borra lo que aprendió.
+                                </p>
                               </div>
                             </div>
-                            <button type="button" className="btn-primary" disabled={!canFlash} onClick={() => startRelease(latest)}>
-                              <Icon.Download /> Instalar v{latest.version} publicada
+                            <button type="button" className="btn-link" disabled={!canFlash} onClick={() => startRelease(latest)}>
+                              Volver a v{latest.version} publicada
                             </button>
                           </>
                         )}
@@ -950,6 +952,20 @@ export default function App() {
                     </div>
                   ) : (
                     <ol className="releases">
+                      {/* Lo que el bicho aprendió solo no está en el manifiesto: se muestra igual, sin botón de instalar. */}
+                      {info?.fw && !releases.some((r) => r.version === info.fw) && (
+                        <li className="rel" data-current="">
+                          <span className="rel-dot" aria-hidden />
+                          <div>
+                            <div className="rel-head">
+                              <b>v{info.fw}</b>
+                              <span className="tag tag-cur">En el bicho</span>
+                            </div>
+                            {info.desc && <p>{info.desc}</p>}
+                            <span className="rel-by">Aprendida por el bicho · no publicada</span>
+                          </div>
+                        </li>
+                      )}
                       {releases.map((r) => {
                         const current = info?.fw === r.version
                         const isLatest = r === latest
