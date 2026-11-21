@@ -18,6 +18,23 @@ Manejar el bicho con las manos frente a la cámara del computador.
 
 Sin robot conectado igual se maneja el **bicho virtual** de la pantalla, así que la demo funciona siempre.
 
+## Señas: enseñarle con la voz y que obedezca con su cámara
+
+`tracker/senas.py` es la demo principal (ver `ROADMAP.md`). Le muestras una seña a la **cámara del bicho** y le dices «Bicho, esta seña significa para». El oído la transcribe, el servicio guarda la huella de esa mano y la anuncia en bicho·dev (Cerebro y Habilidades) como algo aprendido. Cuando vuelve a ver la seña, manda `{"cmd":"stop"}` + `{"cmd":"no"}` (luz roja).
+
+```bash
+./correr.sh senas --rele https://<relé> --clave <clave del equipo> --ver           # cámara del bicho (1 imagen/s)
+./correr.sh senas --rele https://<relé> --clave <clave> --fuente cam --ver         # plan B: cámara del computador
+./correr.sh senas --sin-rele --fuente cam --ver                                     # ensayo: escribe «e para» y Enter
+```
+
+- Corre en el computador (MediaPipe no anda bien en la Pi 3) y habla con el bicho por el relé, como un cliente más. No toca el código del bicho.
+- Señas con acción propia: `para`, `alto`, `detente`, `hola`, `saluda`, `bien`, `celebra`, `no` (tabla `ACCIONES`). Cualquier otra se aprende igual y solo se anuncia.
+- Las señas quedan en `tracker/senas.json` (local, no se sube).
+- Probado de punta a punta con el relé del equipo en local y un bicho falso que mandaba imágenes de los videos del proceso: aprendió «para» con la palma, no se confundió con el puño, y mandó `stop` + `no` al volver a verla. En 9 videos, ninguna otra forma de mano se tomó por la seña.
+- **Falta:** correrlo con la clave; que el cerebro ignore las frases con «seña» (si no, también intenta aprender); confirmar que el bicho prende la cámara con `{"cmd":"camara","on":true}` (si no, `--camara-on '<json>'`).
+- Ensayo interactivo con el modelo 3D y diagramas: https://claude.ai/artifact/3Xh4pvMBCPUGVwnrkk729f (privado; pedir acceso a Walls).
+
 ## Gestos
 
 | Mano | Gesto | Qué hace |
