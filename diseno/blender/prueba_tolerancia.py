@@ -13,9 +13,9 @@ def box(sx, sy, sz, loc):
 def cyl(r, h, loc):
     bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=24, radius1=r * M, radius2=r * M, depth=h * M)
     bmesh.ops.translate(bm, vec=Vector(loc) * M, verts=bm.verts); return obj(bm, "c")
-def tail(cl, x0):
+def tail(cl, x0, z0, z1):  # la cola va del alto de la tira (0 a 4 mm); antes iba de -10 a 10 y la tira quedaba en el aire
     bm = bmesh.new(); vs = []
-    for z in (-10, 10):
+    for z in (z0, z1):
         for (x, y) in ((0.6, -5 - cl), (-14 - cl, -8.5 - cl), (-14 - cl, 8.5 + cl), (0.6, 5 + cl)):
             vs.append(bm.verts.new(Vector((x + x0, y, z)) * M))
     bmesh.ops.convex_hull(bm, input=vs); return obj(bm, "t")
@@ -27,11 +27,11 @@ def boolean(o, others, op):
     for c in others: bpy.data.objects.remove(c, do_unlink=True)
 # macho: tira con 3 agujeros + cola
 a = box(40, 24, 4, (-20, 0, 2))
-boolean(a, [tail(0, 0)], "UNION")
+boolean(a, [tail(0, 0, 0, 4)], "UNION")
 boolean(a, [cyl(d / 2, 10, (-35 + i * 10, 0, 2)) for i, d in enumerate((3.2, 3.4, 3.6))], "DIFFERENCE")
 # hembra: tira con alojamiento (+0,15 mm) separada 10 mm
 b = box(40, 24, 4, (30, 0, 2))
-boolean(b, [tail(0.15, 10.15 + 0.0)], "DIFFERENCE")
+boolean(b, [tail(0.15, 10.15 + 0.0, -1, 5)], "DIFFERENCE")
 boolean(b, [cyl(1.7, 10, (40, 0, 2)), cyl(1.7, 10, (50, 0, 2))], "DIFFERENCE")
 bpy.context.view_layer.update()
 bpy.ops.object.select_all(action="DESELECT")
