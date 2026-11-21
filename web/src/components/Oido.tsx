@@ -111,7 +111,7 @@ export function Oido({ store, connected, frases }: { store: SensorStore; connect
           </figure>
 
           <div className="oido-frases">
-            {lista.length === 0 ? (
+            {lista.length === 0 && !voz ? (
               <div className="empty">
                 <p className="empty-t">{vivo ? 'Todavía no le dicen nada' : 'Sin micrófono'}</p>
                 <p className="empty-s">
@@ -122,6 +122,18 @@ export function Oido({ store, connected, frases }: { store: SensorStore; connect
               </div>
             ) : (
               <ol>
+                {voz && (
+                  <li className="pendiente oyendo">
+                    <span className="oido-de">
+                      <svg viewBox="0 0 24 24" style={{ transform: `rotate(${angulo ?? 0}deg)` }} aria-hidden>
+                        <path d="M12 3.5 17 14h-3.4v6.5h-3.2V14H7z" />
+                      </svg>
+                      <b>{angulo === null ? '—' : `${angulo}°`}</b>
+                    </span>
+                    <p>Escuchando…</p>
+                    <span className="oido-cuando">ahora</span>
+                  </li>
+                )}
                 {lista.map((f) => (
                   <li key={f.id} className={f.texto ? '' : 'pendiente'}>
                     <span className="oido-de" title={f.angulo === null ? 'Sin dirección' : `Desde ${f.angulo}°`}>

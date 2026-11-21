@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.4.1",
+      "date": "2026-11-21T10:24:20.203Z",
+      "author": "TesslaRay",
+      "notes": "Oído más rápido: el audio va sin comprimir (ffmpeg tardaba 2 s por frase en el Pi 3) y la frase se corta a los 0,6 s de silencio.",
+      "package": "0.4.1/bicho-0.4.1.tar.gz",
+      "size": 20827
+    },
+    {
       "version": "0.4.0",
       "date": "2026-11-21T10:10:37.629Z",
       "author": "TesslaRay",

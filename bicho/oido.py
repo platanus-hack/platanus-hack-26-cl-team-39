@@ -29,9 +29,9 @@ DOA_VALUE = (20, 18)  # 2 x uint16: ángulo 0..359 y 1 si hay voz
 FRECUENCIA = 16000  # Hz, mono, 16 bits
 TROZO = 0.1  # segundos por trozo de audio
 PREVIO = 0.4  # audio que se guarda de antes de que empiece la voz
-SILENCIO = 0.9  # silencio que da la frase por terminada
+SILENCIO = 0.6  # silencio que da la frase por terminada
 MINIMO = 0.5  # una frase más corta se descarta (golpes, clics)
-MAXIMO = 15.0  # una frase más larga se corta
+MAXIMO = 12.0  # una frase más larga se corta
 
 disponible = False  # True si el ReSpeaker respondió
 _angulo: int | None = None
@@ -101,8 +101,12 @@ def _media_angulos(grados: list[int]) -> int | None:
 
 
 def _comprimir(pcm: bytes) -> tuple[str, bytes]:
-    """Opus si hay ffmpeg (pesa 10 veces menos por el relé); si no, WAV."""
-    if shutil.which("ffmpeg"):
+    """WAV tal cual: son unos 32 KB por segundo y sale al instante.
+
+    Con BICHO_OIDO_OPUS=1 se comprime a Opus (10 veces menos datos), pero en el Pi 3 ffmpeg
+    tarda más de 2 s por frase, y ese retraso se nota mucho más que el peso.
+    """
+    if os.environ.get("BICHO_OIDO_OPUS") == "1" and shutil.which("ffmpeg"):
         try:
             r = subprocess.run(
                 ["ffmpeg", "-loglevel", "error", "-f", "s16le", "-ar", str(FRECUENCIA), "-ac", "1", "-i", "pipe:0", "-c:a", "libopus", "-b:a", "24k", "-f", "ogg", "pipe:1"],

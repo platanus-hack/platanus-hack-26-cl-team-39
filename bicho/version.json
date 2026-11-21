@@ -1,4 +1,4 @@
 {
-  "version": "0.4.0",
+  "version": "0.4.1",
   "desc": "Raspberry Pi 3 Model B v1.2 con oído: un ReSpeaker XVF3800 por USB dice desde qué ángulo le hablan y manda cada frase al relé, que la transcribe. Además reporta temperatura, carga, WiFi y red, y maneja una luz en el GPIO 17 (comando luz)."
 }
