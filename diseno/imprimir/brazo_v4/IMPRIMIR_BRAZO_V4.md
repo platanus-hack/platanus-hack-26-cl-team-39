@@ -2,19 +2,19 @@
 
 21-nov-2026 · Equipo CRBRC · Platanus Hack 26. **Reemplaza al brazo de la bandeja B07** (P07-P11, P14, P15 de la v3): no imprimir B07 ni B08.
 
-## ✅ PLAN VIGENTE: 3 impresoras en paralelo, ~3 h 35 min (21-nov, 18:00)
+## ✅ PLAN VIGENTE: 3 impresoras en paralelo, ~3 h 45 min (21-nov, 18:00)
 
 Están ya laminadas en [`SD_3_impresoras/`](SD_3_impresoras/). Hay que lanzar las 3 al mismo tiempo:
 
 | Impresora | Archivo | Piezas | Tiempo |
 |---|---|---|---|
-| **Creality CR-3040 Pro** (300 × 300 × 400, Bowden, BLTouch, firmware V0.09) | `BRAZO_CR3040.gcode` | P09B, P10A, P10B, 2 × P36, P37: planas y tubos, sin soportes | **3 h 11 min** · 47 g |
+| **Creality CR-3040 Pro** (300 × 300 × 400, Bowden, BLTouch, firmware V0.09) | `BRAZO_CR3040.gcode` | P09B, P10A, P10B, 2 × P36, P37: planas y tubos, sin soportes | **3 h 41 min** · 47 g |
 | **Bambu A1 n.º 1** | `T2_A1n1_torreta_dedos_bujes.gcode.3mf` | P07 (soporte árbol interior), P31, P32, P33, P34, P41 | **3 h 34 min** · 102 g |
 | **Bambu A1 n.º 2** | `T3_A1n2_cunas_plataforma_palma.gcode.3mf` | P35, P08, P30, P09A, P40 | **3 h 21 min** · 110 g |
 
 **Por qué este reparto.** La CR-3040 Pro es grande, pero lenta con soportes: es Bowden con Marlin, y la torreta con soporte árbol tardaba 4,7 h en ella. Por eso le tocan las piezas planas y los tubos, que imprime bien en su cama de vidrio, y la torreta va en una A1. Así las 3 terminan casi juntas.
 
-**Perfil de la CR.** No hay un perfil oficial de la CR-3040 Pro en Bambu Studio. Se usó el de la **Creality CR-10 V2**, que tiene el mismo volumen y la misma arquitectura, con estos ajustes:
+**Perfil de la CR.** Se ajustó a los valores de fábrica que trae la SD original de la impresora (G-code de muestra de Creality, generado con Cura): aceleración de 500, viaje a 1000 y PLA a 205-210 °C con la cama a 60 °C. No hay un perfil oficial de la CR-3040 Pro en Bambu Studio. Se usó el de la **Creality CR-10 V2**, que tiene el mismo volumen y la misma arquitectura, con estos ajustes:
 - retracción Bowden de 5 mm;
 - G29 con BLTouch;
 - velocidades de 50 a 100 mm/s;

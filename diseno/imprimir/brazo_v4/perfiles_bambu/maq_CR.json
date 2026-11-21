@@ -27,20 +27,20 @@
   "5000"
  ],
  "machine_max_acceleration_extruding": [
-  "1000",
-  "1000"
+  "500",
+  "500"
  ],
  "machine_max_acceleration_retracting": [
   "1000",
   "1000"
  ],
  "machine_max_acceleration_x": [
-  "1000",
-  "1000"
+  "500",
+  "500"
  ],
  "machine_max_acceleration_y": [
-  "1000",
-  "1000"
+  "500",
+  "500"
  ],
  "machine_max_acceleration_z": [
   "100",
@@ -51,12 +51,12 @@
   "60"
  ],
  "machine_max_speed_x": [
-  "200",
-  "200"
+  "150",
+  "150"
  ],
  "machine_max_speed_y": [
-  "200",
-  "200"
+  "150",
+  "150"
  ],
  "machine_max_speed_z": [
   "10",
@@ -134,8 +134,8 @@
  "machine_end_gcode": "{if max_layer_z < printable_height}G1 Z{z_offset+min(max_layer_z+2, printable_height)} F600{endif} ; Move print head up\nG1 X5 Y170 F{travel_speed*60} ; present print\n{if max_layer_z < printable_height-10}G1 Z{z_offset+min(max_layer_z+70, printable_height-10)} F600{endif} ; Move print head further up\nM140 S0 ; turn off heatbed\nM104 S0 ; turn off temperature\nM107 ; turn off fan\nM84 X Y E ; disable motors",
  "change_filament_gcode": "M600",
  "machine_max_acceleration_travel": [
-  "1500",
-  "1250"
+  "1000",
+  "1000"
  ],
  "default_filament_profile": [
   "Generic PLA @Creality"

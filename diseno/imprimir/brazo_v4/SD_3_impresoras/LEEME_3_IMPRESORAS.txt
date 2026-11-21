@@ -1,6 +1,6 @@
-BICHO · BRAZO V4 · 3 IMPRESORAS EN PARALELO (todo listo en ~3 h 35 min)
+BICHO · BRAZO V4 · 3 IMPRESORAS EN PARALELO (todo listo en ~3 h 45 min)
 
-1) CREALITY CR-3040 Pro (la grande) -> BRAZO_CR3040.gcode      3 h 11 min · 47 g
+1) CREALITY CR-3040 Pro (la grande) -> BRAZO_CR3040.gcode      3 h 41 min · 47 g
    Placas P09B, P10A, P10B + separadores P36 x2 y P37. Sin soportes. PLA 210/60 °C.
    Copia el .gcode a su tarjeta/USB. Arranca con G28 + G29 (nivela con BLTouch). Vidrio limpio con alcohol.
 
