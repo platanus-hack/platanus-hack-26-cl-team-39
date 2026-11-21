@@ -95,9 +95,12 @@ V = ["V4"]
 g = grupo(R, "brazo", "Brazo v4: 3 MG995 + pinza MG90S", (0, 0, 0), superficie="cubierta", movible=False)
 
 # --- P07 Torreta (fija a la cubierta). Eje del giro en (0, 0).
-t = box("P07", -50, 50, -50, 50, 0, 4)
-union(t, [cyl("_s", R_TORRE, 0, 0, 0, H_TORRE), cyl("_r", R_TORRE, 0, 0, H_TORRE - 0.01, Z_PLAT - 1.0)])
-cut(t, [cyl("_i", 38, 0, 0, -1, H_TORRE - 4), cyl("_i", 39.5, 0, 0, H_TORRE, Z_PLAT)])
+# v4.1 (impresión rápida): sin placa base entera, 4 orejas de anclaje; pared de 2,5 mm (cargas bajas: FS > 10 en vuelco)
+t = cyl("P07", R_TORRE, 0, 0, 0, H_TORRE)
+union(t, [cyl("_r", R_TORRE, 0, 0, H_TORRE - 0.01, Z_PLAT - 1.0)] +
+         [box("_o", sx * 30 - 8, sx * 30 + 8, sy * 40 - 8, sy * 40 + 8, 0, 4) for sx in (-1, 1) for sy in (-1, 1)] +
+         [box("_o", min(sx * 22, sx * 34), max(sx * 22, sx * 34), min(sy * 26, sy * 40), max(sy * 26, sy * 40), 0, 4) for sx in (-1, 1) for sy in (-1, 1)])
+cut(t, [cyl("_i", R_TORRE - 2.5, 0, 0, -1, H_TORRE - 4), cyl("_i", R_TORRE - 2.0, 0, 0, H_TORRE, Z_PLAT)])
 cut(t, [box("_win", -30.8 - 10.2 + 10.2, 10.4, -10.1, 10.1, H_TORRE - 5, H_TORRE + 1)] +           # el cuerpo del servo pasa
        [cyl("_c", M3 / 2, x, y, H_TORRE - 5, H_TORRE + 1, seg=16) for x in (-34.95, 14.55) for y in (-5, 5)] +
        [hexp(x, y, H_TORRE - 4 - 0.01, H_TORRE - 4 + NUT_H) for x in (-34.95, 14.55) for y in (-5, 5)] +

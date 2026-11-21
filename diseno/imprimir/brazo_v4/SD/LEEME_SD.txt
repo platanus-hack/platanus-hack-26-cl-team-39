@@ -1,50 +1,10 @@
-BICHO · BRAZO V4 · ARCHIVOS PARA LA SD (21-nov-2026)
+BICHO · BRAZO V4 · PLAN RÁPIDO (menos de 5 h)
 
-Cada .gcode.3mf ya está laminado (Bambu Studio 2.09, perfiles oficiales, boquilla 0,4, placa Textured PEI).
-Copia a la SD SOLO la carpeta de tu impresora y de tu filamento, y elige el archivo en la pantalla.
+2 bandejas, UNA POR IMPRESORA, AL MISMO TIEMPO:
+  R1_brazo_placas_cunas_y_sensores  -> A1 PLA: 4 h 19 min (131 g) · A2L PLA: 4 h 26 min
+  R2_torreta_plataforma_y_dedos     -> A1 PLA: 4 h 10 min (130 g) · A2L PLA: 4 h 20 min
 
-  A1_PETG  / A1_PLA   -> Bambu Lab A1 (cama 256 x 256)
-  A2L_PETG / A2L_PLA  -> Bambu Lab A2L (cama 330 x 320)
-
-Usa PETG (Bambu PETG Basic) si hay: es lo que pide el cálculo estructural. PLA sirve de respaldo, pero no dejes el robot al sol.
-
-Todas: 0,20 mm, 4 paredes, 5/5 capas, 40 % giroide. B10 lleva soporte árbol solo por dentro. B12 lleva brim de 4 mm. B14 va al 100 %.
-Aviso de Bambu 'floating cantilever' en B11, B12 y B13: son puentes cortos (asiento del horn de 25 mm y ventanas de 20 mm). Se imprimen bien sin soporte.
-
-TIEMPOS (horas) Y GRAMOS
-  A1 PETG:
-    B10  Torreta                                           4.43 h   102 g
-    B11  Plataforma y cuna del hombro                      2.29 h    50 g
-    B12  Placas de los eslabones                           2.47 h    60 g
-    B13  Cuna del codo, palma, contraplaca y separadores   5.03 h    94 g
-    B14  Dedos y bujes (100 %)                             1.46 h    25 g
-    B15  Soportes del LiDAR y de la cámara                 0.90 h    11 g
-    TOTAL                                                    16.6 h   342 g
-  A1 PLA:
-    B10  Torreta                                           4.30 h   107 g
-    B11  Plataforma y cuna del hombro                      1.87 h    53 g
-    B12  Placas de los eslabones                           2.35 h    63 g
-    B13  Cuna del codo, palma, contraplaca y separadores   4.70 h    98 g
-    B14  Dedos y bujes (100 %)                             1.38 h    26 g
-    B15  Soportes del LiDAR y de la cámara                 0.75 h    11 g
-    TOTAL                                                    15.3 h   358 g
-  A2L PETG:
-    B10  Torreta                                           4.80 h   102 g
-    B11  Plataforma y cuna del hombro                      2.47 h    50 g
-    B12  Placas de los eslabones                           2.77 h    60 g
-    B13  Cuna del codo, palma, contraplaca y separadores   5.35 h    94 g
-    B14  Dedos y bujes (100 %)                             1.38 h    25 g
-    B15  Soportes del LiDAR y de la cámara                 0.91 h    10 g
-    TOTAL                                                    17.7 h   341 g
-  A2L PLA:
-    B10  Torreta                                           4.55 h   107 g
-    B11  Plataforma y cuna del hombro                      2.03 h    53 g
-    B12  Placas de los eslabones                           2.65 h    63 g
-    B13  Cuna del codo, palma, contraplaca y separadores   5.05 h    98 g
-    B14  Dedos y bujes (100 %)                             1.31 h    26 g
-    B15  Soportes del LiDAR y de la cámara                 0.76 h    11 g
-    TOTAL                                                    16.4 h   358 g
-
-ORDEN SUGERIDO: B12 y B13 primero (son el brazo), luego B10, B11, B14 y B15.
-Antes: mide con pie de metro las orejas de un MG995 (49 x 10 mm) y el LiDAR S850 con su placa adaptadora.
-Armado y tornillería: IMPRIMIR_BRAZO_V4.md (en esta carpeta y en GitHub, rama dev, diseno/imprimir/brazo_v4/).
+Copia a la SD la carpeta de tu impresora: A1_PLA o A2L_PLA (PETG solo si sobra tiempo: 4,5-4,9 h).
+Placa Textured PEI, boquilla 0,4. Ya laminado: elige el archivo en la pantalla de la impresora y listo.
+Si solo hay una impresora libre: R1 primero.
+Armado y tornillería: IMPRIMIR_BRAZO_V4.md

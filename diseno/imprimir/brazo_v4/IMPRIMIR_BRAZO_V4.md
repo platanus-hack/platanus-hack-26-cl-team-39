@@ -2,40 +2,36 @@
 
 21-nov-2026 · Equipo CRBRC · Platanus Hack 26. **Reemplaza al brazo de la bandeja B07** (P07-P11, P14, P15 de la v3): no imprimir B07 ni B08.
 
-## Archivos para la SD (ya laminados) ✅
+## Archivos para la SD: 2 bandejas de menos de 5 h, en paralelo ✅
 
-**No hay que laminar nada.** En [`SD/`](SD/) están los `.gcode.3mf` listos, en 4 carpetas: `A1_PETG`, `A1_PLA`, `A2L_PETG` y `A2L_PLA`. Se laminaron con Bambu Studio 2.09 y los perfiles oficiales: boquilla 0,4, placa Textured PEI, capa de 0,20 mm, 4 paredes, 5/5 capas y 40 % de giroide. B10 lleva soporte árbol por dentro, B12 lleva brim de 4 mm y B14 va al 100 %.
+**Plan rápido** (21-nov, 17:30): todo el brazo y los soportes de sensores se imprimen en **2 bandejas, una por impresora y al mismo tiempo**. Están ya laminadas en [`SD/`](SD/) y se terminan en unas **4 h 20 min**.
 
-Para imprimir:
-1. Copia a la SD **solo la carpeta de tu impresora y tu filamento**.
-2. En la impresora, entra a **Archivos** y elige la bandeja.
-
-Usa PETG si hay. El PLA es el respaldo.
-
-| Bandeja | A1 | A2L | PETG |
+| Bandeja | Qué lleva | A1 · PLA | A2L · PLA |
 |---|---|---|---|
-| B10 · Torreta | 4,4 h | 4,8 h | 102 g |
-| B11 · Plataforma y cuna del hombro | 2,3 h | 2,5 h | 50 g |
-| B12 · Placas de los eslabones | 2,5 h | 2,8 h | 60 g |
-| B13 · Cuna del codo, palma, contraplaca y separadores | 5,0 h | 5,3 h | 94 g |
-| B14 · Dedos y bujes (100 %) | 1,5 h | 1,4 h | 25 g |
-| B15 · Soportes del LiDAR y de la cámara | 0,9 h | 0,9 h | 11 g |
-| **Total** | **16.6 h** | **17.7 h** | **342 g** |
+| **R1** · `R1_brazo_placas_cunas_y_sensores` | P09A, P09B, P10A, P10B, P35, P30, P34, 2 × P36, P37, P40, P41 | **4 h 19 min · 131 g** | 4 h 26 min · 133 g |
+| **R2** · `R2_torreta_plataforma_y_dedos` | P07, P08, P31, P32, P33 | **4 h 10 min · 130 g** | 4 h 20 min · 132 g |
 
-Los tiempos son los que calcula Bambu Studio. Todos están en [`SD/tiempos_bambu.json`](SD/tiempos_bambu.json).
+**Cómo se imprime:**
+1. Copia a la SD la carpeta de tu impresora (`SD/A1_PLA` o `SD/A2L_PLA`).
+2. Pon **R1 en una impresora y R2 en otra al mismo tiempo**.
+3. Si solo hay una libre, empieza con R1 (el brazo) y deja R2 para la siguiente que se libere.
+4. Para liberar una A2L, la placa de arriba (B02) puede cambiarse por la placa acrílica del kit 4WD: la guía general ya lo dice.
 
-**Aviso «floating cantilever» en B11, B12 y B13.** Son puentes cortos y previstos: el asiento del horn (Ø25 × 1,6 mm) y las ventanas de las cunas (20 mm). Se imprimen bien sin soporte. Si se les pone soporte, queda atrapado en el asiento del horn.
+**Perfil rápido, aplicado a todo:**
+- **PLA Basic.** Imprime más rápido que el PETG y en el cálculo es más resistente y más rígido; solo es más frágil ante golpes.
+- **Capa de 0,28 mm.**
+- **3 paredes y 3/3 capas arriba y abajo.** Las placas de 5 mm quedan casi macizas.
+- **15 % de relleno giroide.**
+- **Brim de 2 mm.**
+- **Soporte árbol solo en R2**, dentro de la torreta.
 
-**Orden:**
-1. **B12 y B13 primero**, porque son el brazo. Usa la impresora que esté libre: todas caben en la A1.
-2. Después B10, B11, B14 y B15.
+Todo sigue por sobre el torque de bloqueo de los servos: el servo sigue siendo el fusible. Las carpetas `SD/A1_PETG` y `SD/A2L_PETG` existen por si acaso, pero tardan 4,5-4,9 h.
 
-**Copia en Drive**, con el mismo contenido, para bajarla directo a la SD: https://drive.google.com/drive/folders/1tgVAXhTr5cy_0PL6q8t-ZDHyu3ACUdJh
+**Torreta v4.1:** para bajar tiempo, la torreta perdió la base entera de 100 × 100 mm y ahora tiene 4 orejas (los mismos M3 en ±30, ±40), con pared de 2,5 mm. El vuelco lo resiste el anillo, y las tensiones de la pared quedan bajo 1 MPa.
 
-**Para regenerar** si cambia una medida:
-1. `Blender -b -P diseno/blender/generar_brazo_v4.py -- <salida>`
-2. `python3 -I diseno/blender/empaquetar_brazo_v4.py <salida> diseno/imprimir/brazo_v4`
-3. `python3 -I diseno/blender/laminar_brazo_v4.py`. Necesita Bambu Studio 2.09 en `/Applications`. Los perfiles aplanados están en `perfiles_bambu/`.
+Avisos de Bambu en R1 («floating cantilever» en P35) y R2 («unsupported overhangs» en P08): son los puentes del asiento del horn y de las ventanas de las cunas. Se imprimen bien sin soporte.
+
+**Copia en Drive:** https://drive.google.com/drive/folders/1tgVAXhTr5cy_0PL6q8t-ZDHyu3ACUdJh (carpeta «RAPIDO_5h»). Las bandejas B10-B15 de calidad (16,6 h) siguen en `3MF_bandejas/` y en Drive, por si después hay tiempo.
 
 ## Por qué cambió
 
