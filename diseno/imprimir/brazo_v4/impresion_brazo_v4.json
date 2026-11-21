@@ -100,6 +100,23 @@
    ],
    "gramos": 26,
    "perfil": "PETG 100 % de relleno (dedos y bujes macizos). Sin soportes."
+  },
+  {
+   "id": "B15",
+   "titulo": "Soportes del LiDAR y de la cámara",
+   "archivo": "B15_soportes_lidar_y_camara.3mf",
+   "piezas": [
+    [
+     "P40",
+     1
+    ],
+    [
+     "P41",
+     1
+    ]
+   ],
+   "gramos": 12,
+   "perfil": "PETG o PLA, 4 paredes, 40 % giroide, sin soportes"
   }
  ],
  "piezas": [
@@ -392,6 +409,48 @@
     11
    ],
    "stl": "P33_bujes_(hombro,_codo_y_dedo).stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P40",
+   "nombre": "Soporte del LiDAR",
+   "material": "PETG o PLA",
+   "relleno": 40,
+   "soportes": "No (base en la cama)",
+   "notas": "El S850 entra desde arriba con el conector arriba, mirando al frente; la Radar_Con entra atrás con el USB-C arriba. Pegar o 4 M3 a la rejilla",
+   "volumen_cm3": 5.6,
+   "gramos": 7.1,
+   "horas": 0.54,
+   "medidas_mm": [
+    26,
+    41,
+    26
+   ],
+   "stl": "P40_soporte_del_lidar.stl",
+   "cantidad_total": 1,
+   "versiones": [
+    "V4"
+   ]
+  },
+  {
+   "id": "P41",
+   "nombre": "Soporte de la cámara frontal",
+   "material": "PETG o PLA",
+   "relleno": 40,
+   "soportes": "No (base en la cama)",
+   "notas": "La Pi Camera entra desde arriba, lente al frente, inclinada 12° hacia arriba; la cinta baja por la ventana de la base al pasacables delantero (x = 130)",
+   "volumen_cm3": 4.0,
+   "gramos": 5.0,
+   "horas": 0.43,
+   "medidas_mm": [
+    24,
+    49,
+    22
+   ],
+   "stl": "P41_soporte_de_la_camara_frontal.stl",
    "cantidad_total": 1,
    "versiones": [
     "V4"

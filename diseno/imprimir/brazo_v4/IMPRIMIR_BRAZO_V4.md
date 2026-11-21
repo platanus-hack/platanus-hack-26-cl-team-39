@@ -106,3 +106,16 @@ Si alguna medida no coincide, se cambia en `diseno/blender/generar_brazo_v4.py` 
 En el robot real, cierra la pinza **hasta el contacto + 10°**, no hasta los 60° fijos: si el MG90S se queda empujando, se calienta. Usa rampa de aceleración en el giro y en el hombro.
 
 Regenerar: `Blender -b -P diseno/blender/generar_brazo_v4.py -- <salida>` y `python3 -I diseno/blender/empaquetar_brazo_v4.py <salida> diseno/imprimir/brazo_v4`.
+
+## Soportes del LiDAR y de la cámara frontal (bandeja B15)
+
+| Pieza | Qué lleva | Dónde va en la cubierta |
+|---|---|---|
+| **P40 · Soporte del LiDAR** | Dos ranuras. Adelante va el módulo S850, de pie, con el sensor al frente y el conector de 4 hilos arriba. Atrás, a 14 mm, va la placa Radar_Con con el USB-C arriba. | Proa izquierda: centro en x = 145, y = −45, mirando a +X. Los 4 M3 caen en la rejilla. |
+| **P41 · Soporte de la cámara frontal** | La Pi Camera v1.3 entra desde arriba con la lente al frente, inclinada 12° hacia arriba para ver personas y manos a 1-2 m. La cinta baja por la ventana de la base. | Proa al centro: x = 146, y = 0, justo sobre el pasacables delantero (x = 130). La cinta baja doblada en diagonal hasta la Pi. |
+
+- **Material:** PETG o PLA, 4 paredes, 40 % giroide, sin soportes, con la base en la cama.
+- **Fijación:** se pegan a la cubierta (cianoacrilato o silicona caliente) o se apernan con M3×12 en la rejilla. Los muros quedan perpendiculares a la base y llevan cartelas.
+- **Antes de imprimir, mide el S850 y la Radar_Con con pie de metro.** Sus medidas salieron de la foto (sensor de unos 20 × 25 mm, adaptadora de unos 25 × 31 mm, ±1 mm). Si no coinciden, cambia `W_LIDAR`, `H_LIDAR`, `W_ADAPT` o `H_ADAPT` al inicio de `diseno/blender/generar_soportes_sensores.py` y regenera.
+- **Cámara:** sus medidas son las del plano oficial de la v1.3 (25 × 24 mm). Si se quiere otra inclinación, se cambia `TILT_CAM`.
+- **Si usan los ESP32-CAM de V1 o V2 en (130, ±50),** muévanlos a x = 100: el soporte del LiDAR ocupa esa esquina.

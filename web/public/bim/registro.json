@@ -428,6 +428,50 @@
      "cambio": "Reemplazada por el brazo v4: no se podía armar"
     }
    ]
+  },
+  {
+   "id": "P40",
+   "nombre": "Soporte del LiDAR",
+   "grupo": "Sensores",
+   "material": "PETG o PLA",
+   "relleno": "40 % giroide, 4 paredes",
+   "orientacion": "No (base en la cama)",
+   "rev": "A",
+   "estado": "Listo para imprimir",
+   "stl": "diseno/imprimir/brazo_v4/STL/P40_soporte_del_lidar.stl",
+   "bandeja": "B15",
+   "gramos": 7.1,
+   "notas": "El S850 entra desde arriba con el conector arriba, mirando al frente; la Radar_Con entra atrás con el USB-C arriba. Pegar o 4 M3 a la rejilla",
+   "historial": [
+    {
+     "rev": "A",
+     "fecha": "2026-11-21",
+     "commit": "sensores-v4",
+     "cambio": "Soporte nuevo: la placa entra desde arriba en ranuras; base para pegar o apernar a la cubierta"
+    }
+   ]
+  },
+  {
+   "id": "P41",
+   "nombre": "Soporte de la cámara frontal",
+   "grupo": "Sensores",
+   "material": "PETG o PLA",
+   "relleno": "40 % giroide, 4 paredes",
+   "orientacion": "No (base en la cama)",
+   "rev": "A",
+   "estado": "Listo para imprimir",
+   "stl": "diseno/imprimir/brazo_v4/STL/P41_soporte_de_la_camara_frontal.stl",
+   "bandeja": "B15",
+   "gramos": 5.0,
+   "notas": "La Pi Camera entra desde arriba, lente al frente, inclinada 12° hacia arriba; la cinta baja por la ventana de la base al pasacables delantero (x = 130)",
+   "historial": [
+    {
+     "rev": "A",
+     "fecha": "2026-11-21",
+     "commit": "sensores-v4",
+     "cambio": "Soporte nuevo: la placa entra desde arriba en ranuras; base para pegar o apernar a la cubierta"
+    }
+   ]
   }
  ],
  "componentes": [
