@@ -6,12 +6,16 @@ export type Impresion = {
   impresora: string
   inicio: Date
   fin: Date
+  /** La hora de inicio es una suposición: se muestra con ≈. */
+  aprox: boolean
 }
 
-export const IMPRESIONES: Impresion[] = data.impresiones
+type Fila = { pieza: string; impresora: string; inicio: string; minutos: number; aprox?: boolean }
+
+export const IMPRESIONES: Impresion[] = (data.impresiones as Fila[])
   .map((i) => {
     const inicio = new Date(i.inicio)
-    return { pieza: i.pieza, impresora: i.impresora, inicio, fin: new Date(inicio.getTime() + i.minutos * 60_000) }
+    return { pieza: i.pieza, impresora: i.impresora, inicio, fin: new Date(inicio.getTime() + i.minutos * 60_000), aprox: !!i.aprox }
   })
   .sort((a, b) => a.fin.getTime() - b.fin.getTime())
 

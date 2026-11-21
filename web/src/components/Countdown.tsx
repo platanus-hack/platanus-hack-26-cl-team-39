@@ -118,19 +118,26 @@ export function Countdown({ onAlert }: { onAlert?: (a: { title: string; body: st
 
 /** Cuenta regresiva de cada pieza que se está imprimiendo. */
 function Impresiones({ now }: { now: number }) {
-  if (!IMPRESIONES.length) return null
+  // Las que terminaron hace más de una hora ya no hacen falta aquí.
+  const visibles = IMPRESIONES.filter((i) => now - i.fin.getTime() < 60 * 60_000)
+  if (!visibles.length) return null
   return (
     <ul className="prints" aria-label="Piezas en las impresoras 3D">
-      {IMPRESIONES.map((i) => {
+      {visibles.map((i) => {
         const { p, lista } = avance(i, now)
         return (
-          <li key={i.pieza} data-lista={lista || undefined} title={`${i.impresora} · partió ${hora(i.inicio, now)}`}>
+          <li
+            key={i.pieza}
+            data-lista={lista || undefined}
+            title={`${i.impresora} · partió ${i.aprox ? 'cerca de las ' : ''}${hora(i.inicio, now)}${i.aprox ? ' (hora supuesta: corrígela en web/src/lib/impresiones.json)' : ''}`}
+          >
             <span className="prints-head">
               <b>🖨️ {i.pieza}</b>
-              <small>{lista ? 'lista ✓' : restante(i, now)}</small>
+              <small>{lista ? (i.aprox ? '≈ lista' : 'lista ✓') : `${i.aprox ? '≈ ' : ''}${restante(i, now)}`}</small>
             </span>
             <span className="prints-sub">
-              {i.impresora} · {lista ? `terminó ${hora(i.fin, now)}` : `termina ${hora(i.fin, now)}`}
+              {i.impresora} · {lista ? 'terminó' : 'termina'} {i.aprox ? '≈ ' : ''}
+              {hora(i.fin, now)}
             </span>
             <span className="prints-bar">
               <span style={{ '--p': p } as CSSProperties} />
