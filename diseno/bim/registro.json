@@ -1,0 +1,50 @@
+{
+  "proyecto": "Bicho · CRBRC · Platanus Hack 26",
+  "modelo": "Brazo de Bicho",
+  "version_modelo": "v4.0",
+  "fecha": "2026-11-21",
+  "nota": "Registro BIM del brazo: una fila por pieza con su revisión vigente, historial, estado y archivos. Lo leen diseno/bim/planos.py (planos por revisión) y bicho·dev (vista Brazo). Al cambiar una pieza: sube su 'rev' (A, B, C…), agrega una línea al 'historial' con fecha, commit y cambio, regenera su STL y corre planos.py. Los planos viejos no se borran: quedan como <ID>_rev<R>.svg.",
+  "articulaciones": [
+    { "nodo": "J_giro", "servo": "S1_giro", "canal": 0, "eje_blender": "Z", "eje_gltf": "Y", "min": 0, "max": 180, "inicio": 90,
+      "angulo_nodo": "deg - 90", "que_hace": "Gira todo el brazo a izquierda y derecha. En 90° mira al frente del Bicho." },
+    { "nodo": "J_hombro", "servo": "S2_hombro", "canal": 1, "eje_blender": "Y", "eje_gltf": "-Z", "min": 0, "max": 180, "inicio": 60,
+      "angulo_nodo": "-deg", "que_hace": "Sube y baja el eslabón 1. En 90° queda vertical. Es el servo que más carga." },
+    { "nodo": "J_codo", "servo": "S3_codo", "canal": 2, "eje_blender": "Y", "eje_gltf": "-Z", "min": 20, "max": 180, "inicio": 110,
+      "angulo_nodo": "180 - deg", "que_hace": "Dobla el eslabón 2. Con el hombro en 90°, el codo en 90° deja el eslabón 2 horizontal hacia adelante." },
+    { "nodo": "J_pinza_a", "servo": "S4_pinza", "canal": 3, "eje_blender": "Z", "eje_gltf": "Y", "min": 60, "max": 108, "inicio": 84,
+      "angulo_nodo": "deg - 60", "espejo": "J_pinza_b", "que_hace": "Abre y cierra los dos dedos a la vez. En 60° está cerrada." }
+  ],
+  "calibracion": "Los signos de angulo_nodo siguen el modelo. Si en el robot real un servo gira al revés, se invierte su signo aquí, no en el firmware.",
+  "piezas": [
+    { "id": "P07", "nombre": "Torreta alta", "grupo": "Brazo · base", "material": "PETG", "relleno": "40 % giroide, 4 paredes",
+      "orientacion": "Base contra la cama, sin soportes", "rev": "A", "estado": "Impresión por confirmar (B07)",
+      "stl": "diseno/imprimir/STL/P07_torreta_alta.stl", "bandeja": "B07", "gramos": 45.1,
+      "historial": [ { "rev": "A", "fecha": "2026-11-21", "commit": "e778b11", "cambio": "Primera versión: pedestal de 46 mm, 4 M3 a la rejilla" } ] },
+    { "id": "P08", "nombre": "Horquilla del hombro", "grupo": "Brazo · giro", "material": "PETG", "relleno": "40 % giroide, 4 paredes",
+      "orientacion": "Piso contra la cama, sin soportes", "rev": "A", "estado": "Impresión por confirmar (B07)",
+      "stl": "diseno/imprimir/STL/P08_horquilla_del_hombro.stl", "bandeja": "B07", "gramos": 27.1,
+      "historial": [ { "rev": "A", "fecha": "2026-11-21", "commit": "e778b11", "cambio": "Primera versión: horquilla de paredes de 4 mm" } ] },
+    { "id": "P09", "nombre": "Eslabón 1", "grupo": "Brazo · hombro", "material": "PETG", "relleno": "40 % giroide, 4 paredes",
+      "orientacion": "De canto: las capas siguen el largo", "rev": "A", "estado": "Impresión por confirmar (B07)",
+      "stl": "diseno/imprimir/STL/P09_eslabon_1.stl", "bandeja": "B07", "gramos": 14.5,
+      "historial": [ { "rev": "A", "fecha": "2026-11-21", "commit": "e778b11", "cambio": "Primera versión: 100 mm entre ejes, 6 × 20 mm con ranura" } ] },
+    { "id": "P10", "nombre": "Eslabón 2", "grupo": "Brazo · codo", "material": "PETG", "relleno": "40 % giroide, 4 paredes",
+      "orientacion": "De canto: las capas siguen el largo", "rev": "B", "estado": "Impresión por confirmar (B07)",
+      "stl": "diseno/imprimir/STL/P10_eslabon_2.stl", "bandeja": "B07", "gramos": 13.3,
+      "historial": [
+        { "rev": "A", "fecha": "2026-11-21", "commit": "e778b11", "cambio": "Primera versión: 90 mm, 5 × 16 mm, alojamiento del MG90S de la muñeca" },
+        { "rev": "B", "fecha": "2026-11-21", "commit": "cb79dcd", "cambio": "El alojamiento del MG90S parte al ras de la cama (quedaba 0,5 mm flotando)" } ] },
+    { "id": "P30", "nombre": "Palma de la pinza", "grupo": "Pinza", "material": "PETG", "rev": "-", "estado": "En diseño (cálculo estructural en curso)",
+      "historial": [ { "rev": "-", "fecha": "2026-11-21", "commit": "", "cambio": "Concepto de Cristian: pinza de dos dedos engranados, sin muñeca" } ] },
+    { "id": "P31", "nombre": "Dedo motriz", "grupo": "Pinza", "material": "PETG", "rev": "-", "estado": "En diseño", "historial": [] },
+    { "id": "P32", "nombre": "Dedo conducido", "grupo": "Pinza", "material": "PETG", "rev": "-", "estado": "En diseño", "historial": [] },
+    { "id": "P33", "nombre": "Buje y puente de los dedos", "grupo": "Pinza", "material": "PETG", "rev": "-", "estado": "En diseño", "historial": [] },
+    { "id": "P34", "nombre": "Contraplaca", "grupo": "Pinza", "material": "PETG", "rev": "-", "estado": "En diseño", "historial": [] }
+  ],
+  "componentes": [
+    { "id": "S1_giro", "nombre": "Servo grande n.º 1 · giro", "modelo": "MG995 o MG996R (sin confirmar)", "canal": 0, "gramos": 55 },
+    { "id": "S2_hombro", "nombre": "Servo grande n.º 2 · hombro", "modelo": "MG995 o MG996R (sin confirmar)", "canal": 1, "gramos": 55 },
+    { "id": "S3_codo", "nombre": "Servo grande n.º 3 · codo", "modelo": "MG995 o MG996R (sin confirmar)", "canal": 2, "gramos": 55 },
+    { "id": "S4_pinza", "nombre": "Microservo · pinza", "modelo": "TowerPro MG90S", "canal": 3, "gramos": 13.4 }
+  ]
+}
