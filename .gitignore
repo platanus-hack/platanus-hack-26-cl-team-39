@@ -1,0 +1,23 @@
+# Sistema y editores
+.DS_Store
+.vscode/
+.idea/
+
+# Node (web/ y harness/)
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Python (por si el harness va en Python)
+__pycache__/
+.venv/
+*.pyc
+
+# Secretos: nunca al repo
+.env
+.env.*
+!.env.example
+secrets.h
+
+# Binarios de compilación del firmware (los publicados viven en web/public/firmware/)
+firmware/**/build/
