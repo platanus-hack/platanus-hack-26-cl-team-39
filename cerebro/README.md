@@ -34,7 +34,8 @@ ANTHROPIC_API_KEY=... RELE_URL=https://<relé> CLAVE_EQUIPO=... node cerebro.mjs
 | `ANTHROPIC_API_KEY` | Clave de Anthropic, con saldo. Obligatoria. |
 | `RELE_URL` | Dirección del relé. Obligatoria. |
 | `CLAVE_EQUIPO` | La clave del equipo: sin ella no puede mandar comandos ni instalar. |
-| `CEREBRO_MODELO` | Modelo de Claude (`claude-fable-5-2` por defecto). |
+| `CEREBRO_MODELO` | Modelo de Claude para aprender, o sea escribir código (`claude-fable-5-2` por defecto). |
+| `CEREBRO_MODELO_DECIDIR` | Modelo que decide qué hacer con cada frase (`claude-haiku-5-5` por defecto, por velocidad). |
 | `CEREBRO_APRENDE` | `0` para que decida y responda, pero no modifique el bicho. |
 
 También se pueden poner en `cerebro/.env`, que no se sube al repo.

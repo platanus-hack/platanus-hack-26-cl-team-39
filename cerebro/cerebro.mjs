@@ -17,7 +17,9 @@
 //   ANTHROPIC_API_KEY   clave de Anthropic. Obligatoria.
 //   RELE_URL            dirección del relé, p. ej. https://<relé>. Obligatoria.
 //   CLAVE_EQUIPO        la clave del equipo (la misma del relé): sin ella no puede mandar comandos.
-//   CEREBRO_MODELO      modelo de Claude (claude-fable-5-2 por defecto).
+//   CEREBRO_MODELO      modelo de Claude para aprender, o sea escribir código (claude-fable-5-2 por defecto).
+//   CEREBRO_MODELO_DECIDIR  modelo que decide qué hacer con cada frase (claude-haiku-5-5 por defecto: responde
+//                       en un par de segundos; con Fable cada vuelta tarda varias veces más).
 //   CEREBRO_APRENDE     "0" para que decida y responda pero no modifique el bicho.
 //   CEREBRO_ESCUCHA     "nombre" (por defecto): de lo que oye, solo evalúa las frases que dicen "bicho" o que
 //                       siguen una conversación reciente. "todo": evalúa cada frase (caro: cada una es una
@@ -41,6 +43,7 @@ try {
 }
 
 const MODELO = process.env.CEREBRO_MODELO || 'claude-fable-5-2'
+const MODELO_DECIDIR = process.env.CEREBRO_MODELO_DECIDIR || 'claude-haiku-5-5'
 const RELE = (process.env.RELE_URL || '').replace(/\/+$/, '')
 const CLAVE = process.env.CLAVE_EQUIPO || ''
 const APRENDE = process.env.CEREBRO_APRENDE !== '0'
@@ -156,7 +159,17 @@ async function comandoAlBicho(comando, ms = 2500) {
     E.esperas.delete(juntar)
     return 'No hay conexión con el relé.'
   }
-  await dormir(ms)
+  // Se vuelve apenas el bicho contesta (y deja de hablar por 300 ms), no después de un tiempo fijo.
+  const tope = Date.now() + ms
+  let vistas = 0
+  let ultima = 0
+  while (Date.now() < tope) {
+    await dormir(50)
+    if (respuestas.length !== vistas) {
+      vistas = respuestas.length
+      ultima = Date.now()
+    } else if (vistas && Date.now() - ultima >= 300) break
+  }
   E.esperas.delete(juntar)
   return respuestas.length ? respuestas.join('\n') : 'El bicho no respondió nada en la consola.'
 }
@@ -182,20 +195,22 @@ function bloqueImagen(nombre = 'camara', maxEdadMs = 15_000) {
  * Corre el ciclo de herramientas hasta que Claude termina. `ejecutar(nombre, entrada)` devuelve el
  * contenido del resultado (texto o bloques) o { fin: ... } para cortar ahí.
  */
-async function ciclo({ sistema, herramientas, mensajes, esfuerzo, maxVueltas, ejecutar, maxTokens = 16000, alPensar }) {
+async function ciclo({ sistema, herramientas, mensajes, esfuerzo, maxVueltas, ejecutar, maxTokens = 16000, alPensar, modelo = MODELO }) {
+  // Haiku: sin pensar antes de contestar (es lo que más demora) y sin fallback, que ese modelo no tiene.
+  const rapido = /haiku/.test(modelo)
   for (let vuelta = 0; vuelta < maxVueltas; vuelta++) {
     alPensar?.(vuelta)
     // En streaming: escribir un archivo entero más lo que piensa puede pasar de los 16 mil tokens,
     // y una respuesta así de larga sin streaming se corta o se queda sin tiempo.
     const r = await claude.beta.messages
       .stream({
-      model: MODELO,
+      model: modelo,
       max_tokens: maxTokens,
       // Si el modelo declina por seguridad, la API reintenta sola con otro modelo.
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
+      ...(rapido ? { thinking: { type: 'disabled' } } : { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }),
       output_config: { effort: esfuerzo },
-      system: sistema,
+      // El sistema y las herramientas no cambian entre frases: se leen de la caché.
+      system: [{ type: 'text', text: sistema, cache_control: { type: 'ephemeral' } }],
       tools: herramientas,
       messages: mensajes,
       })
@@ -278,7 +293,7 @@ Te llega cada frase que se oye cerca, transcrita. La mayoría NO es para ti: el 
 - responder: te hablan o te preguntan algo y basta con contestar.
 - comando: te piden algo que ya sabes hacer. Tus comandos son exactamente los de comandos.py (abajo). No inventes comandos.
 - aprender: te piden algo que no sabes hacer todavía y que se podría lograr con código nuevo y el hardware que tienes conectado (por ejemplo, te dicen que te conectaron una cámara y que muestres lo que ves, y no tienes ningún comando de cámara). Úsalo solo cuando te lo piden a ti de forma clara.${APRENDE ? '' : ' AHORA EL APRENDIZAJE ESTÁ DESACTIVADO: si te piden algo que no sabes, responde que no puedes aprender en este momento.'}
-- mirar: si ya tienes cámara funcionando y te preguntan qué ves, mira antes de responder.
+- mirar: si ya tienes cámara funcionando y te preguntan qué ves, mira antes de responder. Si la frase ya viene con una imagen adjunta, eso es lo que ves ahora: responde directo, sin usar mirar.
 
 Se nota que te hablan a ti cuando te nombran ("bicho"), te saludan o te hablan directo ("hey", "oye", "puedes…", "tienes…") o siguen una conversación que ya tenías. La transcripción puede venir con errores: interpreta con sentido común.
 
@@ -341,11 +356,16 @@ async function decidir(frase) {
     .filter(Boolean)
     .join('\n')
 
+  // Con la cámara prendida, la imagen va junto con la frase: así "qué ves" se responde en una sola vuelta.
+  const vista = bloqueImagen('camara', 5000)
+  const inicio = Date.now()
   let hecho = null
   const r = await ciclo({
+    modelo: MODELO_DECIDIR,
     sistema: sistemaDecidir(comandosPy),
     herramientas: H_DECIDIR,
-    mensajes: [{ role: 'user', content: contexto }],
+    mensajes: [{ role: 'user', content: vista ? [vista, { type: 'text', text: `${contexto}
+La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
     esfuerzo: 'low',
     maxVueltas: 5,
     ejecutar: async (nombre, x) => {
@@ -382,6 +402,7 @@ async function decidir(frase) {
   E.historia.push(`Oíste «${frase.texto}» (${frase.angulo ?? '?'}°) → ${hecho.tipo}: ${hecho.texto}`)
   if (E.historia.length > 12) E.historia.shift()
   if (hecho.tipo !== 'ignora') E.ultimaInteraccion = Date.now()
+  log(`decidió en ${Date.now() - inicio} ms (${MODELO_DECIDIR})`)
   anunciar(hecho.tipo, hecho.texto, { frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null })
   if (hecho.tipo === 'aprende') aprender(hecho.que, frase).catch((e) => errorDeClaude(e, 'aprendiendo'))
 }
@@ -571,5 +592,5 @@ async function aprender(que, frase) {
   }
 }
 
-log(`cerebro del bicho · modelo ${MODELO} · escucha ${ESCUCHA_TODO ? 'todo' : 'solo si lo nombran'} · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
+log(`cerebro del bicho · decide ${MODELO_DECIDIR} · aprende ${MODELO} · escucha ${ESCUCHA_TODO ? 'todo' : 'solo si lo nombran'} · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
 conectar()
