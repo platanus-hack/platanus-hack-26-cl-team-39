@@ -1,0 +1,4 @@
+{"pi3b_g":45,"picam_g":3,"esp32cam_g":10,"mg995_g":55,"mg90s_g":13.4,"tt_motor_g":30.6,"rueda_g":36,
+ "lidar_g":126,"dtof_g":5.4,"parlante_g":180,"ups_g":45,"celda_g":48,"portapilas_g":25,"pca_g":9,"lm2596_g":12,
+ "adns_g":8,"hcsr04_g":9,"led_g":4,"placa_acrilico_g":95,"placa_redonda_g":70,"oruga_g":380,"casco_tanque_g":160,
+ "cables_tornillos_g":90,"tt_stall_Nm":0.078,"mg995_stall_Nm_6v":0.98,"mg995_stall_Nm_48":0.83,"mg90s_stall_Nm_6v":0.216}

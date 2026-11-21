@@ -1,0 +1,8 @@
+tracker/.venv/
+tracker/models/
+__pycache__/
+unity/BichoHands/Library/
+unity/BichoHands/Logs/
+unity/BichoHands/UserSettings/
+unity/BichoHands/Temp/
+unity/BichoHands/obj/

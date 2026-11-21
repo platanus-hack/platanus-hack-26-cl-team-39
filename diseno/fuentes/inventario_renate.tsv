@@ -1,0 +1,11 @@
+Ítem	Cant.	Categoría	Origen	Estado	Uso en la lámpara	Notas
+Servo estándar metálico (probable MG996R / MG995), eje de latón	4	Motores	Inventario de Renate	Por verificar	Opcional	Todos iguales. Etiqueta ilegible en video: foto fija para confirmar modelo. 4,8–6,6 V, picos 1–2,5 A c/u: fuente aparte ≥5 A con GND común
+Microservo TowerPro MG90S (engranaje metálico, 9 g)	3	Motores	Inventario de Renate	Listo	Opcional	Etiqueta «MG90S» leída en las 3 bolsas (audio dice «dos»). 4,8–6 V, ~2 kg·cm, 180°
+Horns y tornillería de servo	7	Estructura	Inventario de Renate	Listo	Opcional	1 juego por servo (4 estándar + 3 MG90S)
+Driver PWM de servos 16 canales PCA9685 (I2C)	2	Placas y módulos	Inventario de Renate	Por verificar	Opcional	Los «dos iguales». 16 conectores 3 pines + borne V+; chip no leído. Encadenables (A0) = 32 servos. Revisar si ambas traen header soldado
+Módulo azul con potenciómetro amarillo (probable servo tester)	1	Placas y módulos	Inventario de Renate	Sin identificar	No	El «otro controlador de servos». Abrir bolsa y leer serigrafía; podría ser 2
+Parlante cuadrado ~40–50 mm	1	Luz y pantallas	Inventario de Renate	Por verificar	Opcional	Probable 4–8 Ω 3–5 W. Necesita amplificador (PAM8403 o MAX98357A I2S)
+Kit de cable eléctrico Striveday (carretes de colores)	1	Cables y conectores	Inventario de Renate	Listo	Opcional	Marca leída en la caja; calibre no visible (probable 22 AWG)
+Cable plano arcoíris / Dupont	1	Cables y conectores	Inventario de Renate	Por verificar	Opcional	1 tira
+Surtido de condensadores electrolíticos	1	Prototipado	Inventario de Renate	Por verificar	Opcional	1 bolsa. Uno de 470–1000 µF en V+ de servos absorbe picos
+Servos sueltos en pila de fondo (probables SG90/MG90S)	0	Motores	Inventario de Renate	Sin identificar	No	Visto desenfocado en video 3; no contables. Contar fuera de bolsa

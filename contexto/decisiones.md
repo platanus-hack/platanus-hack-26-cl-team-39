@@ -11,3 +11,5 @@ _Una línea por decisión, la más nueva abajo. Formato: fecha y hora · decisi�
 - **21 nov, 04:04** · Un solo brazo, de 2 o 3 ejes · alcanza para los usos pensados (resumen de Granola) · equipo de hardware
 - **21 nov, 04:00** · El inventario pasa del Claude Sheet a Neon + bicho·dev, con API para que los Claude lo lean y editen · el Sheet daba problemas y no lo podían editar los Claude · Guty
 - **21 nov, 04:20** · Harness del equipo en el repo: `CLAUDE.md` + `contexto/` + skills compartidas · que todos los Claude tengan el mismo contexto · Guty
+- **21 nov, 05:30** · Brazo al centro sobre un pedestal y LiDAR 2D fijo montado en el brazo (o en un servo), no en una torre · el LiDAR no gira; así barre con el movimiento del brazo · equipo de hardware
+- **21 nov, 06:20** · Estructura impresa de 32 × 20 cm con 3 placas iguales de una sola pieza (rejilla M3 cada 10 mm, PLA 40 %) · rígida, sin juntas, y cualquier pieza se atornilla donde se quiera · equipo de hardware

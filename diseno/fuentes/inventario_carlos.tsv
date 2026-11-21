@@ -1,0 +1,49 @@
+Ítem	Cant.	Categoría	Origen	Estado	Uso en la lámpara	Notas
+Raspberry Pi en caja negra con disipadores	1	Placas y módulos	Inventario de Carlos	Por verificar	Opcional	Confirmar si es Pi 4 o 3B+
+Cámara Raspberry Pi (v1.3 / OV5647) con cable FFC	1	Sensores	Inventario de Carlos	Listo	Opcional	
+ESP32-CAM	3	Placas y módulos	Inventario de Carlos	Listo	Opcional	2 montadas en mini protoboards y 1 en bolsa
+Teensy 3.x (probable 3.2) soldada a matriz LED 8x8	1	Placas y módulos	Inventario de Carlos	Por verificar	No	Viene armada con la matriz; ver si se puede despegar
+Arduino Nano	1	Placas y módulos	Inventario de Carlos	Por verificar	No	Visto en fotos; no confirmado en video
+CNC Shield V3 con 2 drivers A4988	1	Placas y módulos	Inventario de Carlos	Listo	No	
+Driver paso a paso suelto (A4988/DRV8825)	2	Placas y módulos	Inventario de Carlos	Listo	No	
+IMU 9 DOF L3GD20H + LSM303 (tipo Adafruit #1714)	4	Sensores	Inventario de Carlos	Por verificar	Opcional	3 a 4; se lee la fila de pines
+IMU MPU-6050 (GY-521)	1	Sensores	Inventario de Carlos	Por verificar	Opcional	Mínimo 1; puede haber más en el montón de bolsas
+ADC ADS1115 16 bits I2C	1	Sensores	Inventario de Carlos	Listo	No	1 a 2
+Sensor de flujo óptico ADNS-3080 (CJMCU) con lente M12	3	Sensores	Inventario de Carlos	Listo	No	2 con lente y 1 sin lente
+LiDAR 2D EAI / YDLIDAR con adaptador USB	1	Sensores	Inventario de Carlos	Por verificar	No	Modelo por confirmar (X2/X3/X4/T-mini)
+Sensor ToF VL53Lx (LiDAR 1D)	3	Sensores	Inventario de Carlos	Por verificar	Opcional	2 seguros; 3 a 5 estimados; modelo L0X/L1X/L3CX por confirmar
+Sensor ultrasónico HC-SR04	5	Sensores	Inventario de Carlos	Por verificar	Opcional	Rango 4 a 8; vaciar bolsa para contar
+Barra de sensores IR de 8 canales (tipo QTR-8)	3	Sensores	Inventario de Carlos	Listo	No	
+Pololu QTR-1A sensor de reflectancia #2458	2	Sensores	Inventario de Carlos	Listo	No	Pack de 2
+Sensor de presión diferencial Honeywell 163PC01D36	1	Sensores	Inventario de Carlos	Listo	No	Montado en placa perforada con manguera
+Multiplexor analógico 16 canales CD74HC4067	2	Placas y módulos	Inventario de Carlos	Listo	No	
+Conversor de nivel lógico (BSS138)	1	Placas y módulos	Inventario de Carlos	Sin identificar	No	Baja confianza
+Motorreductor Pololu #2360 Micro Metal 75:1 sin encoder	6	Motores	Inventario de Carlos	Por verificar	No	5 a 8; contar fuera de la bolsa
+Motor N20 con encoder magnético y rueda	2	Motores	Inventario de Carlos	Listo	No	
+Soporte Pololu #989 para micromotor	2	Estructura	Inventario de Carlos	Por verificar	No	2 a 3 bolsas
+Bomba de agua brushless QR30E 12 V 4.2 W 240 L/h	2	Motores	Inventario de Carlos	Listo	No	
+Driver de motor L298N	1	Placas y módulos	Inventario de Carlos	Listo	No	Puede haber más en la bolsa
+Driver chico rojo 2x8 pines (probable TB6612FNG)	6	Placas y módulos	Inventario de Carlos	Por verificar	No	5 a 7; confirmar si son TB6612FNG o A4988
+Matriz LED WS2812B 8x8	1	Luz y pantallas	Inventario de Carlos	Listo	Opcional	Lleva la Teensy soldada
+LED de 1 W en placa estrella	1	Luz y pantallas	Inventario de Carlos	Listo	Opcional	
+Módulo UPS LX-2BUPS 5 V 3 A con portapilas 2x18650	1	Alimentación	Inventario de Carlos	Listo	Opcional	Lo que en el audio llaman BMS
+Celda Samsung INR18650-30Q 3000 mAh	2	Alimentación	Inventario de Carlos	Listo	Opcional	Sueltas
+Cajas blancas (probables celdas 18650)	8	Alimentación	Inventario de Carlos	Sin identificar	No	7 a 8; abrir y contar
+Portapilas 18650	4	Alimentación	Inventario de Carlos	Por verificar	No	3 a 4 en bolsa
+Fuente para protoboard MB102	2	Alimentación	Inventario de Carlos	Listo	No	
+Regulador buck LM2596	1	Alimentación	Inventario de Carlos	Listo	Opcional	
+Elevador DC-DC ~100 W con voltímetro	1	Alimentación	Inventario de Carlos	Por verificar	No	
+Convertidor DC-DC angosto con borneras (¿XL4015?)	1	Alimentación	Inventario de Carlos	Sin identificar	No	
+Breakout USB-C	2	Alimentación	Inventario de Carlos	Listo	No	
+Power bank	2	Alimentación	Inventario de Carlos	Por verificar	No	Confirmar si son personales
+Mini protoboard 170 puntos	7	Prototipado	Inventario de Carlos	Listo	Opcional	2 azules; 2-3 blancas; 2 amarillas
+Placa perforada	25	Prototipado	Inventario de Carlos	Por verificar	Opcional	20 a 30
+Cables Dupont macho-macho	40	Cables y conectores	Inventario de Carlos	Listo	Opcional	
+Kit de resistencias 1/4 W	1	Prototipado	Inventario de Carlos	Listo	Opcional	Varios valores
+Trimpots azules	50	Prototipado	Inventario de Carlos	Sin identificar	No	40 a 60; baja confianza
+Chasis tipo tanque con orugas	1	Estructura	Inventario de Carlos	Listo	No	
+Chasis redondo de acrílico con rueda de motor TT	1	Estructura	Inventario de Carlos	Por verificar	No	En la caja JOKU
+Correa GT2	1	Estructura	Inventario de Carlos	Listo	No	1 a 2 tramos
+Rodamientos FUSHI ABEC-1 (MR63ZZ o MR52ZZ)	30	Estructura	Inventario de Carlos	Por verificar	Opcional	3 bolsas de 10; referencia por confirmar
+Tornillos y separadores	1	Estructura	Inventario de Carlos	Listo	Opcional	1 bolsa
+Bolsas oscuras etiqueta 012664 con placas rojas chicas	18	Placas y módulos	Inventario de Carlos	Sin identificar	No	15 a 20; prioridad abrir una

@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-_Lo actualiza el Claude de cualquiera cuando algo cambia. Máximo ~50 líneas: lo viejo se borra de aquí (queda en la bitácora). Última actualización: 21 nov, 04:35, Guty (Claude)._
+_Lo actualiza el Claude de cualquiera cuando algo cambia. Máximo ~50 líneas: lo viejo se borra de aquí (queda en la bitácora). Última actualización: 21 nov, 06:40, Walls (Claude)._
 
 ## La idea
 
@@ -16,6 +16,9 @@ El **bicho**: un robot sobre un chasis 4WD de acrílico, con una Raspberry Pi 3 
 - **bichod** ([`bicho/`](../bicho/)): agente Python con WebSocket de sensores y actualización por `POST /update`.
 - **Inventario** en Neon, con 134 ítems sacados del Claude Sheet. Se ve en bicho·dev → Equipo → Inventario.
 - **Harness del equipo:** este `CLAUDE.md`, `contexto/` y las skills compartidas.
+- **Cuerpo del bicho listo para imprimir** ([`diseno/`](../diseno/)): estructura de 32 × 20 cm, 3 placas iguales de una pieza con rejilla M3 cada 10 mm y 3 distribuciones (V1 brazo-cuello, V2 brazo + torre, V3 barredor). Son 19 STL y 14 bandejas .3mf, con la guía en [`diseno/imprimir/IMPRIMIR.md`](../diseno/imprimir/IMPRIMIR.md). Drive en `links.md`.
+- **Taller 3D** ([`diseno/taller3d/`](../diseno/taller3d/)): mover el brazo, arrastrar piezas, torque en vivo, choques, centro de gravedad y LiDAR. Plan para pasarlo a bicho·dev en [`diseno/INTEGRAR_EN_BICHO_DEV.md`](../diseno/INTEGRAR_EN_BICHO_DEV.md).
+- **Hand tracking** ([`handtracking/`](../handtracking/)): manejar el bicho con las manos (MediaPipe + Unity) por el mismo WebSocket del panel.
 - **Simulador 3D** en bicho·dev → Simulador, con el **idioma del bicho** (30 estados y 5 escenas) en [`bicho/lenguaje.json`](../bicho/lenguaje.json). Propuesta de Guty para que la ajusten Walls y Cristian.
 
 ## En qué está cada uno
@@ -29,6 +32,9 @@ _Reparto sugerido el 21 nov a las 00:01; cada uno corrige su línea._
 
 ## Pendientes
 
+- **Imprimir** (orden en `IMPRIMIR.md`): primero B00, la prueba de tolerancia de 20 min, y el brazo. Las placas de 320 × 200 necesitan una cama de 330 × 210 mm o más; si no hay, usar la versión en dos mitades que está en Drive (carpeta v3.1).
+- Medir el patrón de agujeros del motor TT antes de imprimir las cunas P24, y elegir la distribución: V1, V2 o V3.
+- Llevar el robot real (GLB) al Simulador de bicho·dev y agregar el modo «Armar» (ver `diseno/INTEGRAR_EN_BICHO_DEV.md`).
 - Elegir el caso de uso (guardián o ayuda).
 - Corroborar que el esquemático (4 páginas) funciona con el hardware que hay.
 - Revisar por qué el segundo inversor no aparece en el sistema.

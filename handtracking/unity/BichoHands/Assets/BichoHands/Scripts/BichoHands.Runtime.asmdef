@@ -1,0 +1,6 @@
+{
+  "name": "BichoHands.Runtime",
+  "rootNamespace": "Bicho.Hands",
+  "references": [],
+  "autoReferenced": true
+}
