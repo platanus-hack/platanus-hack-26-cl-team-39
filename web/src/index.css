@@ -533,7 +533,8 @@ select.btn-secondary{padding-right:28px;background-image:linear-gradient(45deg,t
 
 /* ── cronómetro de entrega ─────────────────────────────────────── */
 .clock{
-  position:relative;overflow:hidden;padding:13px 14px 14px;border-radius:16px;display:grid;gap:4px;
+  /* flex:none: en pantallas bajas la barra lateral lo apretaba y, con overflow:hidden, se cortaban el cronograma y las impresiones */
+  flex:none;position:relative;overflow:hidden;padding:13px 14px 14px;border-radius:16px;display:grid;gap:4px;
   background:rgba(255,255,255,.62);
   box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06),inset 0 1px 0 #fff,0 1px 2px rgba(40,30,70,.04);
 }
