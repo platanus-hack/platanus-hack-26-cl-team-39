@@ -232,7 +232,9 @@ export default function App() {
         if (m.t === 's' && m.d && typeof m.d === 'object') store.push(m.d as Record<string, unknown>)
         else if (m.t === 'oido') {
           const f = m as unknown as Frase
-          setFrases((prev) => (prev.some((x) => x.id === f.id) ? prev.map((x) => (x.id === f.id ? { ...x, ...f } : x)) : [...prev, { ...f, ts: f.ts ?? Date.now() }].slice(-40)))
+          if (f.estado === 'vacio') setFrases((prev) => prev.filter((x) => x.id !== f.id)) // era ruido: no dijo nada
+          else
+            setFrases((prev) => (prev.some((x) => x.id === f.id) ? prev.map((x) => (x.id === f.id ? { ...x, ...f } : x)) : [...prev, { ...f, ts: f.ts ?? Date.now() }].slice(-40)))
         } else if (m.t === 'rele') {
           // El relé avisa si el bicho está conectado a él. Si no, la web espera sin mostrar datos viejos.
           const esta = Boolean((m as { bicho?: boolean }).bicho)

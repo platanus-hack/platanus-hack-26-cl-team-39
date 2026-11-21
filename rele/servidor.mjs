@@ -321,7 +321,7 @@ async function transcribir(audio, fmt) {
     cuerpo.append('file', new Blob([audio], { type: fmt === 'ogg' ? 'audio/ogg' : 'audio/wav' }), `frase.${fmt === 'ogg' ? 'ogg' : 'wav'}`)
     cuerpo.append('model', process.env.GROQ_MODELO || 'whisper-large-v3-turbo')
     cuerpo.append('language', idioma)
-    cuerpo.append('response_format', 'json')
+    cuerpo.append('response_format', 'verbose_json')
     cuerpo.append('temperature', '0')
     const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
@@ -330,7 +330,11 @@ async function transcribir(audio, fmt) {
       signal: AbortSignal.timeout(30_000),
     })
     if (!r.ok) throw new Error(`Groq respondió ${r.status}: ${(await r.text()).slice(0, 200)}`)
-    return String((await r.json()).text ?? '').trim()
+    const j = await r.json()
+    // Whisper dice qué tan probable es que el trozo no tenga voz: con ruido o música inventa palabras.
+    const segs = Array.isArray(j.segments) ? j.segments : []
+    if (segs.length && segs.every((x) => x.no_speech_prob > 0.6)) return ''
+    return String(j.text ?? '').trim()
   }
   if (process.env.WHISPER_URL) {
     const r = await fetch(process.env.WHISPER_URL, { method: 'POST', body: audio, signal: AbortSignal.timeout(120_000) })
@@ -341,15 +345,39 @@ async function transcribir(audio, fmt) {
   return null // nadie configurado para transcribir
 }
 
+// Lo que Whisper "escucha" cuando en realidad solo hay ruido, música o un golpe: se descarta.
+const INVENTOS = new Set([
+  'gracias', 'muchas gracias', 'gracias por ver el video', 'gracias por ver', 'gracias por su atencion', 'subtitulos por la comunidad de amaraorg',
+  'subtitulos realizados por la comunidad de amaraorg', 'suscribete', 'suscribete al canal', 'hasta la proxima', 'chau', 'adios', 'musica', 'aplausos',
+  'speaking in foreign language', 'thank you', 'thanks for watching', 'you', 'bye',
+])
+const esInvento = (texto) =>
+  INVENTOS.has(
+    texto
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[^a-z ]/g, '')
+      .replace(/ +/g, ' ')
+      .trim(),
+  )
+
 /** Llega {"t":"_voz","id","angulo","dur","fmt","b64"}; a la web sale {"t":"oido",...,"texto","estado"}. */
 function oyo(m) {
   const frase = { t: 'oido', id: String(m.id), angulo: typeof m.angulo === 'number' ? m.angulo : null, dur: Number(m.dur) || 0, ts: Date.now(), texto: null, estado: 'transcribiendo' }
-  E.frases.push(frase)
-  if (E.frases.length > MAX_FRASES) E.frases.shift()
-  aLasWebs(linea(frase))
+  const publicar = () => {
+    if (!E.frases.includes(frase)) {
+      E.frases.push(frase)
+      if (E.frases.length > MAX_FRASES) E.frases.shift()
+    }
+    aLasWebs(linea(frase))
+  }
+  // Con un servicio lento se avisa altiro que se oyó algo; con Groq (menos de 1 s) se espera el texto,
+  // así los ruidos que no dicen nada ni siquiera aparecen en la web.
+  if (!process.env.GROQ_API_KEY) publicar()
   const t0 = Date.now()
   transcribir(Buffer.from(String(m.b64 ?? ''), 'base64'), m.fmt)
     .then((texto) => {
+      if (texto && esInvento(texto)) texto = ''
       frase.texto = texto
       frase.estado = texto === null ? 'sin-transcriptor' : texto ? 'listo' : 'vacio'
       frase.ms = Date.now() - t0
@@ -360,7 +388,16 @@ function oyo(m) {
     })
     .finally(() => {
       log(`oído: ${frase.angulo}° ${frase.dur} s → ${frase.estado}${frase.texto ? ` «${frase.texto}»` : ''}`)
-      aLasWebs(linea(frase))
+      if (frase.estado === 'vacio') {
+        // ruido sin palabras: fuera de la lista (y se le avisa a quien ya la estaba mostrando)
+        const i = E.frases.indexOf(frase)
+        if (i >= 0) {
+          E.frases.splice(i, 1)
+          aLasWebs(linea(frase))
+        }
+        return
+      }
+      publicar()
     })
 }
 
