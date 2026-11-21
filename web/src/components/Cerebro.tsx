@@ -16,6 +16,10 @@ export type Evento = {
   pendiente?: boolean
   /** Lo dijo en voz alta, con esa voz (ElevenLabs). */
   voz?: 'dueno' | 'extrano'
+  /** De dónde vino lo que se le dijo ("app": la app de voz del teléfono). */
+  canal?: string
+  /** En "aprendido": la habilidad nueva, con nombre corto, cómo pedírsela y sus comandos. */
+  habilidad?: { nombre?: string; pidele?: string; comandos?: string[] }
 }
 
 export type Imagen = { nombre: string; url: string; ts: number }

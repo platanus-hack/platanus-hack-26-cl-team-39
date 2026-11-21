@@ -62,4 +62,4 @@ Todo lo que decide o hace lo manda al relé, que lo reparte a quienes miran bich
 {"t":"cerebro","id":"…","tipo":"responde","texto":"Listo, luz prendida.","frase":"…","oido":"prende la luz","angulo":282,"ts":1795258000000}
 ```
 
-`tipo` puede ser `ignora`, `responde`, `comando`, `aprende`, `paso` (avance de un aprendizaje), `aprendido` o `error`. Para escribirle desde la web se manda `{"t":"cerebro","tipo":"decir","texto":"…"}` (pide la clave del equipo).
+`tipo` puede ser `ignora`, `responde`, `comando`, `aprende`, `paso` (avance de un aprendizaje), `aprendido` o `error`. `aprendido` trae además `version` y `habilidad` (`{"nombre":"Ver con su cámara","pidele":"bicho, ¿qué ves?","comandos":["camara"]}`), y lo aprendido queda anotado en `habilidades.json` dentro del código del bicho. bicho·dev arma con eso la sección **Habilidades** (lo último que aprendió, qué sabe hacer y el gráfico de autonomía); la lista base está en [`../bicho/habilidades.json`](../bicho/habilidades.json). Para escribirle desde la web se manda `{"t":"cerebro","tipo":"decir","texto":"…"}` (pide la clave del equipo).

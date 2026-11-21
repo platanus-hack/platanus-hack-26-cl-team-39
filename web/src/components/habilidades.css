@@ -1,0 +1,145 @@
+/* Habilidades: qué sabe hacer el bicho, qué aprendió solo y cuándo */
+.hab-top{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr);gap:20px}
+@media (max-width:1100px){.hab-top{grid-template-columns:minmax(0,1fr)}}
+
+/* lo último que aprendió (protagonista) */
+.hab-hero{padding:26px 30px 24px;display:flex;flex-direction:column;gap:14px;overflow:hidden;animation-delay:.08s}
+.hab-glow{opacity:.75}
+.hab-hero-nueva .hab-glow{opacity:1}
+.hab-hero-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hab-sello{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 11px 0 9px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap;
+  background:var(--banana-soft);color:var(--banana-ink);box-shadow:inset 0 0 0 .5px rgba(160,110,0,.2)}
+.hab-sello i{width:7px;height:7px;border-radius:50%;background:#f0a000}
+
+.hab-hero-nombre{display:flex;align-items:center;gap:16px}
+.hab-emoji{flex:none;width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:34px;line-height:1;
+  background:linear-gradient(160deg,#fff3c4,#ffe07a);box-shadow:inset 0 1px 0 #fff,0 0 0 .5px rgba(150,100,0,.25),0 6px 16px -6px rgba(230,150,0,.45)}
+.hab-emoji-vivo{animation:pensar 1.6s ease-in-out infinite}
+.hab-hero-nombre h2{font:650 clamp(26px,2.6vw,36px)/1.08 var(--display);letter-spacing:-.025em;overflow-wrap:anywhere}
+.hab-cuando{margin-top:6px;font-size:13.5px;color:var(--ink-2)}
+.hab-cuando .sep{margin:0 6px;color:var(--ink-4)}
+.hab-que{font-size:16px;line-height:1.42;letter-spacing:-.01em;color:var(--ink-2);max-width:60ch}
+
+.hab-pedido{margin:0;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.6);box-shadow:inset 0 0 0 .5px var(--hair)}
+.hab-pedido p{font-size:14.5px;line-height:1.4;color:var(--ink);overflow-wrap:anywhere}
+.hab-pedido footer{margin-top:3px;font-size:12px;color:var(--ink-3)}
+
+.hab-proceso{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:18px}
+.hab-proceso div{padding:10px 0 8px;border-top:.5px solid var(--hair);min-width:0}
+.hab-proceso dt{font-size:11.5px;color:var(--ink-3);margin-bottom:3px}
+.hab-proceso dd{font:600 14px var(--font);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hab-proceso dd small{display:block;margin-top:1px;font-size:11.5px;font-weight:400;color:var(--ink-3)}
+@media (max-width:620px){.hab-proceso{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.hab-como{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:13.5px;color:var(--ink-2)}
+.hab-como b{color:var(--ink);font-weight:600}
+.hab-cmds{display:flex;flex-wrap:wrap;gap:5px}
+.hab-cmds code{font:500 11.5px var(--mono);padding:2px 7px;border-radius:7px;background:rgba(0,122,255,.08);color:var(--blue-ink)}
+
+.hab-resumen p{font-size:13.5px;line-height:1.45;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hab-resumen.abierto p{display:block;max-height:280px;overflow-y:auto}
+.hab-resumen button{margin-top:4px;padding:2px 0;border:0;background:none;font:600 12.5px var(--font);color:var(--blue-ink);cursor:pointer}
+.hab-fallo{font-size:12.5px;line-height:1.4;color:var(--red-ink);padding:8px 12px;border-radius:12px;background:rgba(255,59,48,.08)}
+
+/* aprendiendo ahora */
+.hab-vivo{box-shadow:0 0 0 2px rgba(240,160,0,.55),0 18px 50px -20px rgba(240,160,0,.55)}
+.hab-vivo .live-dot,.hab-vivo .live-dot::after{background:#f0a000}
+.hab-etapas{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.hab-etapas li{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;font-size:12.5px;font-weight:600;color:var(--ink-3);background:rgba(255,255,255,.45)}
+.hab-etapas i{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:700 11px var(--font);font-style:normal;background:var(--fill);color:var(--ink-3)}
+.hab-etapas li[data-estado="hecha"]{color:var(--green-ink)}
+.hab-etapas li[data-estado="hecha"] i{background:var(--green);color:#fff}
+.hab-etapas li[data-estado="ahora"]{color:var(--banana-ink);background:rgba(255,199,0,.22)}
+.hab-etapas li[data-estado="ahora"] i{background:#f0a000;color:#fff;animation:blink 1.2s ease-in-out infinite}
+@media (max-width:620px){.hab-etapas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hab-pasos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.hab-pasos li{display:grid;grid-template-columns:52px 1fr;gap:8px;font-size:13px;line-height:1.4;color:var(--ink-3);overflow-wrap:anywhere}
+.hab-pasos li span{font:11.5px var(--mono);padding-top:1px}
+.hab-pasos li.ahora{color:var(--ink)}
+.hab-pasos li.pensando{color:var(--banana-ink)}
+
+/* autonomía: cifras */
+.hab-auto{padding:24px 26px;display:flex;flex-direction:column;animation-delay:.14s}
+.hab-cifra{margin-top:10px;font:600 72px/1 var(--font);letter-spacing:-.04em;color:var(--ink)}
+.hab-cifra span{font-size:.42em;font-weight:500;letter-spacing:-.01em;color:var(--ink-3)}
+.hab-cifra-s{margin-top:6px;font-size:14.5px;line-height:1.35;color:var(--ink-2);max-width:30ch}
+.hab-datos{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column}
+.hab-datos li{display:flex;flex-direction:column;gap:3px;padding:12px 0;border-top:.5px solid var(--hair)}
+.hab-dato-t{font-size:12px;color:var(--ink-3)}
+.hab-dato-v{font:600 17px/1.25 var(--font);color:var(--ink)}
+.hab-dato-v small{font-size:13px;font-weight:500;color:var(--ink-3)}
+.hab-dato-s{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:12.5px;line-height:1.4;color:var(--ink-3)}
+.hab-dato-s .k:not(:first-child){margin-left:8px}
+.hab-barra{display:flex;gap:2px;height:8px;margin:4px 0 2px}
+.hab-barra i{display:block;height:100%;border-radius:999px}
+.hab-barra i:first-child{width:var(--p);background:#f0a000}
+.hab-barra i:last-child{flex:1;background:#3a6fd8}
+
+/* claves de color (leyendas) */
+.k{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px}
+.k-solo{background:#f0a000}
+.k-equipo{background:#3a6fd8}
+
+/* gráfico */
+.hab-graf{margin-top:20px;padding:22px 24px 18px;animation-delay:.2s}
+.hab-graf .card-head{margin-bottom:8px}
+.hab-graf .card-head p{max-width:62ch}
+.hab-leyenda{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2)}
+.hab-leyenda span{display:inline-flex;align-items:center;gap:6px}
+.hab-graf-lienzo{position:relative;min-height:220px}
+.hab-graf-lienzo svg{display:block;touch-action:pan-y}
+.g-grid{stroke:rgba(60,60,67,.1);stroke-width:1}
+.g-tick{font:11px var(--mono);fill:var(--ink-3)}
+.g-hito line{stroke:var(--ink-4);stroke-width:1}
+.g-hito text{font:600 11.5px var(--font);fill:var(--ink-2)}
+.g-ahora{stroke:var(--ink-4);stroke-width:1}
+.g-cruz{stroke:var(--ink-3);stroke-width:1;pointer-events:none}
+.g-punto{transition:r .15s}
+.g-punto.activo{r:7}
+.g-fin{font:12px var(--font);fill:var(--ink-2)}
+.g-fin-n{font:650 18px var(--font);fill:var(--ink)}
+.g-fin-s{font-weight:600;fill:var(--banana-ink)}
+.g-rotulo{font:600 12px var(--font);fill:var(--ink)}
+.g-vivo text{font:600 11.5px var(--font);fill:var(--banana-ink)}
+.g-vivo circle{animation:blink 1s ease-in-out infinite}
+.hab-tip{position:absolute;top:6px;transform:translateX(-50%);pointer-events:none;min-width:180px;max-width:260px;padding:9px 12px;border-radius:12px;
+  background:rgba(255,255,255,.96);box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 10px 28px -10px rgba(60,40,90,.35);font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.hab-tip-t{font-weight:650;color:var(--ink)}
+.hab-tip-s{display:flex;align-items:center;gap:5px;margin-top:4px}
+.hab-tip-s .k:not(:first-child){margin-left:6px}
+.hab-graf-pie{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-top:6px;font-size:12px;color:var(--ink-3)}
+.hab-graf-pie .btn-link{margin-left:auto}
+.hab-tabla{width:100%;margin-top:10px;border-collapse:collapse;font-size:13px}
+.hab-tabla th{text-align:left;font-size:11.5px;font-weight:600;color:var(--ink-3);padding:6px 8px;border-bottom:.5px solid var(--hair)}
+.hab-tabla td{padding:6px 8px;border-bottom:.5px solid var(--hair);color:var(--ink)}
+.hab-tabla td:first-child,.hab-tabla td:last-child{font:12px var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* qué sabe hacer */
+.hab-lista{margin-top:20px;padding:22px 24px 24px;animation-delay:.26s}
+.hab-grupo + .hab-grupo{margin-top:22px}
+.hab-grupo-t{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin-bottom:10px;font:650 15px var(--display);letter-spacing:-.01em}
+.hab-grupo-t span{font:600 12px var(--mono);padding:1px 7px;border-radius:999px;background:var(--fill);color:var(--ink-2)}
+.hab-grupo-t small{font:400 12.5px var(--font);color:var(--ink-3)}
+.hab-cards{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.hab-card{display:flex;gap:12px;padding:14px;border-radius:16px;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 .5px var(--hair)}
+.hab-card-emoji{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:22px;line-height:1;background:rgba(58,111,216,.1)}
+.hab-solo .hab-card-emoji{background:linear-gradient(160deg,#fff3c4,#ffe07a);box-shadow:0 0 0 .5px rgba(150,100,0,.22)}
+.hab-solo{background:linear-gradient(180deg,rgba(255,247,214,.8),rgba(255,255,255,.62))}
+.hab-card-cuerpo{min-width:0;display:flex;flex-direction:column;gap:4px}
+.hab-card-nombre{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:650 15px/1.25 var(--display);letter-spacing:-.01em}
+.hab-card-que{font-size:13px;line-height:1.4;color:var(--ink-2)}
+.hab-card-pide{font-size:13px;color:var(--ink);font-style:italic}
+.hab-card-pie{margin-top:2px;font:11.5px var(--mono);color:var(--ink-3)}
+.hab-nueva{box-shadow:0 0 0 2px rgba(240,160,0,.6)}
+.hab-borrada{opacity:.5}
+.hab-borrada .hab-card-pie{color:var(--red-ink)}
+
+@keyframes pensar{50%{transform:translateY(-3px) rotate(-4deg)}}
+#habilidades{margin-bottom:20px}
+@media (max-width:520px){
+  .hab-hero{padding:20px 18px 18px}
+  .hab-auto,.hab-graf,.hab-lista{padding:20px 16px}
+  .hab-emoji{width:52px;height:52px;font-size:28px;border-radius:15px}
+  .hab-cifra{font-size:60px}
+}

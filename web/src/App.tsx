@@ -7,6 +7,7 @@ import { Toasts, type Toast } from './components/Toasts'
 import { Icon, SparkDefs, fmtAgo, fmtBytes, fmtUptime } from './components/ui'
 import { cmpSemver, fetchPackage, loadManifest, looksLikePackage, uploadPackage, type Manifest, type Release } from './lib/firmware'
 import { Cerebro, type Evento, type Imagen } from './components/Cerebro'
+import { Habilidades } from './components/Habilidades'
 import { Oido, type Frase } from './components/Oido'
 import { clave as claveEquipo } from './lib/inventario'
 import releCfg from './lib/rele.json'
@@ -49,6 +50,7 @@ const SIM_RELEASE: Release = {
 }
 
 const NAV = [
+  { id: 'habilidades', label: 'Habilidades', icon: Icon.Sparkle },
   { id: 'firmware', label: 'Firmware', icon: Icon.Chip },
   { id: 'sensores', label: 'Sensores', icon: Icon.Pulse },
   { id: 'oido', label: 'Oído', icon: Icon.Sparkle },
@@ -99,9 +101,12 @@ function useScrollSpy(mainRef: React.RefObject<HTMLElement>) {
       tops.forEach((t, i) => {
         if (t <= 140) cur = i
       })
-      const sameRow = Math.abs(tops[2] - tops[3]) < 4
-      if (atEnd) cur = sameRow ? Math.max(cur, pinned.current === 3 ? 3 : 2) : secs.length - 1
-      if (sameRow && cur >= 2) cur = pinned.current === 3 ? 3 : 2
+      // Consola y Versiones van lado a lado: al llegar abajo se marca la que se eligió.
+      const a = NAV.findIndex((n) => n.id === 'consola')
+      const b = NAV.findIndex((n) => n.id === 'versiones')
+      const sameRow = Math.abs(tops[a] - tops[b]) < 4
+      if (atEnd) cur = sameRow ? Math.max(cur, pinned.current === b ? b : a) : secs.length - 1
+      if (sameRow && cur >= a) cur = pinned.current === b ? b : a
       setActive(cur)
     }
     const onScroll = () => {
@@ -139,6 +144,8 @@ export default function App() {
   const [imagenes, setImagenes] = useState<Imagen[]>([])
   // Lo que el bicho dijo en voz alta: audio (data URL) por id del evento del cerebro.
   const [voces, setVoces] = useState<Record<string, string>>({})
+  // El código que corre el bicho ({"t":"fuente"}): de ahí sale cuánto escribió él y su propia lista de habilidades.
+  const [codigo, setCodigo] = useState<{ version: string | null; archivos: Record<string, string> } | null>(null)
   // Si su voz también suena en este computador (plan B por si el parlante del bicho falla).
   const [vozAqui, setVozAqui] = useState(() => {
     try {
@@ -275,6 +282,14 @@ export default function App() {
             setVoces((prev) => Object.fromEntries([...Object.entries(prev).slice(-9), [v.evento!, url]]))
             if (vozAquiRef.current) new Audio(url).play().catch(() => {})
           }
+        } else if (m.t === 'fuente') {
+          // Lo pide el cerebro (o esta web) y el relé lo reparte a todos.
+          const f = m as unknown as { version?: string; archivos?: Record<string, unknown> }
+          if (f.archivos && typeof f.archivos === 'object')
+            setCodigo({
+              version: f.version ?? null,
+              archivos: Object.fromEntries(Object.entries(f.archivos).filter((e): e is [string, string] => typeof e[1] === 'string')),
+            })
         } else if (m.t === 'imagen') {
           const i = m as unknown as { nombre?: string; fmt?: string; b64?: string }
           if (i.nombre && i.b64) {
@@ -356,6 +371,7 @@ export default function App() {
       setEventos([])
       setImagenes([])
       setVoces({})
+      setCodigo(null)
       linkRef.current = l
       setLink(l)
       try {
@@ -423,6 +439,17 @@ export default function App() {
       )
     }, 6000)
   }
+
+  /* ---------- su código, para contar cuánto escribió él ---------- */
+  // Se pide una vez por versión (es solo lectura). Por el relé hace falta la clave del equipo.
+  const puedePedirCodigo = status === 'connected' && !sinBicho && link?.kind === 'wifi' && (!relLink || !motivoCerebro)
+  const fwActual = info?.fw
+  const versionCodigo = codigo?.version
+  useEffect(() => {
+    if (!puedePedirCodigo || !fwActual || versionCodigo === fwActual) return
+    const t = setTimeout(() => linkRef.current?.sendLine(JSON.stringify({ cmd: 'fuente', id: `web-${crypto.randomUUID()}` })).catch(() => {}), 4000)
+    return () => clearTimeout(t)
+  }, [puedePedirCodigo, fwActual, versionCodigo])
 
   /* ---------- actualizar ---------- */
   const flashVia = link?.kind === 'sim' ? 'el simulador' : 'WiFi'
@@ -744,6 +771,8 @@ export default function App() {
                 {RELE_PUBLICO ? ` (${RELE_PUBLICO})` : ''} o corre la web en localhost.
               </p>
             )}
+
+            <Habilidades eventos={eventos} fw={info?.fw ?? null} releases={manifest?.releases ?? []} codigo={codigo?.archivos ?? null} />
 
             {/* firmware + disponible */}
             <section className="sec" id="firmware" aria-label="Firmware">

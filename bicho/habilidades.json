@@ -1,0 +1,128 @@
+{
+  "nota": "Lo que sabe hacer el bicho, para bicho·dev (sección Habilidades). origen: \"equipo\" si se la programó el equipo, \"solo\" si la aprendió él escribiendo su propio código. La hora sale de la versión publicada (web/public/firmware/manifest.json); si no es una versión del bicho, de \"cuando\". Cuando publiques una versión que agregue algo, súmalo aquí. Lo que aprende solo lo agrega su cerebro en su propia copia de este archivo y bicho·dev lo junta con esta lista.",
+  "habilidades": [
+    {
+      "id": "luz",
+      "icono": "💡",
+      "nombre": "Prender su luz",
+      "que_hace": "Prende, apaga y hace parpadear la luz del GPIO 17.",
+      "pidele": "bicho, prende la luz",
+      "comandos": ["luz"],
+      "origen": "equipo",
+      "version": "0.2.0"
+    },
+    {
+      "id": "actualizarse",
+      "icono": "🔄",
+      "nombre": "Actualizarse por WiFi",
+      "que_hace": "Instala versiones nuevas de su código sin cables, desde bicho·dev.",
+      "origen": "equipo",
+      "version": "0.2.0"
+    },
+    {
+      "id": "estado",
+      "icono": "🌡️",
+      "nombre": "Contar cómo está",
+      "que_hace": "Reporta su temperatura, memoria, carga y a qué WiFi está conectado. bicho·dev lo grafica en vivo.",
+      "pidele": "bicho, ¿cómo estás?",
+      "origen": "equipo",
+      "version": "0.2.1"
+    },
+    {
+      "id": "rele",
+      "icono": "📡",
+      "nombre": "Conectarse desde cualquier red",
+      "que_hace": "Sale a conectarse al relé: se le ve, se le habla y se le actualiza desde cualquier lugar, no solo desde la red local.",
+      "origen": "equipo",
+      "version": "0.3.0"
+    },
+    {
+      "id": "oir",
+      "icono": "👂",
+      "nombre": "Escuchar y saber de dónde le hablan",
+      "que_hace": "Oye cada frase con su micrófono ReSpeaker y sabe desde qué ángulo viene la voz.",
+      "pidele": "bicho, ¿me escuchas?",
+      "origen": "equipo",
+      "version": "0.4.0"
+    },
+    {
+      "id": "aprender",
+      "icono": "🧠",
+      "nombre": "Aprender cosas nuevas",
+      "que_hace": "Escribe su propio código, lo instala en su cuerpo y lo prueba. Si la versión nueva falla, vuelve solo a la anterior.",
+      "pidele": "bicho, aprende a…",
+      "origen": "equipo",
+      "version": "0.5.0"
+    },
+    {
+      "id": "entender",
+      "icono": "💬",
+      "nombre": "Entender y decidir qué hacer",
+      "que_hace": "Con Claude decide si le hablan a él y qué hacer: contestar, usar algo que ya sabe o aprender algo nuevo.",
+      "pidele": "bicho, ¿qué sabes hacer?",
+      "origen": "equipo",
+      "cuando": "2026-11-21T08:06:00-03:00"
+    },
+    {
+      "id": "voz",
+      "icono": "🗣️",
+      "nombre": "Hablar con dos voces",
+      "que_hace": "Habla con sus voces de ElevenLabs: una cercana para su dueño y otra grave para espantar extraños. Por su parlante, cuando aprenda a usarlo.",
+      "pidele": "bicho, salúdame en voz alta",
+      "origen": "equipo",
+      "cuando": "2026-11-21T12:25:00-03:00"
+    },
+    {
+      "id": "camara",
+      "icono": "📷",
+      "nombre": "Ver con su cámara",
+      "que_hace": "Prende su cámara (ov5647) y manda una imagen por segundo a bicho·dev, o saca una foto suelta.",
+      "pidele": "bicho, ¿qué ves?",
+      "comandos": ["camara", "foto"],
+      "origen": "solo",
+      "a_mas_tardar": "2026-11-21T12:08:11-03:00"
+    },
+    {
+      "id": "luces-de-colores",
+      "icono": "🚦",
+      "nombre": "Responder con luces de colores",
+      "que_hace": "Prende, apaga y hace parpadear una luz verde (GPIO 27) y una roja (GPIO 22), y con ellas contesta que sí o que no.",
+      "pidele": "bicho, contéstame con tus luces",
+      "comandos": ["verde", "rojo", "si", "no", "responder", "luces"],
+      "origen": "solo",
+      "a_mas_tardar": "2026-11-21T12:08:11-03:00"
+    },
+    {
+      "id": "flujo",
+      "icono": "🧭",
+      "nombre": "Sentir cuánto se mueve",
+      "que_hace": "Lee un sensor de flujo óptico ADNS-3080 (como el de un mouse) por SPI: cuánto se movió y qué tan bien ve la superficie.",
+      "pidele": "bicho, prende el sensor de flujo",
+      "comandos": ["flujo"],
+      "origen": "solo",
+      "version": "0.9.0",
+      "pedido": "Agrega un sensor de flujo óptico ADNS-3080 en spidev0.0, modo SPI 3, 500 kHz.",
+      "canal": "web",
+      "inicio": "2026-11-21T13:31:41-03:00",
+      "cuando": "2026-11-21T13:33:39-03:00",
+      "archivos": { "flujo.py": 205, "comandos.py": 152, "sensores.py": 89 },
+      "intentos": 1
+    },
+    {
+      "id": "flujo2",
+      "icono": "🧭",
+      "nombre": "Usar dos sensores de flujo",
+      "que_hace": "Lee un segundo ADNS-3080 en el pin 26 (spidev0.1) y los dos a la vez.",
+      "pidele": "bicho, prende los dos sensores de flujo",
+      "comandos": ["flujo2", "flujos"],
+      "origen": "solo",
+      "version": "0.10.0",
+      "pedido": "puedes aprender a conectar el otro sensor andas-3080 pero en el otro pin 26?",
+      "canal": "web",
+      "inicio": "2026-11-21T13:42:37-03:00",
+      "cuando": "2026-11-21T13:44:22-03:00",
+      "archivos": { "flujo2.py": 195, "comandos.py": 176, "sensores.py": 93 },
+      "intentos": 1
+    }
+  ]
+}

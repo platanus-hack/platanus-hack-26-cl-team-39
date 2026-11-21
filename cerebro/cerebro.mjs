@@ -551,6 +551,12 @@ Cómo es tu código (carpeta bicho/, todo en un mismo directorio, se importa por
 - Puedes crear módulos nuevos (por ejemplo camara.py) e importarlos desde comandos.py o sensores.py.
 - Para que hables, el cerebro te manda {"cmd":"hablar","voz":"dueno"|"extrano","fmt":"wav","b64":"<WAV en base64: 16 kHz, mono, 16 bits>"}. Si te piden aprender a hablar, implementa ese comando: decodifica el base64 a un archivo temporal y reprodúcelo con aplay (en la tarjeta de sonido que diga el diagnóstico) en un hilo daemon y con timeout. Si llega otro mientras suena, corta el anterior. Devuelve un texto corto, sin el base64.
 
+      nombre: {
+        type: 'string',
+        description: 'Nombre corto de la habilidad nueva para mostrarla en bicho·dev: de 2 a 5 palabras, como lo diría cualquier persona, sin siglas ni pines (por ejemplo «Ver con su cámara» o «Sentir cuánto se mueve»).',
+      },
+      pidele: { type: 'string', description: 'Una frase corta con la que alguien se la pediría, empezando por "bicho" (por ejemplo «bicho, ¿qué ves?»).' },
+      comandos: { type: 'array', items: { type: 'string' }, description: 'Los comandos nuevos o cambiados en esta versión (el valor de "cmd").' },
 Reglas para que la versión nueva no se rompa:
 1. Antes de escribir, usa inspeccionar_hardware para saber qué hay conectado de verdad y con qué programas cuentas. No supongas.
 2. Nada puede bloquear al importar ni dentro de manejar() o leer(): lo que tarda (capturar video, esperar un dispositivo) va en un hilo daemon que parte cuando llega el comando, no al importar.
@@ -580,6 +586,19 @@ function empaquetar(archivos) {
     rmSync(dir, { recursive: true, force: true })
   }
 }
+/** Agrega (o reemplaza, si es la misma versión) una habilidad aprendida a habilidades.json del bicho. */
+function anotarHabilidad(json, h) {
+  let datos
+  try {
+    datos = JSON.parse(json ?? '')
+  } catch {
+    datos = null
+  }
+  if (!datos || !Array.isArray(datos.habilidades)) datos = { nota: 'Lo que sabe hacer el bicho (ver bicho/habilidades.json en el repo). Su cerebro agrega lo que aprende.', habilidades: [] }
+  datos.habilidades = [...datos.habilidades.filter((x) => x?.version !== h.version), { id: `v${h.version}`, ...h }]
+  return JSON.stringify(datos, null, 2) + '\n'
+}
+
 
 async function aprender(que, frase) {
   E.aprendiendo = que
@@ -613,6 +632,9 @@ async function aprender(que, frase) {
       alPensar: (n) => paso(n === 0 ? 'Pienso cómo hacerlo' : 'Pienso el siguiente paso (escribir código puede tardar un par de minutos)'),
       ejecutar: async (nombre, x) => {
         if (nombre === 'inspeccionar_hardware') {
+    let habilidad = null // nombre corto, cómo pedírsela y comandos: para la sección Habilidades de bicho·dev
+    const escritos = {} // archivo → líneas, de lo que escribió en este aprendizaje
+    const inicio = new Date().toISOString()
           paso('Reviso qué hardware tengo conectado')
           const d = await pedir('diag', 'diag', 60_000)
           if (!d) return 'El bicho no respondió el diagnóstico.'
@@ -644,7 +666,27 @@ async function aprender(que, frase) {
           if (instalaciones >= 4) throw new Error('Ya instalaste 4 veces. Termina y cuenta en qué quedó.')
           instalaciones++
           const version = subirVersion(instalada ?? versionInicial)
-          archivos['version.json'] = JSON.stringify({ version, desc: String(x.que_hace ?? E.info?.desc ?? ''), aprendido: String(x.notas ?? que), autor: 'el bicho (Claude)' }, null, 2) + '\n'
+          habilidad = {
+            nombre: String(x.nombre ?? '').trim().slice(0, 60) || undefined,
+            pidele: String(x.pidele ?? '').trim().slice(0, 120) || undefined,
+            comandos: Array.isArray(x.comandos) ? x.comandos.map(String).filter(Boolean).slice(0, 12) : [],
+          }
+          archivos['version.json'] = JSON.stringify({ version, desc: String(x.que_hace ?? E.info?.desc ?? ''), aprendido: String(x.notas ?? que), habilidad: habilidad.nombre, autor: 'el bicho (Claude)' }, null, 2) + '\n'
+          // Su lista de habilidades viaja con su código (bicho·dev la lee de {"t":"fuente"}): se agrega lo que aprende.
+          archivos['habilidades.json'] = anotarHabilidad(archivos['habilidades.json'], {
+            nombre: habilidad.nombre ?? String(x.notas ?? que).slice(0, 60),
+            que_hace: String(x.notas ?? que),
+            pidele: habilidad.pidele,
+            comandos: habilidad.comandos,
+            origen: 'solo',
+            version,
+            inicio,
+            cuando: new Date().toISOString(),
+            pedido: frase.texto,
+            canal: frase.canal ?? (frase.escrito ? 'web' : 'oido'),
+            archivos: { ...escritos },
+            intentos: instalaciones,
+          })
           paso(`Instalo la versión ${version}: ${x.notas ?? ''}`)
           const paquete = empaquetar(archivos)
           mkdirSync(join(AQUI, 'versiones'), { recursive: true })
@@ -655,6 +697,7 @@ async function aprender(que, frase) {
           if (!resp.ok) {
             paso(`El Pi rechazó la versión ${version}`)
             return `NO se instaló; el bicho sigue con la versión anterior. Error del Pi:\n${texto}`
+          escritos[n] = contenido.split('\n').length
           }
           const info = await llega
           fuenteCache = { version: null, archivos: null }
@@ -690,7 +733,7 @@ async function aprender(que, frase) {
     const resumen = r.texto || `${porque[r.motivo] ?? `Terminé sin explicación (${r.motivo}).`}${instalada ? ` Quedó instalada la versión ${instalada}.` : ' No instalé nada.'}`
     log(`aprendizaje terminó: motivo=${r.motivo} instalada=${instalada} instalaciones=${instalaciones}`)
     E.historia.push(`Aprendizaje «${que}» → ${instalada ? `instalaste la versión ${instalada}` : 'no se instaló nada'}: ${resumen.slice(0, 200)}`)
-    anunciar(instalada ? 'aprendido' : 'error', resumen, { trabajo, version: instalada })
+    anunciar(instalada ? 'aprendido' : 'error', resumen, { trabajo, version: instalada, ...(instalada && habilidad ? { habilidad } : {}) })
   } finally {
     E.aprendiendo = null
     E.ultimoAprendizaje = Date.now()
