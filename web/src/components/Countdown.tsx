@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { EVENTOS, agenda, falta, hora } from '../lib/cronograma'
 
 /** Horarios de la Platanus Hack 26 (hora de Santiago). */
 export const HACKATHON = {
@@ -58,6 +59,18 @@ export function Countdown({ onAlert }: { onAlert?: (a: { title: string; body: st
     if (prev > 0 && left <= 0) onAlert({ title: 'Se acabó el tiempo', body: 'La entrega cerró a las 9:00.', urgent: true })
   }, [left, onAlert])
 
+  // Avisar 10 minutos antes de cada evento del cronograma (comidas, charlas, presentaciones).
+  const prevNow = useRef<number | null>(null)
+  useEffect(() => {
+    const prev = prevNow.current
+    prevNow.current = now
+    if (prev === null || !onAlert) return
+    for (const e of EVENTOS) {
+      const t = e.inicio.getTime() - 10 * 60_000
+      if (prev < t && now >= t) onAlert({ title: `${e.icono} ${e.titulo} en 10 minutos`, body: `De ${hora(e.inicio, now)} a ${hora(e.fin, now)}.${e.detalle ? ` ${e.detalle}` : ''}`, urgent: false })
+    }
+  }, [now, onAlert])
+
   const level = left <= 0 ? 'over' : left <= 3_600_000 ? 'urgent' : left <= 6 * 3_600_000 ? 'soon' : 'ok'
   const notStarted = now < HACKATHON.start.getTime()
   const { h, m, sec } = parts(left)
@@ -84,6 +97,33 @@ export function Countdown({ onAlert }: { onAlert?: (a: { title: string; body: st
       <div className="clock-bar" title={`${Math.round(elapsed * 100)} % de la hackathon`}>
         <span style={{ '--p': elapsed } as CSSProperties} />
       </div>
+      <Agenda now={now} />
     </div>
+  )
+}
+
+/** Qué está pasando, qué viene y cuándo se come, según el cronograma del evento. */
+function Agenda({ now }: { now: number }) {
+  const { ahora, proximo, comida } = agenda(now)
+  const filas: { k: string; label: string; icono: string; titulo: string; cuando: string; title?: string }[] = []
+  for (const e of ahora) filas.push({ k: `a${e.titulo}`, label: 'Ahora', icono: e.icono, titulo: e.titulo, cuando: `hasta ${hora(e.fin, now)}`, title: e.detalle })
+  if (proximo) filas.push({ k: 'p', label: 'Próximo', icono: proximo.icono, titulo: proximo.titulo, cuando: `${hora(proximo.inicio, now)} · ${falta(proximo.inicio, now)}`, title: proximo.detalle })
+  if (comida && comida !== proximo && !ahora.some((e) => e.tipo === 'comida'))
+    filas.push({ k: 'c', label: 'Comida', icono: comida.icono, titulo: comida.titulo, cuando: `${hora(comida.inicio, now)} · ${falta(comida.inicio, now)}` })
+  if (!filas.length) return null
+  return (
+    <ul className="agenda" aria-label="Cronograma del evento">
+      {filas.map((f) => (
+        <li key={f.k} title={f.title}>
+          <span className="agenda-label">{f.label}</span>
+          <span className="agenda-what">
+            <b>
+              {f.icono} {f.titulo}
+            </b>
+            <small>{f.cuando}</small>
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ESTADOS, EQUIPO, ErrorApi, autor, clave, inventario, plano, type Cambio, type Campos, type Item } from '../lib/inventario'
+import { ESTADOS, EQUIPO, ErrorApi, autor, clave, inventario, mensajeParaClaude, plano, type Cambio, type Campos, type Item } from '../lib/inventario'
 import type { Toast } from './Toasts'
 import { Icon, fmtAgo } from './ui'
 
@@ -57,6 +57,7 @@ export function Inventario({ toast }: { toast: ToastFn }) {
   const [pensando, setPensando] = useState(false)
   const [abierto, setAbierto] = useState<Item | 'nuevo' | null>(null)
   const [ajustes, setAjustes] = useState<string | false>(false)
+  const [copiado, setCopiado] = useState(false)
   const ultimoCambio = useRef<string | number | null>(null)
   const buscador = useRef<HTMLInputElement>(null)
 
@@ -129,6 +130,24 @@ export function Inventario({ toast }: { toast: ToastFn }) {
   const iaSet = useMemo(() => new Set(ia?.ids ?? []), [ia])
 
   const pedirClave = (msg: string) => setAjustes(msg)
+  const hayActividad = cambios.some((c) => c.autor !== 'carga inicial')
+
+  const copiarParaClaude = async () => {
+    const texto = mensajeParaClaude(location.origin)
+    try {
+      await navigator.clipboard.writeText(texto)
+    } catch {
+      // Sin permiso de portapapeles: copia con un textarea temporal.
+      const ta = Object.assign(document.createElement('textarea'), { value: texto })
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      ta.remove()
+    }
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2500)
+    if (!clave.get()) toast({ tone: 'info', title: 'Copiado sin la clave', body: 'Tu Claude te la va a pedir. Guárdala en “Quién eres” para que vaya incluida.' }, 6000)
+  }
 
   const preguntar = async () => {
     const pregunta = q.trim()
@@ -414,6 +433,7 @@ export function Inventario({ toast }: { toast: ToastFn }) {
               <p>Lo que cambian ustedes y sus Claude, en vivo.</p>
             </div>
           </header>
+          {hayActividad && (
           <ol className="inv-log">
             {cambios
               .filter((c) => c.autor !== 'carga inicial')
@@ -442,16 +462,19 @@ export function Inventario({ toast }: { toast: ToastFn }) {
                 )
               })}
           </ol>
-          {!cambios.some((c) => c.autor !== 'carga inicial') && (
+          )}
+          {!hayActividad && (
             <p className="inv-log-empty">
               Todavía nadie cambia nada. El inventario se cargó desde el Sheet{cambios.length ? ` ${fmtAgo(cambios[cambios.length - 1].fecha)}` : ''}.
             </p>
           )}
           <div className="inv-agents">
-            <p className="eyebrow">Para los Claude del equipo</p>
             <p>
-              En el repo, la skill <code>.claude/skills/inventario</code> les enseña a leer y editar esto. También hay un servidor MCP en <code>/api/mcp</code>.
+              <b>¿Usas Claude?</b> Cópiale esto y podrá buscar y editar el inventario por ti.
             </p>
+            <button type="button" className="btn-secondary" onClick={copiarParaClaude} title="Copia un mensaje con la URL, cómo usar la API y tu clave guardada">
+              {copiado ? <Icon.Check /> : <Icon.Copy />} {copiado ? 'Copiado: pégaselo' : 'Copiar para tu Claude'}
+            </button>
           </div>
         </aside>
       </section>

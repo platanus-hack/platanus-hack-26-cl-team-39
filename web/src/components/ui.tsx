@@ -130,6 +130,12 @@ export const Icon = {
       <path d="m6.5 6.5 11 11M17.5 6.5l-11 11" />
     </svg>
   ),
+  Copy: (p: P) => (
+    <svg {...base} strokeWidth={1.8} {...p}>
+      <rect x="8.5" y="8.5" width="11" height="11" rx="2.5" />
+      <path d="M15.5 5.8A2.5 2.5 0 0 0 13.2 4.5H7A2.5 2.5 0 0 0 4.5 7v6.2a2.5 2.5 0 0 0 1.3 2.2" />
+    </svg>
+  ),
   Key: (p: P) => (
     <svg {...base} strokeWidth={1.8} {...p}>
       <circle cx="8" cy="15" r="4" />

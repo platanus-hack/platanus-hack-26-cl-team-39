@@ -87,5 +87,30 @@ export const inventario = {
   preguntar: (pregunta: string) => api<{ respuesta: string; ids: number[]; modelo: string }>('/api/preguntar', { method: 'POST', body: JSON.stringify({ pregunta }) }),
 }
 
+/** Mensaje para pegarle a tu Claude (Claude Code, claude.ai…): contexto + cómo leer y editar el inventario. */
+export function mensajeParaClaude(base: string) {
+  const nombre = autor.get() || '<tu nombre>'
+  const k = clave.get()
+  const auth = `-H "authorization: Bearer ${k || '$INVENTARIO_TOKEN'}"`
+  const quien = `-H "x-autor: ${nombre} (Claude)"`
+  return `Te doy acceso al inventario de hardware de mi equipo (CRBRC, Platanus Hack 26: un robot 4WD con Raspberry Pi 3 que maneja un agente Claude). Úsalo cuando te pregunte si tenemos algo, o cuando use, saque, rompa, preste o consiga una pieza: actualízalo en el momento y avísame en una línea.
+
+API: ${base}
+${k ? `Clave del equipo (solo para ti; no la subas a git ni la compartas): ${k}` : 'La clave del equipo pídemela la primera vez; guárdala como INVENTARIO_TOKEN.'}
+
+Leer (sin clave):
+  curl -s "${base}/api/inventario?q=servo"        # busca en todo, sin importar tildes
+  curl -s "${base}/api/inventario"                # todo (~130 ítems)
+Preguntar a Claude con todo el inventario:
+  curl -s -X POST "${base}/api/preguntar" ${auth} -H 'content-type: application/json' -d '{"pregunta":"¿qué tenemos para medir distancia?"}'
+Editar (solo los campos que mandes):
+  curl -s -X PATCH "${base}/api/inventario?id=ID" ${auth} ${quien} -H 'content-type: application/json' -d '{"cantidad":3,"estado":"En uso"}'
+Agregar:
+  curl -s -X POST "${base}/api/inventario" ${auth} ${quien} -H 'content-type: application/json' -d '{"item":{"nombre":"Sensor HC-SR04","cantidad":2,"categoria":"Sensores","origen":"Compra AFEL"}}'
+
+Campos: nombre, cantidad (entero o null), categoria, origen (de quién es), estado (Listo, En uso, Por verificar, Sin identificar, Prestado, Dañado), uso_bicho, ubicacion, notas.
+Reglas: busca antes de agregar para no duplicar; no borres (si algo se rompe, cambia el estado a Dañado); no inventes cantidades. Si trabajas en el repo del equipo, la skill .claude/skills/inventario tiene el detalle.`
+}
+
 /** Para buscar sin importar tildes ni mayúsculas. */
 export const plano = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()

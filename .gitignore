@@ -21,3 +21,6 @@ secrets.h
 
 # Paquetes de prueba del agente
 bicho/*.tar.gz
+
+# Ajustes personales de Claude Code (los compartidos van en .claude/settings.json)
+.claude/settings.local.json
