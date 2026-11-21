@@ -93,6 +93,14 @@ En la sala hay varias **Bambu Lab A2L**, con cama de **330 × 320 mm** y placa d
    - por WiFi, con **Print**, si la impresora está vinculada;
    - con **Export plate sliced file** (`.gcode.3mf`), copiándolo a un pendrive o microSD que se conecta a la impresora y se elige en su pantalla.
 
+**Tiempos reales en la A2L.** Los calculó Bambu Studio 2.09 con Bambu PLA Basic:
+- **Placas:** con el perfil PLA-ESTRUCTURA tardan **12 h cada una**, porque la boquilla da muchas vueltas chicas en los cerca de 600 agujeros. Por eso se laminaron con 2 paredes, capas de 0,24 mm y 25 % de giroide: **8 h 11 min y 214 g** cada una. Las nervaduras siguen dando la rigidez.
+- **Lo demás:** brazo 3 h 40 min a 4 h, columnas 3 h 35 min, cunas 1 h 30 min, soportes 1 h 50 min y muñeca unas 3 h.
+
+Los archivos ya laminados (`.gcode.3mf`) están en el Mac de Guty, no en el repo, porque pesan 40 MB.
+
+**Al laminar por línea de comandos:** el perfil de la A2L trae los códigos de inicio y fin en archivos `template` aparte, con `include`, que también hay que cargar. Si no, sale el código de otra impresora.
+
 **Cuidados:**
 - La A2L es abierta y mueve la cama en el eje Y. Déjala lejos del aire acondicionado y de la ventana para que no se levanten las esquinas.
 - Mira la primera capa de cada placa antes de dejarla sola.
