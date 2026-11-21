@@ -1,0 +1,14 @@
+BICHO · BRAZO V4 · 3 IMPRESORAS EN PARALELO (todo listo en ~3 h 35 min)
+
+1) CREALITY CR-3040 Pro (la grande) -> BRAZO_CR3040.gcode      3 h 11 min · 47 g
+   Placas P09B, P10A, P10B + separadores P36 x2 y P37. Sin soportes. PLA 210/60 °C.
+   Copia el .gcode a su tarjeta/USB. Arranca con G28 + G29 (nivela con BLTouch). Vidrio limpio con alcohol.
+
+2) BAMBU A1 n.º 1 -> T2_A1n1_torreta_dedos_bujes.gcode.3mf     3 h 34 min · 102 g
+   Torreta P07 (soporte árbol solo por dentro) + dedos P31/P32 + bujes P33 + contraplaca P34 + soporte cámara P41.
+
+3) BAMBU A1 n.º 2 -> T3_A1n2_cunas_plataforma_palma.gcode.3mf  3 h 21 min · 110 g
+   Cuna del codo P35 + plataforma P08 + palma P30 + placa P09A + soporte LiDAR P40.
+
+Todo en PLA, capa 0,28, 3 paredes, 15 % giroide. En las A1: placa Textured PEI, elige el archivo en la pantalla.
+Lanza las 3 a la vez. Armado y tornillería: IMPRIMIR_BRAZO_V4.md

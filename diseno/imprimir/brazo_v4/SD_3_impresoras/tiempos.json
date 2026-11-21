@@ -1,0 +1,43 @@
+[
+ {
+  "bandeja": "T1_CR3040_placas_y_separadores",
+  "impresora": "CR",
+  "horas": 3.18,
+  "gramos": 47,
+  "piezas": [
+   "P09B",
+   "P10A",
+   "P10B",
+   "P36",
+   "P36",
+   "P37"
+  ]
+ },
+ {
+  "bandeja": "T2_A1n1_torreta_dedos_bujes",
+  "impresora": "A1",
+  "horas": 3.56,
+  "gramos": 102,
+  "piezas": [
+   "P07",
+   "P31",
+   "P32",
+   "P33",
+   "P41",
+   "P34"
+  ]
+ },
+ {
+  "bandeja": "T3_A1n2_cunas_plataforma_palma",
+  "impresora": "A1",
+  "horas": 3.35,
+  "gramos": 110,
+  "piezas": [
+   "P35",
+   "P08",
+   "P30",
+   "P09A",
+   "P40"
+  ]
+ }
+]
