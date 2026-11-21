@@ -11,6 +11,7 @@ _Agrega aquí todo link que el resto vaya a necesitar. Nada con claves, tokens n
 ## Herramientas
 
 - **bicho·dev** en local: `cd web && npm install && npm run dev` → http://localhost:5173
+- **Relé del bicho** (para verlo desde cualquier red): https://promotional-precision-lincoln-david.trycloudflare.com. Es una dirección temporal: si cambia, hay que actualizarla en `web/src/lib/rele.json` y en el `rele.json` del Pi. Código y cómo funciona: [`rele/`](../rele/).
 - **Inventario:** http://localhost:5173/#inventario (versión publicada: pendiente)
 - Inventario original (Claude Sheet, ya no se edita): https://claude.ai/artifact/GBWrPQMav9q9mWqdLA92aG
 - Base de datos: Neon, proyecto `crbrc-platanus` (la conexión está en `web/.env`; pídela por privado)

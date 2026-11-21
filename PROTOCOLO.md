@@ -22,6 +22,7 @@ Se manda al conectarse, cuando se pide con `{"cmd":"info"}` y cada 10 s.
 
 - `fw` (obligatorio): versión **X.Y.Z**, sacada de `bicho/version.json`. La web la compara con las versiones publicadas.
 - `desc`: el "qué hace" que muestra la web.
+- `red`: a qué red está conectado, por ejemplo `"WiFi: MiRed"` o `"WiFi: MiRed + cable"`. `null` si no se puede saber.
 - `heap`: memoria libre en bytes. `uptime`: segundos desde que arrancó el agente.
 
 ### `s`: lecturas de sensores
@@ -47,6 +48,24 @@ Se manda al conectarse, cuando se pide con `{"cmd":"info"}` y cada 10 s.
 | `{"cmd":"rate","hz":50}` | Cambia la frecuencia de las lecturas (de 1 a 100 Hz) |
 | `{"cmd":"reboot"}` | Reinicia el agente (no el Pi) |
 | cualquier otro | Lo resuelve `manejar()` en `bicho/comandos.py`, p. ej. `{"cmd":"servo","i":0,"deg":90}` |
+
+## Relé: llegar al bicho desde cualquier red
+
+El bicho no tiene dirección pública: desde otra red no se le puede "llamar". Por eso `bichod` también sale a conectarse al **relé** ([`rele/`](rele/)), un servicio aparte con dirección pública, y la web habla con el relé en vez de con el bicho. Hacia la web el relé se ve igual que un bicho: mismas rutas y mismos mensajes.
+
+| Qué | Dónde | Para qué |
+|---|---|---|
+| WebSocket | `wss://<relé>/bicho` | El bicho. Header `Authorization: Bearer <BICHO_RELE_TOKEN>` |
+| WebSocket | `wss://<relé>/ws` | La web. Mirar es libre; con `?clave=<clave del equipo>` además manda comandos |
+| HTTP GET | `https://<relé>/info` | La última `info` del bicho (503 si no está conectado) |
+| HTTP POST | `https://<relé>/update` | Instalar una versión (cuerpo: el `.tar.gz`; `Authorization: Bearer <clave del equipo>`) |
+| HTTP GET | `https://<relé>/` | Estado del relé: si está el bicho, desde cuándo y cuánta gente mira |
+
+- El relé agrega un mensaje propio: `{"t":"rele","bicho":true|false}`, cuando el bicho se conecta o se cae.
+- Los sensores solo viajan mientras alguien mira la web.
+- En el Pi se configura con `rele.json` junto a `releases/` (`/opt/bicho/rele.json` o `~/.bicho/rele.json`): `{"url": "https://<relé>", "token": "<secreto>"}`. El token no va al repo. Sin ese archivo, el bicho solo atiende la red local.
+- La web usa el relé de `web/src/lib/rele.json` (o `VITE_BICHO_RELE`). En "Conexión" también se puede escribir `https://<relé>` a mano.
+- La conexión directa (`ws://bicho.local:8080/ws`) sigue funcionando igual en la red local.
 
 ## Versiones
 

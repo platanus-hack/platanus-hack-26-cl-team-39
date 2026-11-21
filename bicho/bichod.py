@@ -24,6 +24,7 @@ import platform
 import re
 import shutil
 import socket
+import ssl
 import subprocess
 import sys
 import tarfile
@@ -95,6 +96,35 @@ def _mac() -> str:
     return ":".join(f"{(n >> i) & 0xFF:02X}" for i in range(40, -1, -8))
 
 
+_red_cache: tuple[float, str | None] = (0.0, None)
+
+
+def _red() -> str | None:
+    """A qué red está conectado el bicho, p. ej. "WiFi: MiRed" o "WiFi: MiRed + cable"."""
+    global _red_cache
+    if time.time() - _red_cache[0] < 8:
+        return _red_cache[1]
+    red = None
+    try:
+        out = subprocess.run(
+            ["nmcli", "-t", "-e", "no", "-f", "TYPE,STATE,CONNECTION", "dev"], capture_output=True, text=True, timeout=2
+        ).stdout
+        partes = []
+        for line in out.splitlines():
+            tipo, estado, nombre = (line.split(":", 2) + ["", ""])[:3]
+            if estado != "connected":
+                continue
+            if tipo == "wifi":
+                partes.insert(0, f"WiFi: {nombre}")
+            elif tipo == "ethernet":
+                partes.append("cable")
+        red = " + ".join(partes) or "sin red"
+    except (OSError, subprocess.SubprocessError):
+        pass  # sin nmcli (por ejemplo en un computador): no se informa
+    _red_cache = (time.time(), red)
+    return red
+
+
 def _mem_available() -> int | None:
     txt = _read("/proc/meminfo")
     if txt:
@@ -116,6 +146,7 @@ def info() -> dict:
         "chip": _read("/proc/device-tree/model") or f"{platform.system()} {platform.machine()}",
         "build": built,
         "ip": _ip(),
+        "red": _red(),
         "mac": _mac(),
         "uptime": int(time.time() - START),
         "heap": _mem_available(),
@@ -136,6 +167,7 @@ class WebSocket:
         self.writer = writer
         self.lock = asyncio.Lock()
         self.closed = False
+        self.max_msg = 1024 * 1024
 
     @staticmethod
     def frame(opcode: int, payload: bytes) -> bytes:
@@ -169,7 +201,7 @@ class WebSocket:
                 n = int.from_bytes(await self.reader.readexactly(2), "big")
             elif n == 127:
                 n = int.from_bytes(await self.reader.readexactly(8), "big")
-            if n > 1024 * 1024:
+            if n > self.max_msg:
                 return None
             mask = await self.reader.readexactly(4) if masked else b""
             data = await self.reader.readexactly(n)
@@ -434,6 +466,165 @@ async def ws_session(reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
 
 
 # ---------------------------------------------------------------------------
+# Relé: el bicho sale a conectarse a la web publicada, para que lo vean desde cualquier red
+# ---------------------------------------------------------------------------
+#
+# El bicho no tiene dirección pública, así que no se le puede "llamar" desde internet. En vez de eso
+# abre él una conexión al relé (rele/servidor.mjs) y la deja abierta; la web habla con el relé.
+# Se configura en $BICHO_HOME/rele.json → {"url": "https://<relé>", "token": "<secreto>"}
+# o con las variables BICHO_RELE_URL y BICHO_RELE_TOKEN. Sin configuración, no se usa.
+
+
+class WebSocketCliente(WebSocket):
+    """Lado cliente: las tramas que salen van enmascaradas (RFC 6455)."""
+
+    @staticmethod
+    def frame(opcode: int, payload: bytes) -> bytes:
+        n = len(payload)
+        head = bytes([0x80 | opcode])
+        if n < 126:
+            head += bytes([0x80 | n])
+        elif n < 65536:
+            head += bytes([0x80 | 126]) + n.to_bytes(2, "big")
+        else:
+            head += bytes([0x80 | 127]) + n.to_bytes(8, "big")
+        mask = os.urandom(4)
+        if n:
+            largo = mask * (n // 4 + 1)
+            payload = (int.from_bytes(payload, "big") ^ int.from_bytes(largo[:n], "big")).to_bytes(n, "big")
+        return head + mask + payload
+
+
+rele_ws: WebSocketCliente | None = None
+
+
+def _rele_cfg() -> tuple[str, str] | None:
+    url, token = os.environ.get("BICHO_RELE_URL", ""), os.environ.get("BICHO_RELE_TOKEN", "")
+    try:
+        cfg = json.loads((HOME / "rele.json").read_text(encoding="utf-8"))
+        url, token = url or str(cfg.get("url", "")), token or str(cfg.get("token", ""))
+    except (OSError, ValueError):
+        pass
+    url = url.strip().rstrip("/")
+    if not url:
+        return None
+    if url.startswith("http"):  # se acepta la dirección tal cual: https://relé → wss://relé/bicho
+        url = "ws" + url[4:]
+    if not url.endswith("/bicho"):
+        url += "/bicho"
+    return url, token.strip()
+
+
+async def _rele_sesion(url: str, token: str) -> None:
+    global rele_ws
+    m = re.match(r"^(wss?)://([^/:]+)(?::(\d+))?(/.*)?$", url)
+    if not m:
+        raise ValueError(f"dirección del relé inválida: {url}")
+    seguro, host = m.group(1) == "wss", m.group(2)
+    port = int(m.group(3) or (443 if seguro else 80))
+    path = m.group(4) or "/bicho"
+    reader, writer = await asyncio.wait_for(
+        asyncio.open_connection(host, port, ssl=ssl.create_default_context() if seguro else None, server_hostname=host if seguro else None),
+        timeout=15,
+    )
+    ws: WebSocketCliente | None = None
+    try:
+        key = base64.b64encode(os.urandom(16)).decode()
+        writer.write(
+            (
+                f"GET {path} HTTP/1.1\r\nHost: {host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+                f"Sec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\nAuthorization: Bearer {token}\r\n"
+                f"User-Agent: bichod/{META['version']}\r\n\r\n"
+            ).encode()
+        )
+        await writer.drain()
+        head = (await asyncio.wait_for(reader.readuntil(b"\r\n\r\n"), timeout=15)).decode("latin-1")
+        estado = head.split("\r\n")[0]
+        if " 101 " not in estado:
+            raise ConnectionError(f"el relé respondió: {estado}")
+        ws = WebSocketCliente(reader, writer)
+        ws.max_msg = MAX_PACKAGE * 2  # los paquetes de actualización llegan en base64
+        rele_ws = ws
+        log(f"conectado al relé {host}")
+        await ws.send(json.dumps(info(), ensure_ascii=False))
+        while True:
+            # el relé manda un latido cada 20 s: si pasa un minuto sin nada, la conexión está muerta
+            msg = await asyncio.wait_for(ws.recv(), timeout=60)
+            if msg is None:
+                break
+            for line in msg.split("\n"):
+                if line.strip():
+                    await _rele_linea(line.strip(), ws)
+    finally:
+        rele_ws = None
+        clients.discard(ws)
+        try:
+            writer.close()
+        except Exception:
+            pass
+
+
+async def _rele_linea(line: str, ws: WebSocketCliente) -> None:
+    try:
+        c = json.loads(line)
+    except ValueError:
+        c = None
+    cmd = c.get("cmd") if isinstance(c, dict) else None
+    if cmd == "_espectadores":
+        # los sensores solo viajan mientras alguien mira la web
+        if int(c.get("n", 0) or 0) > 0:
+            clients.add(ws)
+        else:
+            clients.discard(ws)
+    elif cmd == "_update":
+        await _rele_update(c, ws)
+    else:
+        await handle_cmd(line, ws)
+
+
+async def _rele_update(c: dict, ws: WebSocketCliente) -> None:
+    def responder(ok: bool, msg: str) -> str:
+        return json.dumps({"t": "_update", "id": c.get("id"), "ok": ok, "msg": msg}, ensure_ascii=False)
+
+    try:
+        data = base64.b64decode(c.get("b64", ""), validate=True)
+        if not data or len(data) > MAX_PACKAGE:
+            raise ValueError("paquete vacío o demasiado grande")
+        await send_log(f"recibiendo actualización por el relé ({len(data) // 1024} KB)")
+        version = await asyncio.get_running_loop().run_in_executor(None, install_release, data)
+    except Exception as e:
+        await send_log(f"no se pudo instalar: {e}", "error")
+        await ws.send(responder(False, f"FALLO: {e}"))
+        return
+    await send_log(f"v{version} instalada, reiniciando")
+    await ws.send(responder(True, f"OK, reiniciando con v{version}"))
+    asyncio.get_running_loop().call_later(0.6, restart)
+
+
+async def rele_loop() -> None:
+    cfg = _rele_cfg()
+    if not cfg:
+        log("relé sin configurar (rele.json o BICHO_RELE_URL): solo se atiende la red local")
+        return
+    url, token = cfg
+    espera, ultimo = 1.0, ""
+    while True:
+        t0 = time.monotonic()
+        try:
+            await _rele_sesion(url, token)
+            err = "el relé cerró la conexión"
+        except Exception as e:
+            err = str(e) or type(e).__name__
+        if time.monotonic() - t0 > 30:
+            espera, ultimo = 1.0, ""
+        if err != ultimo:  # el mismo error no se repite en el registro
+            log(f"relé: {err}; reintentando")
+            ultimo = err
+        await asyncio.sleep(espera)
+        espera = min(espera * 2, 15)
+
+
+# ---------------------------------------------------------------------------
 # Bucles
 # ---------------------------------------------------------------------------
 
@@ -458,13 +649,18 @@ async def info_loop() -> None:
     while True:
         await asyncio.sleep(10)
         await broadcast(info())
+        if rele_ws and rele_ws not in clients:  # el relé guarda la última info aunque nadie esté mirando
+            try:
+                await rele_ws.send(json.dumps(info(), ensure_ascii=False))
+            except Exception:
+                pass
 
 
 async def main() -> None:
     server = await asyncio.start_server(handle_conn, host="0.0.0.0", port=PORT, reuse_address=True)
     log(f"v{META['version']} escuchando en http://{_ip()}:{PORT} (WebSocket en /ws) · releases en {RELEASES}")
     async with server:
-        await asyncio.gather(server.serve_forever(), sensor_loop(), info_loop())
+        await asyncio.gather(server.serve_forever(), sensor_loop(), info_loop(), rele_loop())
 
 
 if __name__ == "__main__":

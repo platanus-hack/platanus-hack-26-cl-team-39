@@ -13,6 +13,8 @@ import random
 import time
 from pathlib import Path
 
+import luz
+
 SIMULAR = os.environ.get("BICHO_SIMULAR") == "1"
 _t0 = time.time()
 
@@ -61,6 +63,7 @@ def leer() -> dict:
     w = _wifi_dbm()
     if w is not None:
         d["wifi_dbm"] = w
+    d["luz"] = luz.prendida()
 
     if SIMULAR:
         s = time.time() - _t0

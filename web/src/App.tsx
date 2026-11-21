@@ -6,7 +6,9 @@ import { Sensors } from './components/Sensors'
 import { Toasts, type Toast } from './components/Toasts'
 import { Icon, SparkDefs, fmtAgo, fmtBytes, fmtUptime } from './components/ui'
 import { cmpSemver, fetchPackage, loadManifest, looksLikePackage, uploadPackage, type Manifest, type Release } from './lib/firmware'
-import { SimLink, WifiLink, normalizeHost, type DeviceLink, type LineDir, type LinkHandlers, type LinkStatus } from './lib/links'
+import { clave as claveEquipo } from './lib/inventario'
+import releCfg from './lib/rele.json'
+import { SimLink, WifiLink, esRele, normalizeHost, type DeviceLink, type LineDir, type LinkHandlers, type LinkStatus } from './lib/links'
 import { CMD, type DeviceInfo } from './lib/protocol'
 import { SensorStore } from './lib/sensors'
 // el simulador trae three.js (~600 kB): se carga solo al abrirlo
@@ -16,6 +18,20 @@ type Vista = 'bicho' | 'inventario' | 'simulador'
 const vistaDelHash = (): Vista => (location.hash === '#inventario' ? 'inventario' : location.hash === '#simulador' ? 'simulador' : 'bicho')
 
 const MAX_LINES = 600
+// Bicho por defecto de este computador: VITE_BICHO_HOST en web/.env.local (no va al repo).
+const ENV_HOST = (import.meta.env.VITE_BICHO_HOST as string | undefined)?.trim() || ''
+
+// Relé público del bicho (rele/ en el repo): con él da lo mismo en qué red estén el bicho y quien mira.
+// La dirección no es secreta. Vacía = no hay relé publicado y se busca al bicho en la red local.
+const RELE_PUBLICO = (import.meta.env.VITE_BICHO_RELE as string | undefined)?.trim() || releCfg.url
+
+function savedHost(): string {
+  try {
+    return localStorage.getItem('bicho.host') || ''
+  } catch {
+    return ''
+  }
+}
 
 type FlashPhase = 'idle' | 'preparing' | 'flashing' | 'rebooting' | 'done' | 'warn' | 'error'
 type FlashState = { phase: FlashPhase; pct: number; target?: string; via?: string; msg?: string; log: string[] }
@@ -113,13 +129,7 @@ export default function App() {
   const [info, setInfo] = useState<DeviceInfo | null>(null)
   const [manifest, setManifest] = useState<Manifest | null>(null)
   const [manifestErr, setManifestErr] = useState<string>()
-  const [host, setHost] = useState(() => {
-    try {
-      return localStorage.getItem('bicho.host') || 'bicho.local'
-    } catch {
-      return 'bicho.local'
-    }
-  })
+  const [host, setHost] = useState(() => ENV_HOST || savedHost() || RELE_PUBLICO || 'bicho.local')
   const [flash, setFlash] = useState<FlashState>({ phase: 'idle', pct: 0, log: [] })
   const [lines, setLines] = useState<ConsoleLine[]>([])
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -203,7 +213,7 @@ export default function App() {
         setStatusDetail(detail)
         if (s === 'connected' && (prev === 'connecting' || prev === 'disconnected')) {
           const k = linkRef.current?.kind
-          toast(k === 'sim' ? { tone: 'ok', title: 'Simulador abierto', body: 'Datos simulados, sin hardware.' } : { tone: 'ok', title: 'Conectado por WiFi', body: detail }, 3000)
+          toast(k === 'sim' ? { tone: 'ok', title: 'Simulador abierto', body: 'Datos simulados, sin hardware.' } : { tone: 'ok', title: (linkRef.current as WifiLink | null)?.rele ? 'Conectado al relé' : 'Conectado por WiFi', body: detail }, 3000)
         }
         if (s === 'disconnected') {
           if (!userClosing.current && prev !== 'disconnected') toast({ tone: 'warn', title: 'Se perdió la conexión', body: detail ?? 'El bicho dejó de responder.' })
@@ -214,7 +224,14 @@ export default function App() {
       },
       onMessage: (m) => {
         if (m.t === 's' && m.d && typeof m.d === 'object') store.push(m.d as Record<string, unknown>)
-        else if (m.t === 'info') {
+        else if (m.t === 'rele') {
+          // El relé avisa si el bicho está conectado a él. Si no, la web espera sin mostrar datos viejos.
+          if (!(m as { bicho?: boolean }).bicho) {
+            setInfo(null)
+            store.clear()
+            pushLine('Conectado al relé, pero el bicho no está: ¿está prendido y con internet?', 'sys')
+          }
+        } else if (m.t === 'info') {
           const i = m as unknown as DeviceInfo
           setInfo(i)
           const ex = expect.current
@@ -291,6 +308,15 @@ export default function App() {
     attach(new WifiLink(host, handlers))
   }
   const connectSim = () => attach(new SimLink(handlers))
+
+  /* Al abrir la página se conecta sola al bicho configurado o al último usado. */
+  const autoTried = useRef(false)
+  useEffect(() => {
+    if (autoTried.current) return
+    autoTried.current = true
+    const h = ENV_HOST || savedHost() || RELE_PUBLICO
+    if (h) attach(new WifiLink(h, handlers))
+  }, [attach, handlers])
   const disconnect = () => {
     userClosing.current = true
     linkRef.current?.close()
@@ -335,8 +361,8 @@ export default function App() {
       /* Subida al agente */
       const wl = current as WifiLink
       setFlash((f) => ({ ...f, phase: 'flashing' }))
-      flashLog(`Subiendo a ${wl.httpBase}/update…`)
-      const res = await uploadPackage(wl.httpBase, pkg, (p) => setFlash((f) => ({ ...f, pct: p })))
+      flashLog(`Subiendo a ${wl.updateUrl}…`)
+      const res = await uploadPackage(wl.updateUrl, pkg, (p) => setFlash((f) => ({ ...f, pct: p })), wl.rele ? claveEquipo.get() : undefined)
       flashLog(`Respuesta del bicho: ${res || 'OK'}`)
       setFlash((f) => ({ ...f, phase: 'rebooting', pct: 1, msg: 'Reiniciando… esperando que vuelva a reportar su versión.' }))
       expect.current = {
@@ -560,7 +586,7 @@ export default function App() {
                   value={host}
                   onChange={(e) => setHost(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && connectWifi()}
-                  placeholder="bicho.local o IP"
+                  placeholder="bicho.local, IP o https://relé"
                   aria-label="Dirección del bicho"
                   title={`Se conecta a ${normalizeHost(host || 'bicho.local')}`}
                 />
@@ -643,6 +669,7 @@ export default function App() {
                       <dl className="meta">
                         {[
                           ['Placa', info.chip],
+                          ['Red', typeof info.red === 'string' ? info.red : undefined],
                           ['Dirección IP', info.ip],
                           ['Encendido hace', fmtUptime(info.uptime)],
                           ['Publicado', info.build],
@@ -663,7 +690,9 @@ export default function App() {
                         {connected
                           ? 'Ya hay conexión, pero el bicho todavía no manda su versión.'
                           : conn === 'wait'
-                            ? `Buscando el Raspberry en ${normalizeHost(host || 'bicho.local')}. ¿Está prendido y en la misma red?`
+                            ? esRele(host)
+                              ? `Esperando al bicho en el relé ${normalizeHost(host)}. ¿Está prendido y con internet?`
+                              : `Buscando el Raspberry en ${normalizeHost(host || 'bicho.local')}. ¿Está prendido y en la misma red?`
                             : 'Prende el Raspberry y conéctate por WiFi, o abre el simulador para probar la web sin hardware.'}
                       </p>
                       <div className="hero-actions">

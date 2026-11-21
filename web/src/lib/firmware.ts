@@ -54,16 +54,17 @@ export function looksLikePackage(bin: Uint8Array): boolean {
   return bin.length > 262 && String.fromCharCode(...bin.slice(257, 262)) === 'ustar'
 }
 
-/** Manda el paquete al agente: POST http://<bicho>/update con el .tar.gz como cuerpo. */
-export function uploadPackage(httpBase: string, data: Uint8Array, onProgress: (p: number) => void): Promise<string> {
+/** Manda el paquete (.tar.gz) como cuerpo de un POST: directo al agente (`/update`) o al relé, que pide la clave del equipo. */
+export function uploadPackage(url: string, data: Uint8Array, onProgress: (p: number) => void, clave?: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
-    xhr.open('POST', `${httpBase}/update`)
+    xhr.open('POST', url)
     xhr.setRequestHeader('Content-Type', 'application/octet-stream')
+    if (clave) xhr.setRequestHeader('Authorization', `Bearer ${clave}`)
     xhr.timeout = 600_000 // pip puede tardar si la versión trae dependencias nuevas
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total)
     xhr.onload = () => (xhr.status < 300 ? resolve(xhr.responseText) : reject(new Error(xhr.responseText || `HTTP ${xhr.status}`)))
-    xhr.onerror = () => reject(new Error('Error de red: revisa que el bicho esté en la misma red y que la web corra en localhost.'))
+    xhr.onerror = () => reject(new Error('Error de red: no pude llegar al bicho. Si te conectas directo, revisa que esté en tu misma red y que la web corra en localhost.'))
     xhr.ontimeout = () => reject(new Error('Se acabó el tiempo esperando al bicho.'))
     xhr.send(new Blob([data as BlobPart], { type: 'application/octet-stream' }))
   })

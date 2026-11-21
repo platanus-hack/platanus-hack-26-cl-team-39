@@ -8,6 +8,7 @@ export type DeviceInfo = {
   chip?: string
   build?: string
   ip?: string
+  red?: string | null
   mac?: string
   uptime?: number
   heap?: number

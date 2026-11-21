@@ -1,4 +1,29 @@
 {
   "device": "bicho",
-  "releases": []
+  "releases": [
+    {
+      "version": "0.3.0",
+      "date": "2026-11-21T09:17:39.414Z",
+      "author": "TesslaRay",
+      "notes": "El bicho se conecta al relé (rele/): se ve y se actualiza desde cualquier red, no solo la local.",
+      "package": "0.3.0/bicho-0.3.0.tar.gz",
+      "size": 17756
+    },
+    {
+      "version": "0.2.1",
+      "date": "2026-11-21T08:48:37.823Z",
+      "author": "TesslaRay",
+      "notes": "Muestra a qué red está conectado el bicho (campo red en info).",
+      "package": "0.2.1/bicho-0.2.1.tar.gz",
+      "size": 11142
+    },
+    {
+      "version": "0.2.0",
+      "date": "2026-11-21T05:37:21.049Z",
+      "author": "TesslaRay",
+      "notes": "Primera versión con hardware real: Raspberry Pi 3 Model B v1.2. Agrega el comando luz (prender, apagar, parpadear en el GPIO 17) y reporta el estado de la luz como sensor.",
+      "package": "0.2.0/bicho-0.2.0.tar.gz",
+      "size": 10773
+    }
+  ]
 }

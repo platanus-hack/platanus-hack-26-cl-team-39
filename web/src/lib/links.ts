@@ -1,3 +1,4 @@
+import { clave } from './inventario'
 import { CMD, parseLine, type DeviceInfo, type DeviceMsg } from './protocol'
 
 export type LinkKind = 'wifi' | 'sim'
@@ -20,8 +21,18 @@ export interface DeviceLink {
 
 export const DEFAULT_PORT = 8080
 
-/** "bicho.local" → "bicho.local:8080"; si ya trae puerto lo respeta. */
+/** ¿Es la dirección del relé (https://…) y no la del bicho en la red local? */
+export const esRele = (host: string) => /^https?:\/\//i.test(host.trim())
+
+/** "bicho.local" → "bicho.local:8080"; si ya trae puerto lo respeta. Un sitio con relé queda como su dominio. */
 export function normalizeHost(host: string) {
+  if (esRele(host)) {
+    try {
+      return new URL(host.trim()).host
+    } catch {
+      /* dirección a medio escribir: sigue abajo */
+    }
+  }
   const h = host.trim().replace(/^(https?|wss?):\/\//, '').replace(/\/.*$/, '')
   return /:\d+$/.test(h) ? h : `${h}:${DEFAULT_PORT}`
 }
@@ -35,11 +46,16 @@ function dispatchLine(line: string, h: LinkHandlers) {
 
 /* ------------------------------------------------------------------ */
 /* WiFi: WebSocket ws://<bicho>:8080/ws + HTTP en el mismo puerto       */
+/* Relé: si la dirección es https://…, es el relé (rele/ en el repo),    */
+/* que tiene las mismas rutas y le pasa todo al bicho, esté donde esté. */
 /* ------------------------------------------------------------------ */
 
 export class WifiLink implements DeviceLink {
   readonly kind = 'wifi' as const
   readonly host: string
+  /** true si se llega al bicho por el relé y no directo por la red local. */
+  readonly rele: boolean
+  private readonly origen: string
   private ws?: WebSocket
   private closed = false
   private retry = 0
@@ -50,14 +66,23 @@ export class WifiLink implements DeviceLink {
     private h: LinkHandlers,
   ) {
     this.host = normalizeHost(host)
+    this.rele = esRele(host)
+    this.origen = this.rele ? new URL(host.trim()).origin : `http://${this.host}`
   }
 
   get label() {
     return this.host
   }
 
-  get httpBase() {
-    return `http://${this.host}`
+  /** A dónde se manda el paquete de una versión nueva. */
+  get updateUrl() {
+    return `${this.origen}/update`
+  }
+
+  private get wsUrl() {
+    const url = `${this.origen.replace(/^http/, 'ws')}/ws`
+    const k = this.rele ? clave.get() : '' // el relé deja mirar a cualquiera; para mandar comandos pide la clave del equipo
+    return k ? `${url}?clave=${encodeURIComponent(k)}` : url
   }
 
   async open() {
@@ -66,7 +91,7 @@ export class WifiLink implements DeviceLink {
 
   private connect() {
     this.h.onStatus(this.retry ? 'reconnecting' : 'connecting', this.host)
-    const ws = new WebSocket(`ws://${this.host}/ws`)
+    const ws = new WebSocket(this.wsUrl)
     this.ws = ws
     ws.onopen = () => {
       this.retry = 0

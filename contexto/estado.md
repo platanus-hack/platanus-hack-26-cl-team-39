@@ -14,6 +14,8 @@ El **bicho**: un robot sobre un chasis 4WD de acrílico, con una Raspberry Pi 3 
 
 - **bicho·dev** ([`web/`](../web/)): versión del firmware y botón para actualizar por WiFi, sensores en vivo, consola, versiones, cronómetro de entrega e **inventario**.
 - **bichod** ([`bicho/`](../bicho/)): agente Python con WebSocket de sensores y actualización por `POST /update`.
+- **Raspberry Pi 3 andando** (hostname `team39`, usuario `team39`), con `bichod` como servicio y una luz de prueba en el GPIO 17 (comando `luz`). La red del evento es solo 5 GHz y el Pi 3 no la ve: está en un hotspot de 2.4 GHz. Le falta voltaje: conviene una fuente de 5 V y 2.5 A.
+- **Relé** ([`rele/`](../rele/)): servicio aparte en EDITH; el bicho se conecta a él y bicho·dev lo ve y actualiza desde cualquier red. Mandar comandos pide la clave del equipo.
 - **Inventario** en Neon, con 134 ítems sacados del Claude Sheet. Se ve en bicho·dev → Equipo → Inventario.
 - **Harness del equipo:** este `CLAUDE.md`, `contexto/` y las skills compartidas.
 - **Cuerpo del bicho listo para imprimir** ([`diseno/`](../diseno/)): estructura de 32 × 20 cm, 3 placas iguales de una pieza con rejilla M3 cada 10 mm y 3 distribuciones (V1 brazo-cuello, V2 brazo + torre, V3 barredor). Son 19 STL y 14 bandejas .3mf, con la guía en [`diseno/imprimir/IMPRIMIR.md`](../diseno/imprimir/IMPRIMIR.md). Drive en `links.md`.

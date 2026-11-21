@@ -1,4 +1,4 @@
 {
-  "version": "0.1.0",
-  "desc": "Agente base: manda los sensores del Raspberry por WiFi y acepta actualizaciones desde bicho·dev."
+  "version": "0.3.0",
+  "desc": "Raspberry Pi 3 Model B v1.2, sin sensores externos todavía. Se conecta al relé de bicho·dev para que lo vean desde cualquier red. Reporta temperatura de CPU, carga, señal WiFi y red, y prende, apaga o hace parpadear una luz en el GPIO 17 con el comando luz."
 }
