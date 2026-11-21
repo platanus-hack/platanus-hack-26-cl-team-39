@@ -33,7 +33,7 @@ Sin robot conectado igual se maneja el **bicho virtual** de la pantalla, así qu
 - Las señas quedan en `tracker/senas.json` (local, no se sube).
 - Probado de punta a punta con el relé del equipo en local y un bicho falso que mandaba imágenes de los videos del proceso: aprendió «para» con la palma, no se confundió con el puño, y mandó `stop` + `no` al volver a verla. En 9 videos, ninguna otra forma de mano se tomó por la seña.
 - **Falta:** correrlo con la clave; que el cerebro ignore las frases con «seña» (si no, también intenta aprender); confirmar que el bicho prende la cámara con `{"cmd":"camara","on":true}` (si no, `--camara-on '<json>'`).
-- Ensayo interactivo con el modelo 3D y diagramas: https://claude.ai/artifact/3Xh4pvMBCPUGVwnrkk729f (privado; pedir acceso a Walls).
+- Ensayo interactivo con el modelo 3D y diagramas: https://claude.ai/artifact/YV6ADudpdTCxbmriw4TwXY (demo completa: lo llamas por voz, viene, le enseñas la seña frente a su cámara y se detiene al verla; abre directo la demo con `#demo`; privado, pedir acceso a Walls).
 
 ## Gestos
 

@@ -67,7 +67,7 @@ QUE_HACE = {"para": "me detengo", "alto": "me detengo", "detente": "me detengo",
             "celebra": "celebro con las luces", "no": "prendo la luz roja"}
 
 # «esta seña significa para», «esa seña quiere decir alto», «aprende esta seña: hola», «esta seña es para que pares»
-FRASE = re.compile(r"(?:esta|esa|la|una)\s+sen(?:a|al)\s+(?:significa|quiere\s+decir|es|sera|va\s+a\s+ser)\s+(?:que\s+)?(?:te\s+)?([a-z]+(?:\s+[a-z]+)?)"
+FRASE = re.compile(r"(?:esta|esa|la|una)\s+sen(?:a|al)\s*[:,.]?\s*(?:significa|quiere\s+decir|es|sera|va\s+a\s+ser)\s+(?:que\s+)?(?:te\s+)?([a-z]+(?:\s+[a-z]+)?)"
                    r"|aprende\s+(?:esta|esa)\s+sen(?:a|al)\s*[:,]?\s*([a-z]+)")
 NORMALIZA = {"pares": "para", "parar": "para", "detengas": "detente", "detenerte": "detente", "alto": "alto",
              "saludes": "saluda", "saludar": "saluda", "celebres": "celebra", "celebrar": "celebra"}
