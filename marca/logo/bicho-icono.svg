@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="Bicho">
+  <title>Bicho</title>
+  <defs><linearGradient id="banana-i" x1="0.33" y1="0" x2="0.67" y2="1"><stop offset="0" stop-color="#FFE46B"/><stop offset="0.52" stop-color="#FFC700"/><stop offset="1" stop-color="#FFAD00"/></linearGradient></defs><rect width="240" height="240" rx="54" fill="url(#banana-i)"/><rect x="1.5" y="1.5" width="237" height="237" rx="52.5" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="3"/><g transform="translate(18 30) scale(0.8)"><circle cx="120" cy="34" r="8.2" fill="#1D1D1F"/>
+  <circle cx="142.26" cy="36.93" r="8.2" fill="#1D1D1F"/>
+  <circle cx="163" cy="45.52" r="8.2" fill="#1D1D1F"/>
+  <circle cx="180.81" cy="59.19" r="8.2" fill="#1D1D1F"/>
+  <circle cx="194.48" cy="77" r="8.2" fill="#1D1D1F"/>
+  <circle cx="203.07" cy="97.74" r="8.2" fill="#1D1D1F"/>
+  <circle cx="206" cy="120" r="8.2" fill="#1D1D1F"/>
+  <circle cx="203.07" cy="142.26" r="8.2" fill="#1D1D1F"/>
+  <circle cx="194.48" cy="163" r="8.2" fill="#1D1D1F"/>
+  <circle cx="180.81" cy="180.81" r="8.2" fill="#1D1D1F"/>
+  <circle cx="163" cy="194.48" r="8.2" fill="#1D1D1F"/>
+  <circle cx="142.26" cy="203.07" r="8.2" fill="#1D1D1F"/>
+  <circle cx="120" cy="206" r="8.2" fill="#1D1D1F"/>
+  <circle cx="97.74" cy="203.07" r="8.2" fill="#1D1D1F"/>
+  <circle cx="77" cy="194.48" r="8.2" fill="#1D1D1F"/>
+  <circle cx="59.19" cy="180.81" r="8.2" fill="#1D1D1F"/>
+  <circle cx="45.52" cy="163" r="8.2" fill="#1D1D1F"/>
+  <circle cx="36.93" cy="142.26" r="8.2" fill="#1D1D1F"/>
+  <circle cx="34" cy="120" r="8.2" fill="#1D1D1F"/>
+  <circle cx="36.93" cy="97.74" r="8.2" fill="#1D1D1F"/>
+  <circle cx="45.52" cy="77" r="8.2" fill="#1D1D1F"/>
+  <circle cx="59.19" cy="59.19" r="8.2" fill="#1D1D1F"/>
+  <circle cx="77" cy="45.52" r="8.2" fill="#1D1D1F"/>
+  <circle cx="97.74" cy="36.93" r="8.2" fill="#1D1D1F"/>
+  <circle cx="120" cy="120" r="34" fill="#1D1D1F"/><circle cx="120" cy="120" r="15" fill="#8FDCC4"/><circle cx="126.5" cy="113.5" r="5" fill="#FFFFFF"/>
+  <g transform="translate(180.81 59.19) rotate(45)"><rect x="-60" y="-21" width="120" height="42" rx="21" fill="#F4996F" stroke="#FFFFFF" stroke-width="7" paint-order="stroke"/><rect x="-20" y="-14" width="40" height="28" rx="6" fill="#FFD4BF"/><circle cx="-44" cy="-7" r="2.3" fill="#1D1D1F" fill-opacity=".28"/><circle cx="-44" cy="7" r="2.3" fill="#1D1D1F" fill-opacity=".28"/><circle cx="-34" cy="-7" r="2.3" fill="#1D1D1F" fill-opacity=".28"/><circle cx="-34" cy="7" r="2.3" fill="#1D1D1F" fill-opacity=".28"/><circle cx="34" cy="-7" r="2.3" fill="#1D1D1F" fill-opacity=".28"/><circle cx="34" cy="7" r="2.3" fill="#1D1D1F" fill-opacity=".28"/><circle cx="44" cy="-7" r="2.3" fill="#1D1D1F" fill-opacity=".28"/><circle cx="44" cy="7" r="2.3" fill="#1D1D1F" fill-opacity=".28"/></g></g>
+</svg>

@@ -25,6 +25,12 @@ _Agrega aquí todo link que el resto vaya a necesitar. Nada con claves, tokens n
 - Taller 3D publicado (privado, pedir acceso a Walls): https://claude.ai/artifact/EVKma9DkW9tp2xa4Zq7xeD
 - Ideas del proyecto (22 ideas + kit de entrega, privado): https://claude.ai/artifact/5B7JYRVsV8Uq7vwyLrxGri
 
+## Marca y pitch
+
+- **Manual de marca** (logo, colores, letra, voz; privado, pedir acceso a Guty): https://claude.ai/artifact/AFqF74EGV951uugDiV9pvJ
+- **Deck del pitch** (12 láminas en el estilo «Cristal claro» de bicho·dev, con notas para quien presenta; privado, pedir acceso a Guty): https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm
+- En el repo: [`marca/MARCA.md`](../marca/MARCA.md) (el manual en texto), [`marca/PITCH.md`](../marca/PITCH.md) (guion, demo, plan B, preguntas) y [`marca/logo/`](../marca/logo/) (SVG y PNG; se regeneran con `python3 marca/generar_logo.py && bash marca/exportar_png.sh`).
+
 ## Skills compartidas (`.claude/skills/`)
 
 | Skill | Para qué |

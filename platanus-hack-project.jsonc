@@ -1,12 +1,12 @@
 {
   // Your project's name, as it will appear on the voting page.
-  "project-name": "<FILL THIS>",
+  "project-name": "Bicho",
 
   // Short one-line summary of your project (in Spanish).
-  "project-oneliner-spanish": "<FILL THIS>",
+  "project-oneliner-spanish": "Un robot que se programa solo: si le pides algo que no sabe hacer, escribe, instala y prueba su propio código en vivo.",
 
   // Brief description of your project (in Spanish).
-  "project-description-spanish": "<FILL THIS>",
+  "project-description-spanish": "Bicho es un robot de cuatro ruedas con un solo ojo que nadie programa. Escucha de dónde le hablan y, cuando le piden algo que no sabe hacer, escribe el código con Claude, se lo instala por WiFi y lo prueba antes de activarlo. Si un parche falla, vuelve solo al anterior. Lo hicimos en 36 horas, con el cuerpo diseñado en 3D y un panel para verlo aprender en vivo.",
 
   // Public URL where your project is deployed and running.
   // Must be a valid URL, for example: https://my-project.vercel.app
