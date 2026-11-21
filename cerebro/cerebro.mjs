@@ -174,11 +174,15 @@ function bloqueImagen(nombre = 'camara', maxEdadMs = 15_000) {
  * Corre el ciclo de herramientas hasta que Claude termina. `ejecutar(nombre, entrada)` devuelve el
  * contenido del resultado (texto o bloques) o { fin: ... } para cortar ahí.
  */
-async function ciclo({ sistema, herramientas, mensajes, esfuerzo, maxVueltas, ejecutar }) {
+async function ciclo({ sistema, herramientas, mensajes, esfuerzo, maxVueltas, ejecutar, maxTokens = 16000, alPensar }) {
   for (let vuelta = 0; vuelta < maxVueltas; vuelta++) {
-    const r = await claude.beta.messages.create({
+    alPensar?.(vuelta)
+    // En streaming: escribir un archivo entero más lo que piensa puede pasar de los 16 mil tokens,
+    // y una respuesta así de larga sin streaming se corta o se queda sin tiempo.
+    const r = await claude.beta.messages
+      .stream({
       model: MODELO,
-      max_tokens: 16000,
+      max_tokens: maxTokens,
       // Si el modelo declina por seguridad, la API reintenta sola con otro modelo.
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
@@ -186,8 +190,11 @@ async function ciclo({ sistema, herramientas, mensajes, esfuerzo, maxVueltas, ej
       system: sistema,
       tools: herramientas,
       messages: mensajes,
-    })
+      })
+      .finalMessage()
     if (r.stop_reason === 'refusal') return { texto: '', motivo: 'refusal' }
+    // Cortado por el tope de tokens: una llamada a herramienta a medias no sirve, se avisa en vez de seguir.
+    if (r.stop_reason === 'max_tokens') return { texto: '', motivo: 'max_tokens' }
     mensajes.push({ role: 'assistant', content: r.content }) // tal cual: incluye los bloques de pensamiento
     if (r.stop_reason === 'pause_turn') continue
     const usos = r.content.filter((b) => b.type === 'tool_use')
@@ -458,8 +465,11 @@ async function aprender(que, frase) {
           content: `Lo que te pidieron (oído desde ${frase.angulo ?? '?'}°): «${frase.texto}»\n\nLo que tienes que aprender: ${que}\n\nTu versión actual es la ${versionInicial}. Qué haces hoy: ${E.info?.desc ?? ''}\n\nArchivos que tienes: ${Object.keys(archivos).join(', ')}\n\ncomandos.py:\n\`\`\`python\n${archivos['comandos.py'] ?? ''}\n\`\`\`\n\nsensores.py:\n\`\`\`python\n${archivos['sensores.py'] ?? ''}\n\`\`\`\n\nsalida.py:\n\`\`\`python\n${archivos['salida.py'] ?? ''}\n\`\`\``,
         },
       ],
-      esfuerzo: 'high',
+      esfuerzo: 'medium',
       maxVueltas: 30,
+      maxTokens: 64000,
+      // Cada vuelta de Claude puede tardar un minuto o más: se avisa para que no parezca pegado.
+      alPensar: (n) => paso(n === 0 ? 'Pienso cómo hacerlo' : 'Pienso el siguiente paso (escribir código puede tardar un par de minutos)'),
       ejecutar: async (nombre, x) => {
         if (nombre === 'inspeccionar_hardware') {
           paso('Reviso qué hardware tengo conectado')
@@ -527,7 +537,9 @@ async function aprender(que, frase) {
       },
     })
 
-    const resumen = r.texto || (r.motivo === 'refusal' ? 'Claude declinó hacer este aprendizaje.' : 'Terminé sin poder explicarlo.')
+    const porque = { refusal: 'Claude declinó hacer este aprendizaje.', max_tokens: 'Se me acabó el espacio para escribir a mitad del aprendizaje.', max_vueltas: 'Di demasiadas vueltas sin terminar.' }
+    const resumen = r.texto || `${porque[r.motivo] ?? `Terminé sin explicación (${r.motivo}).`}${instalada ? ` Quedó instalada la versión ${instalada}.` : ' No instalé nada.'}`
+    log(`aprendizaje terminó: motivo=${r.motivo} instalada=${instalada} instalaciones=${instalaciones}`)
     E.historia.push(`Aprendizaje «${que}» → ${instalada ? `instalaste la versión ${instalada}` : 'no se instaló nada'}: ${resumen.slice(0, 200)}`)
     anunciar(instalada ? 'aprendido' : 'error', resumen, { trabajo, version: instalada })
   } finally {
