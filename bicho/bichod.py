@@ -242,6 +242,7 @@ class WebSocket:
         self.lock = asyncio.Lock()
         self.closed = False
         self.max_msg = 1024 * 1024
+        self.visto = time.monotonic()  # última vez que llegó algo del otro lado, pings incluidos
 
     @staticmethod
     def frame(opcode: int, payload: bytes) -> bytes:
@@ -269,6 +270,7 @@ class WebSocket:
         parts: list[bytes] = []
         while True:
             h = await self.reader.readexactly(2)
+            self.visto = time.monotonic()
             fin, opcode = h[0] & 0x80, h[0] & 0x0F
             masked, n = h[1] & 0x80, h[1] & 0x7F
             if n == 126:
@@ -688,8 +690,18 @@ async def _rele_sesion(url: str, token: str) -> None:
         confirmar_version()
         await ws.send(json.dumps(info(), ensure_ascii=False))
         while True:
-            # el relé manda un latido cada 20 s: si pasa un minuto sin nada, la conexión está muerta
-            msg = await asyncio.wait_for(ws.recv(), timeout=60)
+            # El relé manda un ping cada pocos segundos y recv() lo contesta sin devolver nada: la señal de
+            # vida es ws.visto, no solo los mensajes. Si pasa un minuto sin nada, la conexión está muerta.
+            tarea = asyncio.ensure_future(ws.recv())
+            try:
+                while not tarea.done():
+                    await asyncio.wait({tarea}, timeout=20)
+                    if not tarea.done() and time.monotonic() - ws.visto > 60:
+                        raise asyncio.TimeoutError("el relé no da señales de vida")
+                msg = tarea.result()
+            finally:
+                if not tarea.done():
+                    tarea.cancel()
             if msg is None:
                 break
             for line in msg.split("\n"):

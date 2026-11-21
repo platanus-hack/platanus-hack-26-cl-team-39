@@ -40,6 +40,12 @@ chown -R "$RUN_USER": "$HOME_DIR"
 # acceso a GPIO e I2C sin sudo
 usermod -aG gpio,i2c "$RUN_USER" 2>/dev/null || true
 
+# WiFi siempre despierto: con el ahorro de energía del Pi 3 la conexión al relé se queda muda de a ratos
+if [[ -d /etc/NetworkManager/conf.d ]]; then
+  printf '[connection]\nwifi.powersave = 2\n' > /etc/NetworkManager/conf.d/bicho-wifi-despierto.conf
+fi
+iw dev wlan0 set power_save off 2>/dev/null || true
+
 if [[ -n "$NEW_HOSTNAME" ]]; then
   echo "→ Hostname: $NEW_HOSTNAME (quedará en http://$NEW_HOSTNAME.local:8080)"
   OLD="$(hostname)"
