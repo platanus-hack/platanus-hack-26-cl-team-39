@@ -37,21 +37,6 @@ journalctl -u bichod -f
 
 Para los sensores I2C, activa I2C con `sudo raspi-config` (Interface Options → I2C).
 
-## Cambiar de red WiFi (el router del equipo)
-
-El Raspberry Pi 3 **solo ve redes de 2.4 GHz** (la de PlatanusHack es de 5 y 6 GHz). Para pasarlo del hotspot del celular al router, entra por SSH mientras siga en el hotspot y corre:
-
-```bash
-curl -fsSLO https://raw.githubusercontent.com/platanus-hack/platanus-hack-26-cl-team-39/dev/bicho/wifi.sh && sudo bash wifi.sh "NombreDelRouter"
-```
-
-Pide la clave (no queda en el repo), deja el router como red preferida y se cambia a él. La sesión SSH se corta: conecta tu computador al router y entra de nuevo con `ssh team39@team39.local`. El hotspot queda guardado como respaldo: si el router se apaga, el bicho vuelve a él solo; si la clave está mala, vuelve al hotspot al tiro.
-
-- `sudo ./wifi.sh` sin nombre muestra a qué red está, qué redes ve y cuáles tiene guardadas.
-- Si no ve el router: revisa que tenga prendida la banda de 2.4 GHz. Si el router separa las bandas en dos nombres, usa el de 2.4 GHz.
-- El router necesita salida a internet (cable desde su puerto WAN o Internet a un punto de red del evento) para que el bicho llegue al relé, al cerebro y a la voz. Sin internet, bicho·dev igual lo ve directo en `team39.local:8080` desde un computador conectado al mismo router.
-- No hace falta abrir puertos en el router: el bicho sale hacia el relé, no al revés. Abrir el 8080 hacia el Pi solo sirve para entrar directo desde la red del evento sin pasar por el relé, y para eso conviene reservarle una IP fija al Pi en el router.
-
 ## Oído (ReSpeaker XVF3800 por USB)
 
 Con el ReSpeaker enchufado, el bicho dice desde qué ángulo le hablan y manda cada frase al relé para transcribirla. Se prepara una vez en el Pi:

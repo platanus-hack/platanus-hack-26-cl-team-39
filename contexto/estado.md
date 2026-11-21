@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-_Lo actualiza el Claude de cualquiera cuando algo cambia. Máximo ~50 líneas: lo viejo se borra de aquí (queda en la bitácora). Última actualización: 21 nov, 15:35, Guty (Claude)._
+_Lo actualiza el Claude de cualquiera cuando algo cambia. Máximo ~50 líneas: lo viejo se borra de aquí (queda en la bitácora). Última actualización: 21 nov, 14:12, Guty (Claude)._
 
 ## La idea
 
@@ -16,7 +16,7 @@ El **Bicho** (nombre definitivo, votado por el equipo el 21 nov): un robot sobre
 - **bicho·dev** ([`web/`](../web/)): versión del firmware y botón para actualizar por WiFi, sensores en vivo, consola, versiones, cronómetro de entrega e **inventario**.
 - **Habilidades** en bicho·dev (la primera sección): lo último que aprendió, qué sabe hacer y un gráfico de lo que aprendió solo frente a lo que le programó el equipo. Lista base en [`bicho/habilidades.json`](../bicho/habilidades.json): súmenle lo que agreguen.
 - **bichod** ([`bicho/`](../bicho/)): agente Python con WebSocket de sensores y actualización por `POST /update`.
-- **Raspberry Pi 3 andando** (hostname `team39`, usuario `team39`), con `bichod` como servicio y una luz de prueba en el GPIO 17 (comando `luz`). La red del evento es solo 5 GHz y el Pi 3 no la ve: está en un hotspot de 2.4 GHz. Para pasarlo al router del equipo (2.4 GHz) está `bicho/wifi.sh` (pasos en `bicho/README.md`). Le falta voltaje: conviene una fuente de 5 V y 2.5 A.
+- **Raspberry Pi 3 andando** (hostname `team39`, usuario `team39`), con `bichod` como servicio y una luz de prueba en el GPIO 17 (comando `luz`). La red del evento es solo 5 GHz y el Pi 3 no la ve: está en un hotspot de 2.4 GHz. Le falta voltaje: conviene una fuente de 5 V y 2.5 A.
 - **Relé** ([`rele/`](../rele/)): servicio aparte en EDITH; el bicho se conecta a él y bicho·dev lo ve y actualiza desde cualquier red. Mandar comandos pide la clave del equipo.
 - **Inventario** en Neon, con 134 ítems sacados del Claude Sheet. Se ve en bicho·dev → Equipo → Inventario.
 - **Harness del equipo:** este `CLAUDE.md`, `contexto/` y las skills compartidas.
