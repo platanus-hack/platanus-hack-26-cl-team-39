@@ -23,3 +23,7 @@ for m in ("A1", "A2L"):
                             gramos=round(pl["filaments"][0]["total_used_g"]), aviso=pl.get("warning_message", "")))
             print(m, mat, t[:3], out[-1]["horas"], "h", out[-1]["gramos"], "g")
 json.dump(out, open(f"{D}/SD/tiempos_bambu.json", "w"), ensure_ascii=False, indent=1)
+
+# la impresora revisa printer_model_id al abrir desde la SD: rellenarlo
+import glob
+subprocess.run(["python3", "-I", "diseno/blender/fijar_modelo_impresora.py", *glob.glob(f"{D}/SD/*/*.gcode.3mf")])

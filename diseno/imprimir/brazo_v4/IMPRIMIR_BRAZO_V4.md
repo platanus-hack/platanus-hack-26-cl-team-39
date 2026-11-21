@@ -11,6 +11,11 @@
 | **R1** · `R1_brazo_placas_cunas_y_sensores` | P09A, P09B, P10A, P10B, P35, P30, P34, 2 × P36, P37, P40, P41 | **4 h 19 min · 131 g** | 4 h 26 min · 133 g |
 | **R2** · `R2_torreta_plataforma_y_dedos` | P07, P08, P31, P32, P33 | **4 h 10 min · 130 g** | 4 h 20 min · 132 g |
 
+**Reparto confirmado (21-nov, 17:45): 2 Bambu Lab A1 libres** (identificadas en video por la etiqueta «A1» del cabezal y el pórtico doble; cama de 256 × 256).
+- **A1 n.º 1 → R1** (`SD/A1_PLA/R1_…`): 4 h 19 min.
+- **A1 n.º 2 → R2** (`SD/A1_PLA/R2_…`): 4 h 10 min.
+- Las dos terminan en **unas 4 h 20 min**, contando calentamiento y nivelación.
+
 **Cómo se imprime:**
 1. Copia a la SD la carpeta de tu impresora (`SD/A1_PLA` o `SD/A2L_PLA`).
 2. Pon **R1 en una impresora y R2 en otra al mismo tiempo**.

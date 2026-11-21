@@ -1,10 +1,8 @@
-BICHO · BRAZO V4 · PLAN RÁPIDO (menos de 5 h)
+BICHO · BRAZO V4 · 2 × BAMBU A1 EN PARALELO (≈ 4 h 20 min)
 
-2 bandejas, UNA POR IMPRESORA, AL MISMO TIEMPO:
-  R1_brazo_placas_cunas_y_sensores  -> A1 PLA: 4 h 19 min (131 g) · A2L PLA: 4 h 26 min
-  R2_torreta_plataforma_y_dedos     -> A1 PLA: 4 h 10 min (130 g) · A2L PLA: 4 h 20 min
+  A1 n.º 1  ->  A1_PLA/R1_brazo_placas_cunas_y_sensores_A1_PLA.gcode.3mf   (4 h 19 min · 131 g)
+  A1 n.º 2  ->  A1_PLA/R2_torreta_plataforma_y_dedos_A1_PLA.gcode.3mf      (4 h 10 min · 130 g)
 
-Copia a la SD la carpeta de tu impresora: A1_PLA o A2L_PLA (PETG solo si sobra tiempo: 4,5-4,9 h).
-Placa Textured PEI, boquilla 0,4. Ya laminado: elige el archivo en la pantalla de la impresora y listo.
-Si solo hay una impresora libre: R1 primero.
+PLA cargado, boquilla 0,4, placa Textured PEI. Copia cada archivo a la SD de SU impresora y elígelo en la pantalla.
+Ya está laminado para A1 (modelo N2S en el archivo). No hay que tocar nada en el slicer.
 Armado y tornillería: IMPRIMIR_BRAZO_V4.md
