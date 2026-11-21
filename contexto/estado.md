@@ -1,10 +1,10 @@
 # Estado del proyecto
 
-_Lo actualiza el Claude de cualquiera cuando algo cambia. Máximo ~50 líneas: lo viejo se borra de aquí (queda en la bitácora). Última actualización: 21 nov, 06:40, Walls (Claude)._
+_Lo actualiza el Claude de cualquiera cuando algo cambia. Máximo ~50 líneas: lo viejo se borra de aquí (queda en la bitácora). Última actualización: 21 nov, 11:58, Guty (Claude)._
 
 ## La idea
 
-El **bicho**: un robot sobre un chasis 4WD de acrílico, con una Raspberry Pi 3 y sensores, sin control remoto. Lo maneja un agente Claude que además escribe y mejora su propio software (se "autoconstruye"). La lámpara robótica se descartó.
+El **Bicho** (nombre definitivo, votado por el equipo el 21 nov): un robot sobre un chasis 4WD de acrílico, con una Raspberry Pi 3 y sensores, sin control remoto. Lo maneja un agente Claude que además escribe y mejora su propio software (se "autoconstruye"). La lámpara robótica se descartó.
 
 - Track **hardware**. El pitch: algo que parece imposible en 36 horas y que sale gracias a la IA.
 - **Por decidir:** el caso de uso. Caminos en discusión: guardián de la propiedad (ahuyentar personas o animales que entran al terreno) o ayuda (adulto mayor, empresa).
