@@ -636,9 +636,10 @@ export default function App() {
               </div>
             </header>
 
-            {location.protocol === 'https:' && (
+            {location.protocol === 'https:' && !esRele(host) && (
               <p className="notice">
-                <Icon.Warning /> Estás en HTTPS: el navegador bloquea la conexión con el bicho. Corre la web en localhost.
+                <Icon.Warning /> Estás en HTTPS: el navegador bloquea la conexión directa con el bicho en la red local. Conéctate por el relé
+                {RELE_PUBLICO ? ` (${RELE_PUBLICO})` : ''} o corre la web en localhost.
               </p>
             )}
 
