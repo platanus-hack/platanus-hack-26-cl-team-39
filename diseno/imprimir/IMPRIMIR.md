@@ -74,6 +74,29 @@ Dos zonas que **no** necesitan soporte:
 
 **Al abrir una bandeja:** si el slicer avisa que alguna pieza se sale de la cama, o si el brim queda afuera, usa «Ordenar» (tecla A). Las piezas vienen a 3 o 6 mm de la esquina.
 
+## Imprimir en el evento: Bambu Lab A2L
+
+En la sala hay varias **Bambu Lab A2L**, con cama de **330 × 320 mm** y placa de PEI texturada. Las placas enteras de 320 × 200 caben, así que no hace falta la versión en dos mitades. También hay una Creality cerrada: si es una K1 Max (cama de 300 × 300), las placas no entran; si es una K2 Plus (350 × 350), sí. El modelo se ve en su pantalla. Mientras no se sepa, úsala solo para piezas chicas.
+
+**Reparto con 2 A2L:**
+- **A2L n.º 1:** B00 y después las placas B01, B02 y B03, una por trabajo.
+- **A2L n.º 2:** el brazo (B07), las cunas (B05), las columnas (B04) y los soportes (B09).
+
+**Pasos en Bambu Studio:**
+1. Elige la impresora **Bambu Lab A2L**, con boquilla de 0,4 y placa **Textured PEI Plate**.
+2. Abre el `.3mf` de `3MF_bandejas/`.
+3. Elige el filamento y el proceso **0.20 mm Standard**. Después cambia lo que dice la tabla de perfiles: paredes, capas arriba y abajo, y relleno.
+4. **Placas:** el lado de 320 mm va en el eje de 330, de izquierda a derecha. Usa un **brim de 4 mm**: con 5 mm llega justo al borde de la cama. En PEI texturada no se usa pegamento, ni con PETG.
+5. Soportes apagados, salvo en las piezas de la tabla de soportes.
+6. Aprieta **Slice** y revisa la vista previa capa por capa.
+7. Para mandarlo, hay dos formas:
+   - por WiFi, con **Print**, si la impresora está vinculada;
+   - con **Export plate sliced file** (`.gcode.3mf`), copiándolo a un pendrive o microSD que se conecta a la impresora y se elige en su pantalla.
+
+**Cuidados:**
+- La A2L es abierta y mueve la cama en el eje Y. Déjala lejos del aire acondicionado y de la ventana para que no se levanten las esquinas.
+- Mira la primera capa de cada placa antes de dejarla sola.
+
 ## Bandejas y tiempos
 
 Los tiempos son estimados a partir del volumen extruido:
