@@ -5,7 +5,7 @@ El PCA9685 solo genera PWM en 16 canales; qué canal va a qué motor depende de 
 puede averiguar por software. Por eso este módulo es prudente a propósito:
 
   - Nada se mueve sin una orden explícita, y nada se toca al importar.
-  - Potencia con tope (60 %), tiempo con tope (10 s), rampa suave al partir y al frenar.
+  - Potencia hasta 100 % y sin tope de tiempo ("seg":0 = hasta "on":false), con rampa suave al partir.
   - Sube el STBY de los drivers (GPIO 27, 22, 23 y 24) al partir y lo baja al terminar.
   - Mover los 4 a la vez ("on":true) solo se permite después de confirmar el mapeo de canales
     ("confirmar":true), que se hace probando un motor a la vez con las ruedas en el aire.
@@ -36,9 +36,9 @@ SIMULAR = os.environ.get("BICHO_SIMULAR") == "1"
 
 BUS = 1
 DIR = 0x40
-POT_MAX = 60.0  # % de ciclo de trabajo, tope duro (con 9 V en motores de 3-6 V: 60 % ≈ 5,4 V)
+POT_MAX = 100.0  # % de ciclo de trabajo: sin tope, para que pueda correr (ojo: son 9 V en motores de 3-6 V)
 POT_DEF = 15.0
-SEG_MAX = 10.0
+SIN_LIMITE = float("inf")  # "seg":0 = sigue hasta {"cmd":"motores","on":false}
 SEG_DEF = 1.5
 _RAMPA_SUBE = 0.4  # s
 _RAMPA_BAJA = 0.2  # s
@@ -57,8 +57,8 @@ AYUDA = (
     ' o [pwm] por motor)  ·  "motor":1,"pot":12,"seg":1 prueba un solo motor ("sentido":-1 hacia atrás)'
     '  ·  "canal":0,"pot":10,"seg":0.8 prueba un canal PWM en crudo  ·  "invertir":[4] da vuelta SOLO esos motores (los demás quedan como estaban; "invertidos":[1,4] fija la lista completa)'
     '  ·  "confirmar":true deja el mapa como confirmado  ·  recién entonces "on":true mueve los 4 suave'
-    f' ("pot" hasta {POT_MAX:g} %, "seg" hasta {SEG_MAX:g} s, "sentido":-1 atrás)  ·  "on":false para todo'
-    ' al tiro (apaga los 16 canales). Siempre se detiene solo al cumplirse el tiempo'
+    f' ("pot" hasta {POT_MAX:g} %; "seg" los segundos que quieras, o "seg":0 para que siga sin límite hasta "on":false; "sentido":-1 atrás)  ·  "on":false para todo'
+    ' al tiro (apaga los 16 canales). Con "seg" mayor que cero se detiene solo al cumplirse el tiempo'
 )
 
 _lock = threading.Lock()  # estado del módulo
@@ -128,6 +128,18 @@ def _validar_mapa(m) -> str | None:
                 return f"el canal {ch} está repetido"
             vistos.add(ch)
     return None
+
+
+def _seg(c: dict, defecto: float) -> float:
+    """Cuánto dura: lo que pidan, sin tope. "seg":0 (o negativo) es sin límite: sigue hasta que lo paren."""
+    v = c.get("seg")
+    if isinstance(v, (int, float)) and not isinstance(v, bool) and v <= 0:
+        return SIN_LIMITE
+    return _num(v, defecto, 0.2, 86400.0)
+
+
+def _dur(seg: float) -> str:
+    return "sin límite de tiempo" if seg == SIN_LIMITE else f"por {seg:g} s"
 
 
 def _num(v, defecto: float, lo: float, hi: float) -> float:
@@ -323,7 +335,7 @@ def _trabajo(pwm: list[int], altos: list[int], bajos: list[int], pot: float, seg
         _standby(True)
         if SIMULAR:
             _potencia = pot
-            _parar.wait(seg)
+            _parar.wait(None if seg == SIN_LIMITE else seg)
         else:
             from smbus2 import SMBus
 
@@ -483,7 +495,7 @@ def estado() -> str:
     with _lock:
         if _ultimo:
             partes.append("último: " + _ultimo)
-    txt = "motores: " + " | ".join(partes) + f" | topes: {POT_MAX:g} % y {SEG_MAX:g} s"
+    txt = "motores: " + " | ".join(partes) + f" | potencia hasta {POT_MAX:g} %, sin tope de tiempo (\"seg\":0 = hasta \"on\":false)"
     if not cfg["confirmado"]:
         txt += ". " + _PASOS
     return txt[:1900]
@@ -572,10 +584,10 @@ def manejar(c: dict) -> str:
         ch = c.get("canal")
         if isinstance(ch, bool) or not isinstance(ch, int) or not 0 <= ch <= 15:
             return 'motores: "canal" va de 0 a 15'
-        seg = _num(c.get("seg"), 0.8, 0.2, SEG_MAX)
-        no = _lanzar(([ch], [], []), pot, seg, f"canal {ch} al {pot:g} % por {seg:g} s")
+        seg = _seg(c, 0.8)
+        no = _lanzar(([ch], [], []), pot, seg, f"canal {ch} al {pot:g} % {_dur(seg)}")
         return no or (
-            f"motores: canal {ch} del PCA9685 al {pot:g} % por {seg:g} s{_aviso_pot(c, pot)}; se apaga solo. Mira"
+            f"motores: canal {ch} del PCA9685 al {pot:g} % {_dur(seg)}{_aviso_pot(c, pot)}; se apaga solo. Mira"
             " qué motor se mueve y hacia dónde (en placas con canal de velocidad + dos de sentido, un canal solo no mueve nada)"
         )
 
@@ -586,14 +598,15 @@ def manejar(c: dict) -> str:
         n = c.get("motor")
         if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= len(cfg["mapa"]):
             return f'motores: "motor" va de 1 a {len(cfg["mapa"])}'
-        seg = _num(c.get("seg"), 1.0, 0.2, SEG_MAX)
+        seg = _seg(c, 1.0)
         plan = _plan([n - 1], sentido)
         if isinstance(plan, str):
             return "motores: " + plan
-        no = _lanzar(plan, pot, seg, f"motor {n} {hacia} al {pot:g} % por {seg:g} s")
+        no = _lanzar(plan, pot, seg, f"motor {n} {hacia} al {pot:g} % {_dur(seg)}")
         return no or (
-            f"motores: motor {n} {hacia} al {pot:g} % por {seg:g} s{_aviso_pot(c, pot)} (canal PWM {plan[0][0]});"
-            " se detiene solo. Fíjate cuál rueda gira y si va hacia adelante"
+            f"motores: motor {n} {hacia} al {pot:g} % {_dur(seg)}{_aviso_pot(c, pot)} (canal PWM {plan[0][0]});"
+            + (" sigue hasta que lo pares con \"on\":false." if seg == SIN_LIMITE else " se detiene solo.")
+            + " Fíjate cuál rueda gira y si va hacia adelante"
         )
 
     # 5. Los 4 a la vez: solo con el mapa confirmado.
@@ -602,15 +615,16 @@ def manejar(c: dict) -> str:
             return "motores: no los muevo todavía: no hay mapa de canales. " + _PASOS
         if not cfg["confirmado"]:
             return "motores: no muevo todos a la vez con el mapa sin confirmar (" + _txt_mapa() + "). " + _PASOS
-        seg = _num(c.get("seg"), SEG_DEF, 0.2, SEG_MAX)
+        seg = _seg(c, SEG_DEF)
         plan = _plan(list(range(len(cfg["mapa"]))), sentido)
         if isinstance(plan, str):
             return "motores: " + plan
         n = len(cfg["mapa"])
-        no = _lanzar(plan, pot, seg, f"{n} motores {hacia} al {pot:g} % por {seg:g} s")
+        no = _lanzar(plan, pot, seg, f"{n} motores {hacia} al {pot:g} % {_dur(seg)}")
         return no or (
-            f"motores: {n} motores {hacia} al {pot:g} % por {seg:g} s{_aviso_pot(c, pot)}, con rampa suave; se"
-            ' detienen solos. Para cortar antes: {"cmd":"motores","on":false}'
+            f"motores: {n} motores {hacia} al {pot:g} % {_dur(seg)}{_aviso_pot(c, pot)}, con rampa suave; "
+            + ("siguen hasta que los pares" if seg == SIN_LIMITE else "se detienen solos")
+            + '. Para parar: {"cmd":"motores","on":false}'
         )
 
     return estado()

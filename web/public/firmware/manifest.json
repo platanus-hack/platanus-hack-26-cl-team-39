@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.33.0",
+      "date": "2026-11-22T04:06:06.257Z",
+      "author": "Cristian (Claude)",
+      "notes": "Motores sin topes: potencia hasta 100 % y sin tope de tiempo (\"seg\":0 corre hasta \"on\":false). Incluye lo de la 0.32.0: sube solo el STBY de los drivers e invertir un motor ya no deshace los otros.",
+      "package": "0.33.0/bicho-0.33.0.tar.gz",
+      "size": 102935
+    },
+    {
       "version": "0.32.0",
       "date": "2026-11-22T04:01:04.694Z",
       "author": "Cristian (Claude)",

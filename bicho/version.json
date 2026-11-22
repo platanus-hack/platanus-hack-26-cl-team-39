@@ -1,6 +1,6 @@
 {
-  "version": "0.32.0",
+  "version": "0.33.0",
   "desc": "Raspberry Pi 3 con micrófono ReSpeaker (oye frases y de dónde vienen), cámara CSI, parlante, anillo de 12 LEDs y 4 motores por PCA9685 y drivers TB6612. Se expresa con luz y sonido, reconoce un gesto, escanea el bus I2C, mide el piso con dos sensores de flujo óptico y aprende: acepta código nuevo de su cerebro, lo prueba y vuelve atrás si falla. Lo que sabe hacer está en la ayuda de cada comando.",
-  "aprendido": "Versión auditada. Los motores suben solos el STBY de los drivers (GPIO 27, 22, 23 y 24) al partir y lo bajan al terminar; \"invertir\" da vuelta solo los motores nombrados y conserva los demás (\"invertidos\" fija la lista completa); topes de 60 % y 10 s; descripción corta.",
+  "aprendido": "Motores sin topes: potencia hasta 100 % y sin tope de tiempo (\"seg\":0 = corre hasta \"on\":false). Mantiene lo de la 0.32.0: sube solo el STBY de los drivers y \"invertir\" da vuelta solo los motores nombrados.",
   "autor": "Cristian (Claude)"
 }

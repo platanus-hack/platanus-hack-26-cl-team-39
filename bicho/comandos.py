@@ -175,7 +175,7 @@ def manejar(c: dict) -> str | None:
     if cmd == "hola":
         return "hola desde el bicho"
 
-    # Motores (motores.py): 4 motores por el PCA9685 (I2C bus 1, 0x40), suave y con topes (60 %, 10 s). Sube solo el STBY de los drivers al partir.
+    # Motores (motores.py): 4 motores por el PCA9685 (I2C bus 1, 0x40), hasta 100 % y sin tope de tiempo. Sube solo el STBY de los drivers al partir.
     # Va primero para que la orden de parar nunca quede detrás de otra cosa.
     #   {"cmd":"motores","on":false}                   para todo al tiro (apaga los 16 canales)
     #   {"cmd":"motores"}                              estado: mapa, si está confirmado, cómo está el chip
@@ -185,6 +185,7 @@ def manejar(c: dict) -> str | None:
     #   {"cmd":"motores","invertidos":[1,4]}           fija la lista completa de invertidos ([] = ninguno)
     #   {"cmd":"motores","confirmar":true}             deja el mapa confirmado
     #   {"cmd":"motores","on":true,"pot":15,"seg":1.5} mueve los 4 (solo con el mapa confirmado)
+    #   {"cmd":"motores","on":true,"pot":80,"seg":0}   corre sin límite de tiempo, hasta {"cmd":"motores","on":false}
     # No bloquea: el movimiento corre en un hilo daemon que se apaga solo al cumplirse el tiempo.
     if cmd in ("motores", "motor"):
         try:
