@@ -24,6 +24,7 @@ import luz
 import motores
 import oido_luz
 import respeaker
+import servos
 import speaker
 import vibrar
 
@@ -74,6 +75,7 @@ herramientas.AYUDA["expresar"] = (
 herramientas.AYUDA["i2c"] = i2c.AYUDA
 # Motores por el PCA9685 (motores.py): trae su propia ayuda.
 herramientas.AYUDA["motores"] = motores.AYUDA
+herramientas.AYUDA["servo"] = servos.AYUDA
 # Descubrir el mapeo de motores midiendo con flujo y cámara (descubrir.py): trae su propia ayuda.
 herramientas.AYUDA["descubrir"] = descubrir.AYUDA
 # Salidas de los GPIO 23 y 24 (gpios.py): trae su propia ayuda.
@@ -194,6 +196,19 @@ def manejar(c: dict) -> str | None:
             return motores.manejar(c)
         except Exception as e:
             return f"motores: falló: {type(e).__name__}: {e}"
+
+    # Servos (servos.py): hasta 16 servos en un SEGUNDO PCA9685 (I2C 0x41, a 50 Hz), aparte del de los motores.
+    # Un servo no usa "potencia": se le pide un ángulo y se queda ahí sosteniendo.
+    #   {"cmd":"servo"}                          estado
+    #   {"cmd":"servo","i":0,"deg":90}           canal 0 a 90° (de 0 a 180)
+    #   {"cmd":"servo","i":0,"us":1500}          ancho de pulso en crudo (400 a 2600 µs), para calibrar
+    #   {"cmd":"servo","i":0,"barrer":true}      lo pasea 0 → 180 → 90 para probarlo
+    #   {"cmd":"servo","i":0,"soltar":true}      le corta el pulso (queda suelto)  ·  sin "i" suelta todos
+    if cmd in ("servo", "servos"):
+        try:
+            return servos.manejar(c)
+        except Exception as e:
+            return f"servo: falló: {type(e).__name__}: {e}"
 
     # Descubrir (descubrir.py): averiguar solo qué canales del PCA9685 mueven los motores, midiendo cada
     # prueba con los dos sensores de flujo óptico y con la cámara (cuadro de antes y de después).

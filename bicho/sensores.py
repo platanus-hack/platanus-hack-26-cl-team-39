@@ -22,6 +22,7 @@ import gpios
 import luces
 import luz
 import motores
+import servos
 import oido
 import oido_luz
 import respeaker
@@ -95,6 +96,9 @@ def leer() -> dict:
     d["speaker"] = speaker.sonando()  # hay una prueba del speaker sonando: solo un booleano
     d["vibrar"] = vibrar.activa()  # está vibrando (tono grave por el parlante): solo un booleano
     d["motores"] = motores.datos()  # motores (PCA9685): si se están moviendo y a qué potencia; solo copia
+    sv = servos.datos()  # servos con pulso: canal -> ángulo; solo copia, no toca el bus
+    if sv:
+        d["servos"] = sv
     d["descubrir"] = descubrir.activa()  # está probando canales de motores: solo un booleano
     f = flujo.datos()  # ADNS-3080: solo copia lo último que leyó su hilo (si está prendido)
     if f:

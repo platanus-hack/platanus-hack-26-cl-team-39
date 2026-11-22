@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.34.0",
+      "date": "2026-11-22T05:19:38.208Z",
+      "author": "Cristian (Claude)",
+      "notes": "Servos: comando servo para mover hasta 16 servos en un segundo PCA9685 (0x41, 50 Hz): ángulo, pulso en crudo, barrido de prueba y soltar. Mantiene los motores sin topes de la 0.33.0.",
+      "package": "0.34.0/bicho-0.34.0.tar.gz",
+      "size": 106884
+    },
+    {
       "version": "0.33.0",
       "date": "2026-11-22T04:06:06.257Z",
       "author": "Cristian (Claude)",

@@ -184,6 +184,18 @@
       ],
       "origen": "equipo",
       "version": "0.24.0"
+    },
+    {
+      "id": "servos",
+      "icono": "🦾",
+      "nombre": "Mover servos",
+      "que_hace": "Lleva un servo a un ángulo y lo sostiene ahí, lo pasea para probarlo o lo suelta. Van en un segundo PCA9685 (0x41), aparte del de los motores.",
+      "pidele": "bicho, pon el servo 0 en 90 grados",
+      "comandos": [
+        "servo"
+      ],
+      "origen": "equipo",
+      "version": "0.34.0"
     }
   ]
 }
