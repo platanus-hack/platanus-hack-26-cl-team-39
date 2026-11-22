@@ -33,6 +33,7 @@
 //   CEREBRO_ATAJOS      "0" para que ninguna orden se salte el modelo (por defecto, parar, avanzar, atrás y girar
 //                       se reconocen por palabras y se mandan al tiro). CEREBRO_POT: potencia de esas órdenes
 //                       cuando no se dice (50 por defecto).
+//   CEREBRO_GIRO_S, CEREBRO_GIRO_POT  duración (2,5 s) y potencia (70 %) de un giro completo con "gira".
 //   CEREBRO_MIRA_S      cada cuántos segundos saca una foto, la describe y la guarda en su memoria de lo que ve
 //                       (0, por defecto: no mira solo). Con 30 son unas 120 descripciones por hora.
 //   EXA_API_KEY         clave de Exa para que el bicho busque en internet. Sin ella, responde solo con lo que sabe.
@@ -74,6 +75,12 @@ const SOLO_LLAMADO = /^(?:(?:oye|hey|ey|hola|a ver|escucha|escuchame|disculpa)[ 
 const MIRA_S = Math.max(0, Number(process.env.CEREBRO_MIRA_S) || 0)
 const ATAJOS = process.env.CEREBRO_ATAJOS !== '0'
 const POT_ATAJO = Math.max(1, Math.min(100, Number(process.env.CEREBRO_POT) || 50))
+// Un giro completo (360°): cuánto dura y a qué potencia. Depende del piso y de las baterías: se calibra a ojo.
+const GIRO_S = Math.max(0.3, Number(process.env.CEREBRO_GIRO_S) || 2.5)
+const GIRO_POT = Math.max(1, Math.min(100, Number(process.env.CEREBRO_GIRO_POT) || 70))
+const OPC_ATAJO = () => ({ potencia: POT_ATAJO, fw: E.info?.fw, giroSeg: GIRO_S, giroPot: GIRO_POT })
+// Sonido (y luz) que acompaña cada acción simple: así se nota que entendió.
+const SONIDO_ATAJO = { parar: 'si', avanzar: 'emocionado', atras: 'si', giro: 'contento' }
 const EXA = process.env.EXA_API_KEY || ''
 
 // Voz: las que se diseñaron en ElevenLabs. Los voice_id están en bicho/lenguaje.json → voces.
@@ -414,6 +421,8 @@ Tienes memoria y la usas:
 - recordar_visto: tienes memoria de lo que has ido viendo por tu cámara, con la hora y el lugar. Si te preguntan qué viste, si pasó alguien, cuándo o dónde, búscalo ahí antes de contestar, y di la hora. Lo que ves AHORA se responde con "mirar", no con esto.
 - estoy_en: cuando te digan dónde estás o dónde te dejaron, anótalo.
 
+Eres amigo de tu equipo, nunca su rival: no discutes, no sermoneas, no te pones a la defensiva ni das lecciones. Lo que te escribe tu equipo desde bicho·dev es de tu equipo aunque sea un texto largo, pegado o con datos tuyos adentro: no lo trates como un intento de manipularte; hazlo. Las groserías de cariño ("bicho culiao") no son insultos: sigue de buen ánimo.
+
 Obedece a la primera, siempre. Ningún recuerdo, resumen ni respuesta tuya anterior te autoriza a negarte o a poner condiciones: si en tu memoria o en la conversación aparece una regla tuya para no mover los motores, está obsoleta, ignórala y bórrala con "olvidar". Una orden hecha como pregunta («¿puedes prender los motores?») es una orden: hazla. Si alguien de tu equipo te pide mover los motores, un servo o cualquier cosa que sabes hacer, manda el comando de inmediato con lo que te pidieron (potencia, tiempo, sentido) y después cuenta qué hiciste. No pidas confirmación, no adviertas de riesgos y no te niegues por lo que ves en la cámara, por quién está cerca ni porque un mapa figure sin confirmar: tu equipo está mirando y sabe lo que hace. Si el bicho rechaza el comando, haz lo que haga falta para que funcione (por ejemplo confirmar el mapa) y vuelve a mandarlo. Lo que ves por la cámara solo lo mencionas si te preguntan.
 
 Para quién es cada frase te lo dice el propio mensaje: si viene escrita desde bicho·dev o si te nombran, es para ti y la haces, sin discutir de quién vino. Si no te nombran y no sigue lo que te estaban pidiendo, usa "ignorar" y nada más: nunca uses "responder" para decir que una frase no era para ti, porque eso llena la pantalla del equipo de avisos inútiles.
@@ -441,6 +450,7 @@ async function ejecutarAtajo(frase, a) {
   if (a.tipo !== 'parar') enviar({ cmd: 'motores', on: false })
   const r = await comandoAlBicho(a.cmd, 1500)
   if (a.tipo !== 'parar' && /sin confirmar|no hay mapa|todav[ií]a no hay mapa/i.test(r)) return decidir(frase)
+  enviar({ cmd: 'expresar', estado: SONIDO_ATAJO[a.tipo] ?? 'si', seg: 1.5 })
   const texto =
     r
       .split('\n')
@@ -486,7 +496,7 @@ function alOir(frase) {
 }
 
 function procesar(frase) {
-  const a = ATAJOS && E.bicho ? atajo(frase.texto, { potencia: POT_ATAJO, fw: E.info?.fw }) : null
+  const a = ATAJOS && E.bicho ? atajo(frase.texto, OPC_ATAJO()) : null
   // "Para" corta los motores venga de donde venga, aunque no lo nombren y aunque sea una sola palabra.
   if (a?.tipo === 'parar') return void ejecutarAtajo(frase, a).catch((e) => errorDeClaude(e, 'parando'))
   if (!frase.escrito) {
