@@ -542,7 +542,7 @@ async function decidir(frase) {
     `Frase: «${frase.texto}»`,
     frase.escrito ? 'Te la escribió alguien del equipo desde bicho·dev: es para ti con seguridad.' : `Vino desde ${frase.angulo ?? '?'}° y duró ${frase.dur} s.`,
     E.bicho ? '' : 'TU CUERPO ESTÁ DESCONECTADO AHORA (la Raspberry está apagada o sin internet): puedes conversar, recordar y buscar, pero no moverte, ver ni usar sensores. Si te piden algo físico, dilo y ofrece hacerlo cuando vuelva.',
-    E.bicho && E.info ? `Tu versión: ${E.info.fw}. Qué haces: ${E.info.desc}` : '',
+    E.bicho && E.info ? `Tu versión: ${E.info.fw}. Qué haces: ${String(E.info.desc ?? '').slice(0, 600)}` : '',
     E.bicho && E.sensores ? `Sensores ahora: ${JSON.stringify(E.sensores)}` : '',
     E.aprendiendo ? `EN ESTE MOMENTO ESTÁS APRENDIENDO: ${E.aprendiendo}. No lances otro aprendizaje.` : '',
     M.bloque(),

@@ -37,6 +37,20 @@ if os.environ.get("BICHO_SIMULAR") != "1":
         pass
 
 
+# Los GPIO 27 y 22 van además al STBY de dos drivers de motor (TB6612). Mientras los motores se mueven,
+# motores.py los reserva: quedan en alto y ningún comando de luces (ni el parpadeo del gesto) los cambia.
+_reservadas = False
+
+
+def reservar(on: bool) -> None:
+    """La usa motores.py: en alto y bloqueadas mientras se mueve; al soltar quedan en bajo."""
+    global _reservadas
+    _reservadas = False
+    for c in PINES:
+        (prender if on else apagar)(c)
+    _reservadas = bool(on)
+
+
 def real(color: str) -> bool:
     return color in _leds
 
@@ -46,6 +60,8 @@ def donde(color: str) -> str:
 
 
 def prender(color: str) -> None:
+    if _reservadas:
+        return
     led = _leds.get(color)
     if led:
         led.on()
@@ -53,6 +69,8 @@ def prender(color: str) -> None:
 
 
 def apagar(color: str) -> None:
+    if _reservadas:
+        return
     led = _leds.get(color)
     if led:
         led.off()
@@ -66,6 +84,8 @@ def apagar_todas() -> None:
 
 def parpadear(color: str, n: int = 5, periodo: float = 0.5) -> None:
     """Parpadea n veces sin bloquear y termina apagada."""
+    if _reservadas:
+        return
     led = _leds.get(color)
     if led:
         led.blink(on_time=periodo / 2, off_time=periodo / 2, n=n, background=True)
@@ -74,6 +94,8 @@ def parpadear(color: str, n: int = 5, periodo: float = 0.5) -> None:
 
 def destello(color: str, segundos: float = 2.0) -> None:
     """Prende la luz un rato y se apaga sola, sin bloquear."""
+    if _reservadas:
+        return
     led = _leds.get(color)
     if led:
         led.blink(on_time=segundos, off_time=0.05, n=1, background=True)

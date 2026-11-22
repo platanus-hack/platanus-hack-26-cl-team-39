@@ -11,13 +11,17 @@ from __future__ import annotations
 
 import anillo
 import camara
+import descubrir
 import expresar
 import flujo
 import flujo2
 import gesto
+import gpios
 import herramientas
+import i2c
 import luces
 import luz
+import motores
 import oido_luz
 import respeaker
 import speaker
@@ -66,6 +70,14 @@ herramientas.AYUDA["expresar"] = (
     ' una escena completa  ·  "lista":true estados y escenas  ·  "sonido":false solo luz  ·  "luz":false solo'
     ' sonido  ·  "on":false corta todo'
 )
+# Escáner del bus I2C (i2c.py): trae su propia ayuda.
+herramientas.AYUDA["i2c"] = i2c.AYUDA
+# Motores por el PCA9685 (motores.py): trae su propia ayuda.
+herramientas.AYUDA["motores"] = motores.AYUDA
+# Descubrir el mapeo de motores midiendo con flujo y cámara (descubrir.py): trae su propia ayuda.
+herramientas.AYUDA["descubrir"] = descubrir.AYUDA
+# Salidas de los GPIO 23 y 24 (gpios.py): trae su propia ayuda.
+herramientas.AYUDA["gpio23_24"] = gpios.AYUDA
 # Los comandos de respeaker.py (documentación y parámetros del ReSpeaker) traen su propia ayuda.
 herramientas.AYUDA.update(respeaker.AYUDA)
 
@@ -163,6 +175,40 @@ def manejar(c: dict) -> str | None:
     if cmd == "hola":
         return "hola desde el bicho"
 
+    # Motores (motores.py): 4 motores por el PCA9685 (I2C bus 1, 0x40), suave y con topes (60 %, 10 s). Sube solo el STBY de los drivers al partir.
+    # Va primero para que la orden de parar nunca quede detrás de otra cosa.
+    #   {"cmd":"motores","on":false}                   para todo al tiro (apaga los 16 canales)
+    #   {"cmd":"motores"}                              estado: mapa, si está confirmado, cómo está el chip
+    #   {"cmd":"motores","mapa":"pares"}               elige el mapa de canales (o "adafruit", o una lista)
+    #   {"cmd":"motores","motor":1,"pot":12,"seg":1}   prueba un motor  ·  "canal":0 prueba un canal en crudo
+    #   {"cmd":"motores","invertir":[4]}               da vuelta SOLO esos motores: los demás quedan como estaban
+    #   {"cmd":"motores","invertidos":[1,4]}           fija la lista completa de invertidos ([] = ninguno)
+    #   {"cmd":"motores","confirmar":true}             deja el mapa confirmado
+    #   {"cmd":"motores","on":true,"pot":15,"seg":1.5} mueve los 4 (solo con el mapa confirmado)
+    # No bloquea: el movimiento corre en un hilo daemon que se apaga solo al cumplirse el tiempo.
+    if cmd in ("motores", "motor"):
+        try:
+            if (("on" in c and not c.get("on")) or c.get("parar")) and descubrir.activa():
+                return descubrir.detener()  # parar también corta el barrido de descubrir (y apaga los motores)
+            return motores.manejar(c)
+        except Exception as e:
+            return f"motores: falló: {type(e).__name__}: {e}"
+
+    # Descubrir (descubrir.py): averiguar solo qué canales del PCA9685 mueven los motores, midiendo cada
+    # prueba con los dos sensores de flujo óptico y con la cámara (cuadro de antes y de después).
+    #   {"cmd":"descubrir","on":true}                barre los 16 canales de a uno (12 → 20 → 30 %)
+    #   {"cmd":"descubrir","canal":3}                prueba medida de un canal
+    #   {"cmd":"descubrir","motor":2,"sentido":-1}   prueba medida de un motor del mapa
+    #   {"cmd":"descubrir","todos":true}             todos los motores del mapa (para confirmar si avanza)
+    #   {"cmd":"descubrir"}  ·  "resultado":true     cómo va / tabla completa
+    #   {"cmd":"descubrir","on":false}               corta y apaga los motores
+    # No bloquea: todo corre en un hilo daemon; usa la maquinaria segura de motores.py.
+    if cmd == "descubrir":
+        try:
+            return descubrir.manejar(c)
+        except Exception as e:
+            return f"descubrir: falló: {type(e).__name__}: {e}"
+
     # Herramientas de software (herramientas.py): saber qué sé hacer, buscar en mi código y crear notas.
     #   {"cmd":"ayuda"}  ·  {"cmd":"ayuda","de":"camara"}       lista de comandos / cómo se usa uno
     #   {"cmd":"archivos"}                                       archivos de mi código
@@ -185,6 +231,17 @@ def manejar(c: dict) -> str | None:
             return respeaker.manejar(c)
         except Exception as e:
             return f"{cmd}: falló: {type(e).__name__}: {e}"
+
+    # Escáner I2C (i2c.py): qué dispositivos responden en el bus 1 (pines 3 y 5), p. ej. drivers de motores.
+    #   {"cmd":"i2c"}                 escanea y lista las direcciones en hexadecimal, con lo que podrían ser
+    #   {"cmd":"i2c","bus":2}         otro bus (los de la cámara no se tocan)
+    #   {"cmd":"i2c","ultimo":true}   repite el último resultado
+    # No bloquea: el sondeo corre en un hilo daemon que termina solo; solo sondea, no mueve nada.
+    if cmd == "i2c":
+        try:
+            return i2c.manejar(c)
+        except Exception as e:
+            return f"i2c: falló: {type(e).__name__}: {e}"
 
     # Luz en el GPIO 17:  {"cmd":"luz","on":true}  ·  {"cmd":"luz","on":false}
     # Parpadeo:           {"cmd":"luz","blink":5}  (opcional "t": periodo en segundos)
@@ -251,6 +308,17 @@ def manejar(c: dict) -> str | None:
             nombre = "verde" if color == "verde" else "roja"
             partes.append(f"{nombre} {'prendida' if luces.prendida(color) else 'apagada'} ({luces.donde(color)})")
         return "luces: " + ", ".join(partes)
+
+    # Salidas de los GPIO 23 y 24 (gpios.py, pines físicos 16 y 18). El 27 y el 22 siguen siendo verde y rojo.
+    #   {"cmd":"gpio23_24","on":true}    prende las dos y las deja prendidas
+    #   {"cmd":"gpio23_24","on":false}   las apaga
+    #   {"cmd":"gpio23_24"}              cómo están  ·  "pin":23 o "pin":24 para una sola
+    # No bloquea ni deja nada corriendo: los pines se toman con la primera orden de prender o apagar.
+    if cmd in ("gpio23_24", "gpios"):
+        try:
+            return gpios.manejar(c)
+        except Exception as e:
+            return f"gpio23_24: falló: {type(e).__name__}: {e}"
 
     # Cámara CSI:  {"cmd":"camara","on":true}   manda una imagen por segundo a Vista
     #              {"cmd":"camara","on":false}  la apaga

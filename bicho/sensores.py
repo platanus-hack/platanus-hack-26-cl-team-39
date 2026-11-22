@@ -14,11 +14,14 @@ import time
 from pathlib import Path
 
 import camara
+import descubrir
 import flujo
 import flujo2
 import gesto
+import gpios
 import luces
 import luz
+import motores
 import oido
 import oido_luz
 import respeaker
@@ -76,6 +79,8 @@ def leer() -> dict:
     d["luz"] = luz.prendida()
     d["verde"] = luces.prendida("verde")  # luz del "sí" (GPIO 27)
     d["rojo"] = luces.prendida("rojo")  # luz del "no" (GPIO 22)
+    d["gpio23"] = gpios.prendido(23)  # salidas de los GPIO 23 y 24 (comando gpio23_24): solo lee el estado
+    d["gpio24"] = gpios.prendido(24)
     d["camara"] = camara.activa()  # solo un booleano: no toca la cámara
     g = gesto.datos()  # dedo del medio a la vista y cuántas veces: solo copia variables
     if g:
@@ -89,6 +94,8 @@ def leer() -> dict:
         d["respeaker"] = r
     d["speaker"] = speaker.sonando()  # hay una prueba del speaker sonando: solo un booleano
     d["vibrar"] = vibrar.activa()  # está vibrando (tono grave por el parlante): solo un booleano
+    d["motores"] = motores.datos()  # motores (PCA9685): si se están moviendo y a qué potencia; solo copia
+    d["descubrir"] = descubrir.activa()  # está probando canales de motores: solo un booleano
     f = flujo.datos()  # ADNS-3080: solo copia lo último que leyó su hilo (si está prendido)
     if f:
         d["flujo"] = f

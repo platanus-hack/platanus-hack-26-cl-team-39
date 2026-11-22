@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.32.0",
+      "date": "2026-11-22T04:01:04.694Z",
+      "author": "Cristian (Claude)",
+      "notes": "Versión auditada: los motores suben solos el STBY de los drivers, invertir un motor ya no deshace los otros, topes de 60 % y 10 s, y descripción corta. Trae al repo lo que el bicho había aprendido solo (motores, i2c, gpios, descubrir).",
+      "package": "0.32.0/bicho-0.32.0.tar.gz",
+      "size": 102721
+    },
+    {
       "version": "0.24.0",
       "date": "2026-11-21T23:02:23.627Z",
       "author": "gutybv",
