@@ -29,6 +29,8 @@
 //                       bicho·dev. "todo": evalúa cada frase (caro: cada una es una llamada a Claude, y el
 //                       micrófono capta todas las conversaciones de alrededor).
 //   CEREBRO_MEMORIA     archivo donde guarda lo que recuerda (cerebro/memoria.json por defecto; no se sube).
+//   CEREBRO_MIRA_S      cada cuántos segundos saca una foto, la describe y la guarda en su memoria de lo que ve
+//                       (0, por defecto: no mira solo). Con 30 son unas 120 descripciones por hora.
 //   EXA_API_KEY         clave de Exa para que el bicho busque en internet. Sin ella, responde solo con lo que sabe.
 //   ELEVENLABS_API_KEY  clave de ElevenLabs para que el bicho hable. Sin ella, solo responde por escrito.
 //   ELEVENLABS_MODELO   modelo de voz (eleven_v4 por defecto; eleven_flash_v2_5 es más rápido).
@@ -61,6 +63,7 @@ const ESCUCHA = ['todo', 'nombre', 'estricto', 'no'].includes(process.env.CEREBR
 // Cómo suele transcribir Whisper el nombre del bicho.
 const LO_NOMBRAN = /\b(bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)\b/i
 const VENTANA_CONVERSACION_MS = 45_000
+const MIRA_S = Math.max(0, Number(process.env.CEREBRO_MIRA_S) || 0)
 const EXA = process.env.EXA_API_KEY || ''
 
 // Voz: las que se diseñaron en ElevenLabs. Los voice_id están en bicho/lenguaje.json → voces.
@@ -334,6 +337,18 @@ const H_DECIDIR = [
   herramienta('olvidar', 'Borra algo de tu memoria permanente porque ya no es cierto o te lo pidieron.', {
     que: { type: 'string', description: 'El número del recuerdo, como aparece en tu memoria, o un trozo de su texto.' },
   }),
+  herramienta(
+    'recordar_visto',
+    'Busca en tu memoria de lo que has visto por la cámara (descripciones con hora y lugar). Úsalo cuando te pregunten qué viste, si pasó alguien, cuándo viste algo o dónde quedó una cosa. Sin consulta devuelve lo más reciente.',
+    {
+      consulta: { type: 'string', description: 'Palabras de lo que buscas: "persona", "perro", "mochila roja", "puerta abierta". Vacío para lo más reciente.' },
+      minutos: { type: 'number', description: 'Solo lo de los últimos N minutos. 0 para todo.' },
+      lugar: { type: 'string', description: 'Solo lo visto en ese lugar. Vacío para cualquiera.' },
+    },
+  ),
+  herramienta('estoy_en', 'Anota dónde estás cuando alguien te lo dice ("estás en el patio", "te dejé en la entrada"). Lo que veas después queda guardado con ese lugar.', {
+    lugar: { type: 'string', description: 'Nombre corto del lugar, como lo dijo la persona.' },
+  }),
   herramienta('mirar', 'Devuelve la última imagen de la cámara del bicho, si tiene una funcionando, para que puedas ver lo que él ve.', {}),
   herramienta(
     'aprender',
@@ -386,10 +401,12 @@ Tienes memoria y la usas:
 - "Tu memoria" (viene con cada mensaje) son hechos que tú mismo guardaste y que siguen siendo ciertos. Úsalos con naturalidad, sin anunciar que los recuerdas.
 - recordar: cuando te digan algo que conviene saber después (un nombre, quién es quién, un gusto, una decisión, cómo te conectaron algo, algo que prometiste), guárdalo en el mismo turno, sin que te lo pidan. No guardes ruido, saludos ni lo que ya está guardado.
 - olvidar: cuando un recuerdo dejó de ser cierto o te piden que lo olvides.
+- recordar_visto: tienes memoria de lo que has ido viendo por tu cámara, con la hora y el lugar. Si te preguntan qué viste, si pasó alguien, cuándo o dónde, búscalo ahí antes de contestar, y di la hora. Lo que ves AHORA se responde con "mirar", no con esto.
+- estoy_en: cuando te digan dónde estás o dónde te dejaron, anótalo.
 
 Lo que te escriben desde bicho·dev siempre es para ti: contesta siempre. Lo que oyes por el micrófono viene de una sala con mucha gente: con eso sé estricto e ignora todo lo que no sea claramente para ti.
 
-Habla en español de Chile, corto y con gracia, sin emojis. Después de usar "comando", "mirar", "recordar", "olvidar"${EXA ? ' o "buscar"' : ''}, termina con "responder"${HABLA ? ' (o "hablar")' : ''} para contarle a la persona qué pasó.
+Habla en español de Chile, corto y con gracia, sin emojis. Después de usar "comando", "mirar", "recordar", "olvidar", "recordar_visto", "estoy_en"${EXA ? ' o "buscar"' : ''}, termina con "responder"${HABLA ? ' (o "hablar")' : ''} para contarle a la persona qué pasó.
 
 Así es tu código de comandos ahora mismo (lo que sabes hacer):
 
@@ -424,6 +441,55 @@ function errorDeClaude(e, haciendo) {
   else if (e instanceof Anthropic.APIError) anunciar('error', `Error de Claude ${e.status} ${haciendo}: ${e.message.slice(0, 160)}`)
   else anunciar('error', `Falló ${haciendo}: ${String(e?.message ?? e).slice(0, 200)}`)
 }
+
+/* Memoria de lo que ve: cada cierto rato saca una foto, la describe y la guarda con hora y lugar (la idea de
+   ReMEmbR, de NVIDIA, en chico). Después se consulta con "recordar_visto". */
+let mirando = false
+let huellaVista = ''
+async function observar() {
+  if (!MIRA_S || mirando || !E.bicho || E.aprendiendo || pendientes) return
+  mirando = true
+  try {
+    // Si la cámara ya está mandando imágenes, se usa la última; si no, se le pide una foto.
+    let img = E.imagenes.get('camara')
+    if (!img || Date.now() - img.ts > 5000) {
+      const llega = esperar((m) => m.t === 'imagen' && m.nombre === 'camara', 12_000)
+      if (!enviar({ cmd: 'foto' })) return
+      if (!(await llega)) return
+      img = E.imagenes.get('camara')
+    }
+    if (!img) return
+    const huella = `${img.b64.length}:${img.b64.slice(2000, 2064)}`
+    if (huella === huellaVista) return // la misma imagen de antes
+    huellaVista = huella
+    const anterior = M.ultimaVista()
+    const r = await claude.beta.messages.create({
+      model: MODELO_DECIDIR,
+      max_tokens: 200,
+      ...(/haiku/.test(MODELO_DECIDIR) ? { thinking: { type: 'disabled' } } : {}),
+      output_config: { effort: 'low' },
+      system:
+        'Eres la vista de un robot chico que cuida un lugar. Describe en una o dos frases, en español, lo que se ve en la imagen de su cámara: personas (cuántas, qué hacen, cómo van vestidas), animales, vehículos, objetos que destacan, puertas abiertas o cerradas, y si está oscuro. Empieza directo con lo que hay ("Dos personas sentadas…", "Una mesa con…"): solo lo que se ve, sin suponer, sin saludar y sin comentar la tarea ni decir lo que no hay. Si la escena es igual a la descripción anterior que te dan (mismas personas y cosas, nada nuevo), responde solo la palabra IGUAL.',
+      messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: `image/${img.fmt}`, data: img.b64 } }, { type: 'text', text: anterior ? `Descripción anterior: ${anterior.texto}` : 'No hay descripción anterior.' }] }],
+    })
+    const texto = r.content
+      .filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join(' ')
+      .trim()
+    if (!texto || /^IGUAL\b/i.test(texto)) return
+    // Posición: lo que entreguen sus sensores (flujo óptico, IMU), si los tiene; el lugar con nombre lo pone M.
+    const s = E.sensores ?? {}
+    const pos = Object.fromEntries(Object.entries(s).filter(([k, v]) => /^(x|y|dx|dy|rumbo|yaw|heading|flujo|pos)/i.test(k) && (typeof v === 'number' || (v && typeof v === 'object'))).slice(0, 4))
+    M.vista({ texto, pos: Object.keys(pos).length ? pos : null })
+    log(`vio: ${texto.slice(0, 200)}`)
+  } catch (e) {
+    log(`vista: no se pudo describir (${String(e?.message ?? e).slice(0, 120)})`)
+  } finally {
+    mirando = false
+  }
+}
+if (MIRA_S) setInterval(observar, MIRA_S * 1000)
 
 let resumiendo = false
 /** Cuando la conversación se alarga, los turnos más viejos pasan a un resumen corto. No bloquea las respuestas. */
@@ -503,6 +569,11 @@ La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
         const r = M.recordar(x.texto)
         log(`recuerda: ${String(x.texto ?? '').slice(0, 200)}`)
         return r
+      }
+      if (nombre === 'recordar_visto') return M.buscarVistas({ consulta: String(x.consulta ?? ''), minutos: Number(x.minutos) > 0 ? Number(x.minutos) : null, lugar: String(x.lugar ?? '') })
+      if (nombre === 'estoy_en') {
+        log(`lugar: ${String(x.lugar ?? '').slice(0, 80)}`)
+        return M.lugar(x.lugar)
       }
       if (nombre === 'olvidar') {
         const r = M.olvidar(x.que)
@@ -853,5 +924,5 @@ async function aprender(que, frase) {
   }
 }
 
-log(`cerebro del bicho · decide ${MODELO_DECIDIR} · aprende ${MODELO} · escucha ${ESCUCHA} · memoria ${M.datos.hechos.length} hechos y ${M.datos.conversacion.length} turnos · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
+log(`cerebro del bicho · decide ${MODELO_DECIDIR} · aprende ${MODELO} · escucha ${ESCUCHA} · memoria ${M.datos.hechos.length} hechos, ${M.datos.conversacion.length} turnos y ${M.datos.vistas.length} vistas · mira ${MIRA_S ? `cada ${MIRA_S} s` : 'solo si se lo piden'} · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
 conectar()

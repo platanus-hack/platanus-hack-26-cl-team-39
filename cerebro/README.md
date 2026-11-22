@@ -55,6 +55,7 @@ Cuando Claude elige `hablar`, el cerebro pide el audio a ElevenLabs (WAV de 16 k
 | `CEREBRO_APRENDE` | `0` para que decida y responda, pero no modifique el bicho. |
 | `CEREBRO_ESCUCHA` | Qué evalúa de lo que oye: `nombre` (por defecto: lo que dice «bicho» o sigue una conversación en voz alta), `estricto` (solo lo que dice «bicho»; para salas con mucha gente), `no` (ignora el micrófono) o `todo`. |
 | `CEREBRO_MEMORIA` | Archivo donde guarda lo que recuerda (`cerebro/memoria.json` por defecto). |
+| `CEREBRO_MIRA_S` | Cada cuántos segundos saca una foto, la describe y la guarda en su memoria de lo que ve. `0` (por defecto): no mira solo. Con `30` son unas 120 descripciones por hora. |
 
 También se pueden poner en `cerebro/.env`, que no se sube al repo.
 
@@ -67,6 +68,16 @@ Cada frase es una llamada nueva a Claude, así que lo que el bicho sabe de antes
 | Hechos | Lo que él decide guardar con la herramienta `recordar` (nombres, gustos, decisiones, cómo le conectaron algo) y borra con `olvidar`. Hasta 40. | Hasta que lo olvide |
 | Resumen | Lo conversado hace rato, en un párrafo. Se actualiza solo cuando la conversación pasa de 24 turnos. | Se va reescribiendo |
 | Conversación | Los últimos turnos en que le hablaron a él, tal cual. Van a Claude como mensajes de verdad, así entiende «hazlo de nuevo» o «¿y el otro?». | Hasta que pasan al resumen |
+
+### Memoria de lo que ve
+
+Con `CEREBRO_MIRA_S` mayor que cero, cada tantos segundos el cerebro le pide una foto al bicho (o usa la última si la cámara ya está prendida), la describe en una o dos frases con el modelo rápido y la guarda con la hora, el lugar y lo que digan sus sensores de posición (`flujo`, si lo tiene). Si la escena no cambió, no guarda nada. Es la idea de [ReMEmbR](https://arxiv.org/abs/2409.13682), de NVIDIA, en chico.
+
+- `recordar_visto` (herramienta): busca en esas vistas por palabras, por los últimos N minutos y por lugar. Así responde «¿pasó alguien?», «¿cuándo viste al perro?» o «¿dónde quedó la mochila?», con la hora.
+- `estoy_en` (herramienta): cuando alguien le dice dónde está («te dejé en el patio»), lo anota y las vistas siguientes quedan con ese lugar. No tiene GPS: el lugar se lo dice una persona.
+- Guarda hasta 400 vistas (unas 3 horas mirando cada 30 s). Las tres últimas van siempre en su contexto.
+
+### Lo demás
 
 - Las frases que oye y decide ignorar son ruido: guarda las últimas 4 y nunca desplazan la conversación. Antes compartían 12 líneas con todo lo demás y en una sala con gente la memoria duraba menos de un minuto.
 - Escribirle desde bicho·dev no abre la ventana de escucha del micrófono; solo lo que le dicen en voz alta.

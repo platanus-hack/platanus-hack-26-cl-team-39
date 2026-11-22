@@ -5,6 +5,9 @@
 //   resumen       lo conversado hace rato, comprimido en un párrafo cuando la conversación se alarga.
 //   conversación  los últimos turnos en que le hablaron A ÉL (escrito o por voz), tal cual.
 //
+//   vistas        lo que fue viendo por la cámara: una descripción corta con la hora y el lugar donde estaba.
+//                 No van enteras en el contexto: el bicho las consulta con "recordar_visto" (por texto y tiempo).
+//
 // Aparte queda el ruido: frases que oyó y decidió ignorar. Se guardan muy pocas y nunca desplazan la
 // conversación: en una sala con mucha gente, el micrófono llenaba la memoria en menos de un minuto.
 //
@@ -18,8 +21,11 @@ const recortar = (s, n) => {
 }
 const hora = (ts) => new Date(ts).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false })
 
-export function crearMemoria(archivo, { maxHechos = 40, maxTurnos = 24, alResumir = 12, maxRuido = 4, maxSucesos = 6 } = {}) {
-  const datos = { hechos: [], resumen: '', conversacion: [], sucesos: [] }
+const sinTildes = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+const fechaHora = (ts) => `${new Date(ts).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' })} ${hora(ts)}`
+
+export function crearMemoria(archivo, { maxHechos = 40, maxTurnos = 24, alResumir = 12, maxRuido = 4, maxSucesos = 6, maxVistas = 400 } = {}) {
+  const datos = { hechos: [], resumen: '', conversacion: [], sucesos: [], vistas: [], lugar: '' }
   let ruido = [] // no se guarda en disco: es de este rato
   if (archivo && existsSync(archivo)) {
     try {
@@ -28,6 +34,8 @@ export function crearMemoria(archivo, { maxHechos = 40, maxTurnos = 24, alResumi
       if (typeof d.resumen === 'string') datos.resumen = d.resumen
       if (Array.isArray(d.conversacion)) datos.conversacion = d.conversacion.filter((t) => t && typeof t.texto === 'string')
       if (Array.isArray(d.sucesos)) datos.sucesos = d.sucesos.filter((s) => typeof s === 'string').slice(-maxSucesos)
+      if (Array.isArray(d.vistas)) datos.vistas = d.vistas.filter((v) => v && typeof v.texto === 'string' && typeof v.ts === 'number').slice(-maxVistas)
+      if (typeof d.lugar === 'string') datos.lugar = d.lugar
     } catch {
       /* archivo dañado: se parte de cero y se reescribe con el próximo cambio */
     }
@@ -89,6 +97,50 @@ export function crearMemoria(archivo, { maxHechos = 40, maxTurnos = 24, alResumi
       if (ruido.length > maxRuido) ruido.shift()
     },
 
+    /** Dónde está ahora (se lo dice una persona: "estás en el patio"). Las vistas quedan marcadas con ese lugar. */
+    lugar(nombre) {
+      datos.lugar = recortar(nombre, 60)
+      guardar()
+      return datos.lugar ? `Anotado: ahora estás en «${datos.lugar}». Lo que veas queda guardado con ese lugar.` : 'Lugar borrado.'
+    },
+
+    /** Algo que vio por la cámara. `pos` es lo que digan sus sensores de posición, si tiene. */
+    vista({ texto, pos = null, ts = Date.now() }) {
+      const t = recortar(texto, 320)
+      if (!t) return
+      datos.vistas.push({ ts, texto: t, lugar: datos.lugar || null, ...(pos ? { pos } : {}) })
+      if (datos.vistas.length > maxVistas) datos.vistas.shift()
+      guardar()
+    },
+
+    ultimaVista() {
+      return datos.vistas[datos.vistas.length - 1] ?? null
+    },
+
+    /**
+     * Busca en lo que vio. `consulta`: palabras (sin importar tildes ni mayúsculas; calza si aparece alguna, y
+     * primero lo que calza con más). `minutos`: solo lo de los últimos N minutos. `lugar`: solo lo visto ahí.
+     */
+    buscarVistas({ consulta = '', minutos = null, lugar = '', limite = 12 } = {}) {
+      const desde = minutos ? Date.now() - Number(minutos) * 60_000 : 0
+      const palabras = sinTildes(consulta).split(/[^a-z0-9ñ]+/).filter((p) => p.length >= 3)
+      const l = sinTildes(lugar).trim()
+      let r = datos.vistas.filter((v) => v.ts >= desde && (!l || sinTildes(v.lugar).includes(l)))
+      const total = r.length
+      if (palabras.length) {
+        r = r
+          .map((v) => ({ v, n: palabras.filter((p) => sinTildes(v.texto).includes(p)).length }))
+          .filter((x) => x.n > 0)
+          .sort((a, b) => b.n - a.n || b.v.ts - a.v.ts)
+          .slice(0, limite)
+          .map((x) => x.v)
+          .sort((a, b) => a.ts - b.ts)
+      } else r = r.slice(-limite)
+      if (!datos.vistas.length) return 'Todavía no has guardado nada de lo que ves: la cámara no ha entregado imágenes.'
+      if (!r.length) return `Nada de lo que viste calza con eso (revisé ${total} vistas${minutos ? ` de los últimos ${minutos} min` : ''}). Prueba con otras palabras o sin límite de tiempo.`
+      return `${r.length} de ${total} vistas${palabras.length ? ' que calzan' : ' (las más recientes)'}, de la más antigua a la más nueva:\n${r.map((v) => `- [${fechaHora(v.ts)}${v.lugar ? `, ${v.lugar}` : ''}${v.pos ? `, pos ${JSON.stringify(v.pos)}` : ''}] ${v.texto}`).join('\n')}`
+    },
+
     /** La conversación reciente como mensajes para Claude (usuario y asistente alternados). */
     mensajes() {
       const m = []
@@ -104,6 +156,10 @@ export function crearMemoria(archivo, { maxHechos = 40, maxTurnos = 24, alResumi
       return [
         datos.hechos.length ? `Tu memoria (lo que decidiste recordar; no se borra sola):\n${datos.hechos.map((h, i) => `${i + 1}. ${h.texto}`).join('\n')}` : 'Tu memoria está vacía: todavía no has guardado nada con "recordar".',
         datos.resumen ? `Resumen de lo que conversaron antes:\n${datos.resumen}` : '',
+        datos.lugar ? `Dónde estás ahora (te lo dijeron): ${datos.lugar}` : '',
+        datos.vistas.length
+          ? `Lo último que viste por tu cámara (tienes ${datos.vistas.length} vistas guardadas; el resto se consulta con "recordar_visto"):\n${datos.vistas.slice(-3).map((v) => `- [${hora(v.ts)}${v.lugar ? `, ${v.lugar}` : ''}] ${v.texto}`).join('\n')}`
+          : '',
         datos.sucesos.length ? `Lo último que hiciste por tu cuenta:\n${datos.sucesos.map((s) => `- ${s}`).join('\n')}` : '',
         ruido.length ? `Frases sueltas que oíste hace poco y no eran para ti (ruido de la sala, no las contestes):\n${ruido.map((r) => `- ${r}`).join('\n')}` : '',
       ]
