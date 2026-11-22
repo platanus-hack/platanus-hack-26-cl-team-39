@@ -50,7 +50,7 @@ Son tres roles; los nombres se eligen en el primer ensayo.
 
 ## Láminas
 
-El [deck](https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm) está en dark mode, como pidió la charla. Orden de la demo: portada → «Los robots hacen lo que el fabricante les programó» → el harness → bicho·dev en vivo (o la lámina del gráfico si falla) → «Un harness para miles de robots» → gracias. Para las preguntas quedan «Hecho en 36 horas» (con el render del chasis de Walls), «Un robot que se programa solo» y «Se puede equivocar»; al final, las de respaldo de la demo.
+El [deck](https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm) está en dark mode, como pidió la charla. Orden de la demo: portada → el problema (aspiradora robot, dron y brazo industrial: ya tienen cámara, sensores y computador, y solo hacen lo que les programaron) → el harness → bicho·dev en vivo (o la lámina del gráfico si falla) → «Un harness para miles de robots» → gracias. Después de «gracias» hay una lámina que dice «Anexo»: lo que sigue no se presenta. Ahí quedan, para las preguntas, «Hecho en 36 horas» (con el render del chasis de Walls), «Un robot que se programa solo» (con el loop: si falla, lee el error, lo corrige y lo vuelve a probar, hasta 4 veces) y «Se puede equivocar»; al final, las de respaldo de la demo.
 
 ## Guion de 3 minutos
 
@@ -74,9 +74,9 @@ Se da vuelta hacia Bicho: «Bicho, aprende a hablar por tu parlante.»
 
 ### 0:15 · Mientras aprende: el problema (20 s)
 
-**Pantalla:** la lámina «Los robots hacen lo que el fabricante les programó».
+**Pantalla:** la lámina «Tienen cámara, sensores y computador. Solo hacen lo que les programaron».
 
-«Mientras aprende, les cuento por qué lo hicimos. Hoy un robot hace solo lo que alguien le programó. Pero cada casa es distinta: en una es el perro del vecino, en otra los pájaros que se comen la huerta, en otra alguien que se salta la reja. Y para que un robot haga algo nuevo, necesitas un ingeniero y semanas.»
+«Mientras aprende, les cuento por qué lo hicimos. Los robots ya tienen el cuerpo: una aspiradora robot tiene cámara, WiFi y un procesador, pero solo aspira. ¿Avisarte si entra alguien? Podría, pero nadie se lo programó. Y para que un robot haga algo nuevo, necesitas un ingeniero y semanas. El cuerpo ya lo tienen; les falta poder aprender.»
 
 ### 0:35 · Mientras aprende: la solución, el harness (35 s)
 
