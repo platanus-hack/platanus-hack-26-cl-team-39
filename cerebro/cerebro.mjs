@@ -700,6 +700,7 @@ La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
   })
 
   if (!hecho) hecho = r.texto ? { tipo: 'responde', texto: r.texto } : { tipo: 'ignora', texto: r.motivo === 'refusal' ? 'Claude declinó responder.' : 'sin decisión' }
+  if (hecho.tipo === 'responde' && !hecho.voz && /^\W*(ignor|no responder|nada)\W*$/i.test(hecho.texto.trim())) hecho = { tipo: 'ignora', texto: 'sin nada que hacer' }
   if (hecho.tipo === 'responde' && !frase.escrito && !hecho.voz && /no (?:es|era|va|iba) para m[ií]|frase de la sala|la dejo pasar|no me (?:est[aá]n? )?habl|no me nombr/i.test(hecho.texto))
     hecho = { tipo: 'ignora', texto: hecho.texto.slice(0, 160) }
   // Lo ignorado es ruido de la sala: no ocupa lugar en la conversación. Lo escrito siempre es conversación.
