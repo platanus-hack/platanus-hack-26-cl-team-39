@@ -1,0 +1,249 @@
+/* bicho·dev · tema oscuro, el del pitch (la charla «Cómo hacer un buen demo» pidió dark mode: el blanco se sobresatura en el streaming).
+   Paleta igual a la del deck: fondo #0F0E15 con brillos suaves, texto #F5F5F7 / #B9B8C0, azul #0A84FF, amarillo #FFC700 / #FFD60A,
+   verde #30D158, rojo #FF453A, vidrio de rgba(255,255,255,.11) a .045 con borde rgba(255,255,255,.13).
+   Se activa con html[data-tema="oscuro"] (src/lib/tema.ts: sistema, botón o Mayús + D). El modo claro no se toca. */
+
+/* botón claro/oscuro (barra lateral, junto al nombre); en barras angostas el subtítulo se corta para que el botón no se salga */
+.brand > div{min-width:0}
+.brand-sub{overflow:hidden;text-overflow:ellipsis}
+.tema-btn{
+  appearance:none;border:0;flex:none;margin-left:auto;width:30px;height:30px;border-radius:50%;cursor:pointer;
+  display:grid;place-items:center;color:var(--ink-2);background:var(--fill);transition:background .2s,transform .14s var(--ease);
+}
+.tema-btn svg{width:16px;height:16px}
+.tema-btn:hover{background:rgba(118,118,128,.2);color:var(--ink)}
+.tema-btn:active{transform:scale(.94)}
+
+html[data-tema="oscuro"]{
+  color-scheme:dark;
+  --ink:#F5F5F7;
+  --ink-2:#B9B8C0;
+  --ink-3:rgba(235,235,245,.58);
+  --ink-4:rgba(235,235,245,.3);
+  --hair:rgba(255,255,255,.1);
+  --fill:rgba(255,255,255,.08);
+  --blue:#0A84FF;
+  --blue-ink:#5EB0FF;
+  --blue-soft:rgba(10,132,255,.2);
+  --banana:#FFC700;
+  --banana-ink:#FFD60A;
+  --banana-soft:rgba(255,199,0,.16);
+  --green:#30D158;
+  --green-ink:#30D158;
+  --red:#FF453A;
+  --red-ink:#FF6B61;
+  /* gráfico de Habilidades */
+  --c-solo:#FFD60A;
+  --c-equipo:#0A84FF;
+  --g-fondo:#1E1D26;
+  /* vidrio */
+  --vidrio:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.045));
+  --borde:rgba(255,255,255,.13);
+  --tile:rgba(255,255,255,.055);
+}
+html[data-tema="oscuro"] body{background:#0F0E15}
+html[data-tema="oscuro"] :focus-visible{outline-color:rgba(10,132,255,.6)}
+html[data-tema="oscuro"] .tema-btn{color:var(--banana-ink);background:rgba(255,214,10,.12)}
+html[data-tema="oscuro"] .tema-btn:hover{background:rgba(255,214,10,.2);color:var(--banana-ink)}
+
+/* ── fondo: oscuro con brillos suaves de color ───────────────────── */
+html[data-tema="oscuro"] .wallpaper{background:radial-gradient(120% 90% at 50% 0%,#15131f 0%,#0F0E15 60%)}
+html[data-tema="oscuro"] .wallpaper .b1{background:radial-gradient(closest-side,rgba(255,140,70,.16),rgba(255,140,70,0))}
+html[data-tema="oscuro"] .wallpaper .b2{background:radial-gradient(closest-side,rgba(255,199,0,.13),rgba(255,199,0,0))}
+html[data-tema="oscuro"] .wallpaper .b3{background:radial-gradient(closest-side,rgba(10,132,255,.17),rgba(10,132,255,0))}
+html[data-tema="oscuro"] .wallpaper .b4{background:radial-gradient(closest-side,rgba(140,100,255,.15),rgba(140,100,255,0))}
+html[data-tema="oscuro"] .wallpaper .b5{background:radial-gradient(closest-side,rgba(255,110,90,.09),rgba(255,110,90,0))}
+html[data-tema="oscuro"] .wallpaper .b6{background:radial-gradient(closest-side,rgba(255,214,10,.05),rgba(255,214,10,0))}
+html[data-tema="oscuro"] .wallpaper::after{opacity:.05;mix-blend-mode:screen}
+
+/* ── vidrio ──────────────────────────────────────────────────────── */
+html[data-tema="oscuro"] .glass{
+  background:var(--vidrio);
+  -webkit-backdrop-filter:blur(34px) saturate(1.4);backdrop-filter:blur(34px) saturate(1.4);
+  box-shadow:0 0 0 1px var(--borde),0 1px 2px rgba(0,0,0,.3),0 24px 60px -28px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.07);
+}
+html[data-tema="oscuro"] .glass::before{
+  background:linear-gradient(135deg,rgba(255,255,255,.2) 0%,rgba(255,255,255,.05) 22%,rgba(255,255,255,0) 45%,rgba(255,255,255,0) 65%,rgba(255,255,255,.04) 88%,rgba(255,255,255,.12) 100%);
+}
+
+/* ── barra lateral ───────────────────────────────────────────────── */
+html[data-tema="oscuro"] .sidebar{background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.04))}
+html[data-tema="oscuro"] .nav a:hover{background:rgba(255,255,255,.06)}
+html[data-tema="oscuro"] .nav a[aria-current="true"]{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12)}
+html[data-tema="oscuro"] .nav a:active{background:rgba(255,255,255,.16)}
+html[data-tema="oscuro"] .nav a svg{color:var(--blue-ink)}
+html[data-tema="oscuro"] .ico-bicho{stroke:var(--banana-ink)}
+html[data-tema="oscuro"] .ico-bicho circle,html[data-tema="oscuro"] .ico-bicho path[fill]{fill:var(--banana-ink)}
+/* el ojo del ícono: como el logo de fondo oscuro, lente menta y pupila carbón */
+html[data-tema="oscuro"] .ojo-lente{fill:#8FDCC4}
+html[data-tema="oscuro"] .ojo-pupila{fill:#1D1D1F}
+html[data-tema="oscuro"] .ojo-brillo{fill:#FFF4E0}
+html[data-tema="oscuro"] .appicon{box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(170,110,0,.25),0 0 0 .5px rgba(255,199,0,.4),0 6px 18px -4px rgba(255,180,0,.45)}
+
+html[data-tema="oscuro"] .conn,
+html[data-tema="oscuro"] .clock{background:rgba(255,255,255,.055);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.1)}
+html[data-tema="oscuro"][data-conn="off"] .conn-dot{background:#636366}
+html[data-tema="oscuro"] .seg button:hover:not(:disabled){background:rgba(255,255,255,.08)}
+html[data-tema="oscuro"] .seg button[aria-pressed="true"]{background:rgba(255,255,255,.18);box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 0 0 .5px rgba(255,255,255,.12)}
+html[data-tema="oscuro"] .btn-quiet:hover{background:rgba(255,69,58,.14)}
+html[data-tema="oscuro"] .clock[data-level="soon"]{background:linear-gradient(180deg,rgba(255,199,0,.2),rgba(255,255,255,.05))}
+html[data-tema="oscuro"] .clock[data-level="urgent"]{background:linear-gradient(180deg,rgba(255,69,58,.26),rgba(255,255,255,.05));box-shadow:inset 0 0 0 1px rgba(255,69,58,.45),0 6px 18px -8px rgba(255,69,58,.5)}
+
+/* ── campos, botones y cápsulas ──────────────────────────────────── */
+html[data-tema="oscuro"] .field,
+html[data-tema="oscuro"] .inv-in{background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.16)}
+html[data-tema="oscuro"] .field:focus,
+html[data-tema="oscuro"] .inv-in:focus{box-shadow:inset 0 0 0 1px rgba(10,132,255,.7),0 0 0 3px rgba(10,132,255,.22)}
+html[data-tema="oscuro"] .capsule{background:rgba(255,255,255,.08);box-shadow:0 0 0 .5px rgba(255,255,255,.13),0 3px 10px -3px rgba(0,0,0,.4)}
+html[data-tema="oscuro"] button.capsule:hover:not(:disabled){background:rgba(255,255,255,.14)}
+html[data-tema="oscuro"] .btn-secondary,
+html[data-tema="oscuro"] select.btn-secondary{background-color:rgba(255,255,255,.1);box-shadow:0 0 0 .5px rgba(255,255,255,.15),0 2px 6px -2px rgba(0,0,0,.4)}
+html[data-tema="oscuro"] .btn-secondary:hover:not(:disabled){background-color:rgba(255,255,255,.16)}
+html[data-tema="oscuro"] select.btn-secondary option{background:#1E1D26;color:var(--ink)}
+html[data-tema="oscuro"] .btn-primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.65),inset 0 -1px 0 rgba(170,115,0,.22),0 0 0 .5px rgba(255,199,0,.5),0 8px 22px -8px rgba(255,180,0,.55)}
+html[data-tema="oscuro"] .toolbar::before{background:rgba(15,14,21,.62);box-shadow:0 .5px 0 rgba(255,255,255,.1)}
+html[data-tema="oscuro"] .notice{box-shadow:inset 0 0 0 .5px rgba(255,199,0,.3)}
+html[data-tema="oscuro"] .notice svg{color:var(--banana)}
+html[data-tema="oscuro"] kbd{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.18),0 1px 0 rgba(0,0,0,.4)}
+html[data-tema="oscuro"] .switch span{background:rgba(120,120,128,.42)}
+html[data-tema="oscuro"] .toast-x:hover{background:rgba(255,255,255,.1)}
+html[data-tema="oscuro"] .drop{background:rgba(15,14,21,.55)}
+
+/* ── firmware ────────────────────────────────────────────────────── */
+html[data-tema="oscuro"] .status{box-shadow:inset 0 0 0 .5px rgba(255,199,0,.3)}
+html[data-tema="oscuro"] .status i{background:var(--banana)}
+html[data-tema="oscuro"][data-state="flashing"] .status,html[data-tema="oscuro"][data-state="newer"] .status{box-shadow:inset 0 0 0 .5px rgba(10,132,255,.35)}
+html[data-tema="oscuro"][data-state="flashing"] .status i,html[data-tema="oscuro"][data-state="newer"] .status i{background:var(--blue)}
+html[data-tema="oscuro"][data-state="uptodate"] .status{background:rgba(48,209,88,.16);box-shadow:inset 0 0 0 .5px rgba(48,209,88,.3)}
+html[data-tema="oscuro"][data-state="uptodate"] .status i{background:var(--green)}
+html[data-tema="oscuro"][data-state="unknown"] .status,html[data-tema="oscuro"][data-conn="off"] .status{box-shadow:none}
+html[data-tema="oscuro"][data-state="unknown"] .status i,html[data-tema="oscuro"][data-conn="off"] .status i{background:#636366}
+html[data-tema="oscuro"] .glow-y{background:radial-gradient(closest-side,rgba(255,199,0,.22),rgba(255,199,0,0))}
+html[data-tema="oscuro"] .glow-b{background:radial-gradient(closest-side,rgba(10,132,255,.22),rgba(10,132,255,0))}
+html[data-tema="oscuro"] .glow-g{background:radial-gradient(closest-side,rgba(48,209,88,.2),rgba(48,209,88,0))}
+html[data-tema="oscuro"] .bar::after{background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.25),rgba(255,255,255,0))}
+html[data-tema="oscuro"] .ok{background:rgba(48,209,88,.12);box-shadow:inset 0 0 0 .5px rgba(48,209,88,.28)}
+html[data-tema="oscuro"] .ok.warn{background:rgba(255,199,0,.13);box-shadow:inset 0 0 0 .5px rgba(255,199,0,.3)}
+html[data-tema="oscuro"] .ok.err{background:rgba(255,69,58,.13);box-shadow:inset 0 0 0 .5px rgba(255,69,58,.3)}
+html[data-tema="oscuro"] .ok.info{background:var(--blue-soft);box-shadow:inset 0 0 0 .5px rgba(10,132,255,.3)}
+html[data-tema="oscuro"] .ok-ic,html[data-tema="oscuro"] .toast-ic{color:#0F0E15}
+html[data-tema="oscuro"] .ok.warn .ok-ic,html[data-tema="oscuro"] .toast.warn .toast-ic{background:var(--banana)}
+html[data-tema="oscuro"] .ok.info .ok-ic,html[data-tema="oscuro"] .toast.info .toast-ic{color:#fff}
+
+/* ── sensores, consola y versiones ───────────────────────────────── */
+html[data-tema="oscuro"] .sensor{background:var(--tile);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.1)}
+html[data-tema="oscuro"] .sensor:hover{box-shadow:inset 0 0 0 .5px rgba(10,132,255,.5),0 8px 20px -10px rgba(0,0,0,.6)}
+html[data-tema="oscuro"] .sensor[data-on]{box-shadow:inset 0 0 0 1.5px var(--banana),0 4px 16px -6px rgba(255,199,0,.45)}
+html[data-tema="oscuro"] .sensor[data-on] .spark-line{stroke:var(--banana)}
+html[data-tema="oscuro"] .console{background:rgba(0,0,0,.26);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.1)}
+html[data-tema="oscuro"] .line-out .d,html[data-tema="oscuro"] .legend .k-out{color:var(--banana)}
+html[data-tema="oscuro"] .rel-dot{background:#1E1D26;box-shadow:inset 0 0 0 1.5px rgba(235,235,245,.3)}
+html[data-tema="oscuro"] .rel[data-latest] .rel-dot{box-shadow:inset 0 0 0 2.5px var(--blue)}
+html[data-tema="oscuro"] .rel[data-current] .rel-dot{background:var(--banana);box-shadow:0 0 0 4px rgba(255,199,0,.22)}
+
+/* ── Habilidades (sale en la demo) ───────────────────────────────── */
+html[data-tema="oscuro"] .hab-sello{box-shadow:inset 0 0 0 .5px rgba(255,199,0,.32)}
+html[data-tema="oscuro"] .hab-sello i{background:var(--banana)}
+html[data-tema="oscuro"] .hab-emoji{box-shadow:inset 0 1px 0 #fff,0 0 0 .5px rgba(255,199,0,.4),0 8px 22px -6px rgba(255,180,0,.45)}
+html[data-tema="oscuro"] .hab-pedido{background:var(--tile);box-shadow:inset 0 0 0 .5px var(--hair)}
+html[data-tema="oscuro"] .hab-cmds code{background:rgba(10,132,255,.18)}
+html[data-tema="oscuro"] .hab-fallo{background:rgba(255,69,58,.14)}
+html[data-tema="oscuro"] .hab-vivo{box-shadow:0 0 0 2px rgba(255,199,0,.65),0 18px 60px -18px rgba(255,199,0,.5)}
+html[data-tema="oscuro"] .hab-vivo .live-dot,html[data-tema="oscuro"] .hab-vivo .live-dot::after{background:var(--banana)}
+html[data-tema="oscuro"] .hab-etapas li{background:var(--tile)}
+html[data-tema="oscuro"] .hab-etapas li[data-estado="hecha"] i{color:#0F0E15}
+html[data-tema="oscuro"] .hab-etapas li[data-estado="ahora"]{background:rgba(255,199,0,.18)}
+html[data-tema="oscuro"] .hab-etapas li[data-estado="ahora"] i{background:var(--banana);color:#2a1f00}
+html[data-tema="oscuro"] .g-grid{stroke:rgba(255,255,255,.08)}
+html[data-tema="oscuro"] .g-area-e{fill-opacity:.16}
+html[data-tema="oscuro"] .g-banda-s{fill-opacity:.24}
+html[data-tema="oscuro"] .g-linea{stroke-width:2.4px}
+html[data-tema="oscuro"] .g-vivo circle{filter:drop-shadow(0 0 6px rgba(255,214,10,.8))}
+html[data-tema="oscuro"] .hab-tip{background:rgba(34,33,42,.97);box-shadow:0 0 0 .5px rgba(255,255,255,.15),0 12px 30px -10px rgba(0,0,0,.7)}
+html[data-tema="oscuro"] .hab-card{background:var(--tile);box-shadow:inset 0 0 0 .5px var(--hair)}
+html[data-tema="oscuro"] .hab-card-emoji{background:rgba(10,132,255,.16)}
+html[data-tema="oscuro"] .hab-solo{background:linear-gradient(180deg,rgba(255,199,0,.13),rgba(255,255,255,.04));box-shadow:inset 0 0 0 .5px rgba(255,199,0,.22)}
+html[data-tema="oscuro"] .hab-nueva{box-shadow:0 0 0 2px rgba(255,199,0,.7)}
+
+/* ── Cerebro (sale en la demo) ───────────────────────────────────── */
+html[data-tema="oscuro"] .ev{background:var(--tile);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.06)}
+html[data-tema="oscuro"] .ev-ignora{background:rgba(255,255,255,.02)}
+html[data-tema="oscuro"] .ev-comando .ev-tipo,html[data-tema="oscuro"] .ev-responde .ev-tipo{color:var(--blue-ink)}
+html[data-tema="oscuro"] .ev-aprende,html[data-tema="oscuro"] .ev-paso{background:rgba(255,199,0,.12);box-shadow:inset 0 0 0 .5px rgba(255,199,0,.2)}
+html[data-tema="oscuro"] .ev-aprende .ev-tipo,html[data-tema="oscuro"] .ev-paso .ev-tipo{color:var(--banana-ink)}
+html[data-tema="oscuro"] .ev-aprendido{background:rgba(48,209,88,.14);box-shadow:inset 0 0 0 .5px rgba(48,209,88,.24)}
+html[data-tema="oscuro"] .ev-aprendido .ev-tipo{color:var(--green)}
+html[data-tema="oscuro"] .ev-error{background:rgba(255,69,58,.13)}
+html[data-tema="oscuro"] .ev-error .ev-tipo{color:var(--red-ink)}
+html[data-tema="oscuro"] .vista-vacia{background:rgba(255,255,255,.03)}
+html[data-tema="oscuro"] .cerebro-aviso{background:rgba(255,159,10,.15);color:#FFB340}
+html[data-tema="oscuro"] .cerebro-aviso button{background:rgba(255,255,255,.12);color:var(--blue-ink);box-shadow:0 0 0 .5px rgba(255,255,255,.15)}
+html[data-tema="oscuro"] .ev-voz span{background:rgba(10,132,255,.2);color:var(--blue-ink)}
+html[data-tema="oscuro"] .ev-voz-extrano span{background:rgba(255,69,58,.18);color:var(--red-ink)}
+
+/* ── Oído ────────────────────────────────────────────────────────── */
+html[data-tema="oscuro"] .oido-aro{fill:rgba(255,255,255,.04)}
+html[data-tema="oscuro"] .oido-cuna{fill:rgba(235,235,245,.14)}
+html[data-tema="oscuro"] .oido-cuna.habla{fill:rgba(10,132,255,.55)}
+html[data-tema="oscuro"] .oido-centro{fill:#1E1D26}
+html[data-tema="oscuro"] .oido-rastro,html[data-tema="oscuro"] .oido-de svg{fill:var(--blue)}
+html[data-tema="oscuro"] .oido-frases li{background:var(--tile)}
+html[data-tema="oscuro"] .oido-frases li.oyendo{background:rgba(10,132,255,.16)}
+
+/* ── inventario ──────────────────────────────────────────────────── */
+html[data-tema="oscuro"] .inv-ask{background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.16)}
+html[data-tema="oscuro"] .inv-ask:focus-within{box-shadow:inset 0 0 0 1px rgba(10,132,255,.7),0 0 0 4px rgba(10,132,255,.2)}
+html[data-tema="oscuro"] .inv-ia{background:linear-gradient(180deg,rgba(10,132,255,.14),rgba(10,132,255,.06));box-shadow:inset 0 0 0 .5px rgba(10,132,255,.3)}
+html[data-tema="oscuro"] .inv-chip{background:rgba(255,255,255,.1);box-shadow:0 0 0 .5px rgba(255,255,255,.12)}
+html[data-tema="oscuro"] .inv-chip:hover{background:rgba(255,255,255,.16)}
+html[data-tema="oscuro"] .inv-cats button:hover{background:rgba(255,255,255,.13)}
+html[data-tema="oscuro"] .inv-cats button[aria-pressed="true"]{color:#0F0E15}
+html[data-tema="oscuro"] .inv-cats button[aria-pressed="true"] span{color:rgba(15,14,21,.6)}
+html[data-tema="oscuro"] .inv-table tbody tr:hover{background:rgba(255,255,255,.05)}
+html[data-tema="oscuro"] .inv-table tbody tr.is-ia{background:rgba(10,132,255,.12)}
+html[data-tema="oscuro"] .inv-tags em{background:rgba(255,255,255,.08)}
+html[data-tema="oscuro"] .e-ok{background:rgba(48,209,88,.16)}
+html[data-tema="oscuro"] .e-mal{background:rgba(255,69,58,.16)}
+html[data-tema="oscuro"] .inv-agents{background:var(--tile);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.08)}
+html[data-tema="oscuro"] .inv-sheet-back{background:rgba(0,0,0,.45)}
+html[data-tema="oscuro"] .inv-sheet{background:linear-gradient(180deg,rgba(32,31,40,.96),rgba(24,23,31,.95))}
+html[data-tema="oscuro"] .inv-sheet-foot{background:linear-gradient(180deg,rgba(24,23,31,0),rgba(24,23,31,.97) 30%)}
+html[data-tema="oscuro"] .inv-meta{background:rgba(255,255,255,.05)}
+html[data-tema="oscuro"] .inv-qty button:hover{background:rgba(10,132,255,.3)}
+
+/* ── Simulador ───────────────────────────────────────────────────── */
+html[data-tema="oscuro"] .sim-now,
+html[data-tema="oscuro"] .sim-visita,
+html[data-tema="oscuro"] .sim-tip{background:rgba(30,29,38,.82);box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 8px 22px -8px rgba(0,0,0,.6)}
+html[data-tema="oscuro"] .sim-now i{box-shadow:0 0 0 2px #1E1D26,0 0 10px currentColor}
+html[data-tema="oscuro"] .sim-pip{box-shadow:0 0 0 2px rgba(255,255,255,.2),0 10px 26px -8px rgba(0,0,0,.6)}
+html[data-tema="oscuro"] .phone{background:linear-gradient(180deg,#1E1D26,#15141c);box-shadow:0 0 0 6px #000,0 0 0 7px #3a3a3c,0 24px 50px -20px rgba(0,0,0,.7)}
+html[data-tema="oscuro"] .phone-foto figcaption{background:#1E1D26}
+html[data-tema="oscuro"] .est-chip,
+html[data-tema="oscuro"] .esc{background:var(--tile);box-shadow:0 0 0 .5px rgba(255,255,255,.1)}
+html[data-tema="oscuro"] .est-chip:hover,
+html[data-tema="oscuro"] .esc:hover{background:rgba(255,255,255,.12)}
+html[data-tema="oscuro"] .est-chip[aria-pressed="true"]{background:var(--ink);color:#0F0E15}
+html[data-tema="oscuro"] .est-chip[aria-pressed="true"] i{box-shadow:0 0 0 1.5px rgba(15,14,21,.6)}
+html[data-tema="oscuro"] .esc[aria-pressed="true"]{background:var(--banana-soft);box-shadow:0 0 0 1.5px var(--banana)}
+
+/* ── Brazo ───────────────────────────────────────────────────────── */
+html[data-tema="oscuro"] .bz-visor{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025))}
+html[data-tema="oscuro"] .bz-ficha,
+html[data-tema="oscuro"] .bz-real,
+html[data-tema="oscuro"] .bz-torque{background:var(--tile);box-shadow:0 0 0 .5px rgba(255,255,255,.1)}
+html[data-tema="oscuro"] .bz-rotulo,
+html[data-tema="oscuro"] .bz-vistas{background:rgba(30,29,38,.85);box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 4px 10px -4px rgba(0,0,0,.5)}
+html[data-tema="oscuro"] .bz-rotulo b,
+html[data-tema="oscuro"] .bz-num{color:#0F0E15}
+html[data-tema="oscuro"] .bz-plano{background:rgba(30,29,38,.97);box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 20px 50px -20px rgba(0,0,0,.7)}
+html[data-tema="oscuro"] .bz-deg,
+html[data-tema="oscuro"] .bz-carga input{background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.16)}
+html[data-tema="oscuro"] .bz-switch{background:rgba(120,120,128,.42)}
+html[data-tema="oscuro"] .bz-presets .capsule:hover{background:rgba(255,255,255,.14)}
+
+/* ── Gemelo 3D y Manos ───────────────────────────────────────────── */
+html[data-tema="oscuro"] .gm-leyenda,
+html[data-tema="oscuro"] .gm-ficha{background:rgba(30,29,38,.9);box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 10px 28px -10px rgba(0,0,0,.6)}
+html[data-tema="oscuro"] .gm-poses button{background:rgba(255,255,255,.1);box-shadow:0 0 0 .5px rgba(255,255,255,.12)}
+html[data-tema="oscuro"] .mn-frame{background:#0F0E15}

@@ -4,6 +4,7 @@ import { Countdown } from './components/Countdown'
 import { Inventario } from './components/Inventario'
 import { Sensors } from './components/Sensors'
 import { Toasts, type Toast } from './components/Toasts'
+import { BotonTema } from './components/Tema'
 import { Icon, SparkDefs, fmtAgo, fmtBytes, fmtUptime } from './components/ui'
 import { cmpSemver, fetchPackage, loadManifest, looksLikePackage, uploadPackage, type Manifest, type Release } from './lib/firmware'
 import { Cerebro, type Evento, type Imagen } from './components/Cerebro'
@@ -679,6 +680,7 @@ export default function App() {
               <p className="brand-name">bicho·dev</p>
               <p className="brand-sub">CRBRC · Platanus Hack 26</p>
             </div>
+            <BotonTema />
           </div>
 
           <Countdown onAlert={onDeadlineAlert} />

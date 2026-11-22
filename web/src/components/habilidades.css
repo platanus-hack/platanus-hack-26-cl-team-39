@@ -1,4 +1,6 @@
 /* Habilidades: qué sabe hacer el bicho, qué aprendió solo y cuándo */
+/* amarillo = aprendió solo, azul = se lo programó el equipo (tema.css los cambia en oscuro) */
+:root{--c-solo:#f0a000;--c-equipo:#3a6fd8;--g-fondo:#fbf7f4}
 .hab-top{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr);gap:20px}
 @media (max-width:1100px){.hab-top{grid-template-columns:minmax(0,1fr)}}
 
@@ -73,13 +75,13 @@
 .hab-dato-s .k:not(:first-child){margin-left:8px}
 .hab-barra{display:flex;gap:2px;height:8px;margin:4px 0 2px}
 .hab-barra i{display:block;height:100%;border-radius:999px}
-.hab-barra i:first-child{width:var(--p);background:#f0a000}
-.hab-barra i:last-child{flex:1;background:#3a6fd8}
+.hab-barra i:first-child{width:var(--p);background:var(--c-solo)}
+.hab-barra i:last-child{flex:1;background:var(--c-equipo)}
 
 /* claves de color (leyendas) */
 .k{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px}
-.k-solo{background:#f0a000}
-.k-equipo{background:#3a6fd8}
+.k-solo{background:var(--c-solo)}
+.k-equipo{background:var(--c-equipo)}
 
 /* gráfico */
 .hab-graf{margin-top:20px;padding:22px 24px 18px;animation-delay:.2s}
@@ -95,14 +97,22 @@
 .g-hito text{font:600 11.5px var(--font);fill:var(--ink-2)}
 .g-ahora{stroke:var(--ink-4);stroke-width:1}
 .g-cruz{stroke:var(--ink-3);stroke-width:1;pointer-events:none}
-.g-punto{transition:r .15s}
+.g-area-e{fill:var(--c-equipo);fill-opacity:.1}
+.g-banda-s{fill:var(--c-solo);fill-opacity:.28}
+.g-linea{fill:none}
+.g-linea-e{stroke:var(--c-equipo)}
+.g-linea-s{stroke:var(--c-solo)}
+.g-punto{transition:r .15s;stroke:var(--g-fondo)}
+.g-punto-solo{fill:var(--c-solo)}
+.g-punto-equipo{fill:var(--c-equipo)}
+.g-punto-aprox{fill:var(--g-fondo);stroke:var(--c-solo)}
 .g-punto.activo{r:7}
 .g-fin{font:12px var(--font);fill:var(--ink-2)}
 .g-fin-n{font:650 18px var(--font);fill:var(--ink)}
 .g-fin-s{font-weight:600;fill:var(--banana-ink)}
 .g-rotulo{font:600 12px var(--font);fill:var(--ink)}
 .g-vivo text{font:600 11.5px var(--font);fill:var(--banana-ink)}
-.g-vivo circle{animation:blink 1s ease-in-out infinite}
+.g-vivo circle{fill:var(--c-solo);animation:blink 1s ease-in-out infinite}
 .hab-tip{position:absolute;top:6px;transform:translateX(-50%);pointer-events:none;min-width:180px;max-width:260px;padding:9px 12px;border-radius:12px;
   background:rgba(255,255,255,.96);box-shadow:0 0 0 .5px rgba(0,0,0,.08),0 10px 28px -10px rgba(60,40,90,.35);font-size:12.5px;line-height:1.4;color:var(--ink-2)}
 .hab-tip-t{font-weight:650;color:var(--ink)}

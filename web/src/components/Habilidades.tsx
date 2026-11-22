@@ -385,8 +385,7 @@ function Autonomia({
 /* Gráfico: lo que sabe hacer, hora a hora                              */
 /* ------------------------------------------------------------------ */
 
-const C_EQUIPO = '#3a6fd8'
-const C_SOLO = '#f0a000'
+// Los colores (amarillo = aprendió solo, azul = equipo) están en habilidades.css y cambian con el tema.
 
 /** Ancho real del contenedor, para dibujar el gráfico en píxeles (el texto no se deforma). */
 function useAncho() {
@@ -545,16 +544,16 @@ function Crecimiento({ habilidades, ahora, aprendiendo }: { habilidades: Habilid
               </g>
             )}
 
-            <path d={areaE} fill={C_EQUIPO} fillOpacity={0.1} />
-            <path d={bandaS} fill={C_SOLO} fillOpacity={0.28} />
-            <path d={dE} fill="none" stroke={C_EQUIPO} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-            <path d={dT} fill="none" stroke={C_SOLO} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            <path d={areaE} className="g-area-e" />
+            <path d={bandaS} className="g-banda-s" />
+            <path d={dE} className="g-linea g-linea-e" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            <path d={dT} className="g-linea g-linea-s" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
             {/* ahora */}
             <line x1={x(ahora)} x2={x(ahora)} y1={M.t} y2={y(0)} className="g-ahora" />
             {aprendiendo && (
               <g className="g-vivo">
-                <circle cx={x(ahora)} cy={y(fin.e + fin.s + 1)} r={5} fill={C_SOLO} />
+                <circle cx={x(ahora)} cy={y(fin.e + fin.s + 1)} r={5} />
                 {W >= 560 && (
                   <text x={x(ahora) - 8} y={y(fin.e + fin.s + 1)} dy="0.32em" textAnchor="end">
                     aprendiendo…
@@ -572,10 +571,8 @@ function Crecimiento({ habilidades, ahora, aprendiendo }: { habilidades: Habilid
                   cx={x(p.cuando!)}
                   cy={cy}
                   r={p.origen === 'solo' ? 5 : 4}
-                  fill={p.aprox ? '#fbf7f4' : p.origen === 'solo' ? C_SOLO : C_EQUIPO}
-                  stroke={p.aprox ? C_SOLO : '#fbf7f4'}
                   strokeWidth={2}
-                  className={hover?.h === p ? 'g-punto activo' : 'g-punto'}
+                  className={`g-punto ${p.aprox ? 'g-punto-aprox' : p.origen === 'solo' ? 'g-punto-solo' : 'g-punto-equipo'}${hover?.h === p ? ' activo' : ''}`}
                 />
               )
             })}

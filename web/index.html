@@ -6,6 +6,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Bicho Dev</title>
+    <script>
+      // Tema antes de pintar, igual que src/lib/tema.ts: lo forzado (localStorage) o lo del sistema. Así no parpadea en claro.
+      try {
+        var t = localStorage.getItem('bicho.tema')
+        document.documentElement.dataset.tema = t === 'claro' || t === 'oscuro' ? t : matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro'
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
