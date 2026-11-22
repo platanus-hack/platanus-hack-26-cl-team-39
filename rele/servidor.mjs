@@ -18,6 +18,9 @@
 //   BICHO_RELE_TOKEN   secreto que comparte con el bicho. Obligatorio.
 //   CLAVE_EQUIPO       clave para mandar comandos y actualizar (la del inventario). Sin ella, cualquiera puede.
 //   RELE_PUERTO        puerto (8787 por defecto).     RELE_HOST   interfaz (127.0.0.1 por defecto).
+//   ELEVENLABS_API_KEY transcribe lo que oye el bicho con ElevenLabs Scribe v2 (~0,7 s, el que mejor entiende
+//                      «bicho»). Si está, se usa primero; Groq queda de respaldo. SCRIBE_PALABRAS: palabras que debe
+//                      reconocer sí o sí, separadas por comas ("bicho" por defecto).
 //   GROQ_API_KEY       para transcribir lo que oye el bicho con Groq (Whisper large v3 turbo, lo más rápido).
 //                      Acepta varias separadas por comas: cuando una llega a su límite (429), sigue con la otra.
 //   WHISPER_URL        alternativa: un servicio propio que recibe el audio por POST y responde {"text": "..."}.
@@ -351,8 +354,43 @@ function esperaGroq(texto) {
   return ((Number(m[1] || 0) * 60 + Number(m[2] || 0)) * 60 + Number(m[3] || 0)) * 1000 + 5000
 }
 
+const SCRIBE = process.env.ELEVENLABS_API_KEY || ''
+const SCRIBE_PALABRAS = String(process.env.SCRIBE_PALABRAS ?? 'bicho').split(',').map((p) => p.trim()).filter(Boolean)
+let scribeHasta = 0 // si Scribe falla, se deja descansar un rato y se usa Groq
+
+/** ElevenLabs Scribe v2. Devuelve el texto, o lanza un error para que se intente con Groq. */
+async function conScribe(audio, fmt, idioma) {
+  const cuerpo = new FormData()
+  cuerpo.append('file', new Blob([audio], { type: fmt === 'ogg' ? 'audio/ogg' : 'audio/wav' }), `frase.${fmt === 'ogg' ? 'ogg' : 'wav'}`)
+  cuerpo.append('model_id', process.env.SCRIBE_MODELO || 'scribe_v2')
+  cuerpo.append('language_code', idioma)
+  cuerpo.append('tag_audio_events', 'false')
+  for (const p of SCRIBE_PALABRAS) cuerpo.append('keyterms', p) // así entiende «bicho» y no «nicho» o «micho»
+  const r = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+    method: 'POST',
+    headers: { 'xi-api-key': SCRIBE },
+    body: cuerpo,
+    signal: AbortSignal.timeout(20_000),
+  })
+  if (!r.ok) {
+    const texto = (await r.text()).slice(0, 200)
+    // Sin créditos, clave mala o límite: no se insiste por un rato.
+    if ([401, 402, 403, 429].includes(r.status)) scribeHasta = Date.now() + 10 * 60_000
+    throw new Error(`Scribe respondió ${r.status}: ${texto}`)
+  }
+  return String((await r.json()).text ?? '').trim()
+}
+
 async function transcribir(audio, fmt) {
   const idioma = process.env.OIDO_IDIOMA || 'es'
+  if (SCRIBE && scribeHasta < Date.now()) {
+    try {
+      return await conScribe(audio, fmt, idioma)
+    } catch (e) {
+      if (!GROQ.length) throw e
+      log(`transcripción: ${e.message}; pruebo con Groq`)
+    }
+  }
   const libre = GROQ.find((k) => k.hasta < Date.now())
   if (GROQ.length && !libre) {
     if (Date.now() - avisoGroq > 60_000) {
@@ -426,7 +464,7 @@ function oyo(m) {
   }
   // Con un servicio lento se avisa altiro que se oyó algo; con Groq (menos de 1 s) se espera el texto,
   // así los ruidos que no dicen nada ni siquiera aparecen en la web.
-  if (!process.env.GROQ_API_KEY) publicar()
+  if (!process.env.GROQ_API_KEY && !SCRIBE) publicar()
   const t0 = Date.now()
   transcribir(Buffer.from(String(m.b64 ?? ''), 'base64'), m.fmt)
     .then((texto) => {
