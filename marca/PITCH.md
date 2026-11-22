@@ -50,7 +50,9 @@ Son tres roles; los nombres se eligen en el primer ensayo.
 
 ## Láminas
 
-El [deck](https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm) está en dark mode, como pidió la charla. Orden de la demo: portada → el problema (aspiradora robot, dron y brazo industrial: ya tienen cámara, sensores y computador, y solo hacen lo que les programaron) → «El harness: se programa solo y, si falla, se corrige» (los cuatro pasos y el loop: si falla, lee el error, lo corrige y lo vuelve a probar, hasta 4 veces) → bicho·dev en vivo (o la lámina del gráfico si falla) → «Un harness para miles de robots» → gracias. Después de «gracias» hay una lámina que dice «Anexo»: lo que sigue no se presenta. Ahí quedan, para las preguntas, «Hecho en 36 horas» (con el render del chasis de Walls), la del anillo con las seis etapas («Se escribe su propio firmware») y «Se puede equivocar»; al final, las de respaldo de la demo.
+El [deck](https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm) está en dark mode, como pidió la charla. Orden de la demo: portada → el problema (aspiradora robot, dron y brazo industrial: ya tienen cámara, sensores y computador, y solo hacen lo que les programaron) → «El harness: se programa solo y, si falla, se corrige» (los cuatro pasos y el loop: si falla, lee el error, lo corrige y lo vuelve a probar, hasta 4 veces) → bicho·dev en vivo (o la lámina del gráfico si falla) → «Un harness para miles de robots» → gracias. Ahí termina: son 6 láminas.
+
+Lo que no se presenta está en otro deck, [Bicho · preguntas y respaldo](https://claude.ai/artifact/GZDozwCsmpM7jS1U4V5xRV), que se abre en otra pestaña solo si hace falta: «Hecho en 36 horas» (con el render del chasis de Walls), la del anillo con las seis etapas («Se escribe su propio firmware»), «Se puede equivocar» y las de respaldo de la demo en vivo.
 
 ## Guion de 3 minutos
 
