@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import './cerebro.css'
 
 /** Lo que el cerebro (cerebro/ en el repo) decide o hace. Lo reparte el relé. */
@@ -36,6 +36,23 @@ const ETIQUETA: Record<Evento['tipo'], string> = {
 }
 
 const VOZ: Record<NonNullable<Evento['voz']>, string> = { dueno: 'voz del dueño', extrano: 'voz para extraños' }
+
+// Dictado del navegador (Chrome, Edge, Safari): le hablas al bicho desde el micrófono del computador o del
+// teléfono, cerca de la boca, en vez del ReSpeaker que oye toda la sala. Lo dictado llega como si lo escribieras.
+type Reconocedor = {
+  lang: string
+  interimResults: boolean
+  continuous: boolean
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null
+  onend: (() => void) | null
+  onerror: ((e: { error: string }) => void) | null
+  start: () => void
+  stop: () => void
+}
+const ClaseReconocedor = (() => {
+  const w = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>) : {}
+  return (w.SpeechRecognition ?? w.webkitSpeechRecognition) as (new () => Reconocedor) | undefined
+})()
 
 const hora = (ts?: number) => (ts ? new Date(ts).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '')
 
@@ -77,6 +94,46 @@ export function Cerebro({
     return ultimo?.tipo === 'paso'
   })()
   const vista = [...imagenes].sort((a, b) => b.ts - a.ts)
+
+  const [dictando, setDictando] = useState(false)
+  const [errorVoz, setErrorVoz] = useState<string | null>(null)
+  const reconocedor = useRef<Reconocedor | null>(null)
+  const dictar = () => {
+    if (!ClaseReconocedor) return
+    if (dictando) {
+      reconocedor.current?.stop()
+      return
+    }
+    const r = new ClaseReconocedor()
+    r.lang = 'es-CL'
+    r.interimResults = true
+    r.continuous = false
+    let final = ''
+    r.onresult = (e) => {
+      let parcial = ''
+      for (let i = 0; i < e.results.length; i++) {
+        const res = e.results[i]
+        if (res.isFinal) final += res[0].transcript
+        else parcial += res[0].transcript
+      }
+      setTexto((final + parcial).trim())
+    }
+    r.onerror = (e) => setErrorVoz(e.error === 'not-allowed' ? 'El navegador no dio permiso para usar el micrófono' : e.error === 'no-speech' ? 'No te escuché: intenta de nuevo, más cerca' : `Falló el dictado (${e.error})`)
+    r.onend = () => {
+      setDictando(false)
+      reconocedor.current = null
+      const t = final.trim()
+      if (t) {
+        onDecir(t)
+        setTexto('')
+      }
+    }
+    setErrorVoz(null)
+    setTexto('')
+    reconocedor.current = r
+    setDictando(true)
+    r.start()
+  }
 
   const mandar = () => {
     const t = texto.trim()
@@ -130,7 +187,24 @@ export function Cerebro({
               <button type="submit" className="btn-secondary" disabled={!connected || !puedeMandar || !texto.trim()}>
                 Decir
               </button>
+              {ClaseReconocedor && (
+                <button
+                  type="button"
+                  className={`btn-secondary cerebro-voz${dictando ? ' activo' : ''}`}
+                  onClick={dictar}
+                  disabled={!connected || !puedeMandar}
+                  aria-pressed={dictando}
+                  title="Háblale con el micrófono de este equipo, cerca de la boca: no depende del micrófono del bicho"
+                >
+                  {dictando ? 'Escuchando… (toca para terminar)' : '🎤 Hablarle'}
+                </button>
+              )}
             </form>
+            {errorVoz && (
+              <p className="cerebro-aviso" role="status">
+                {errorVoz}.
+              </p>
+            )}
             {connected && motivo && (
               <p className="cerebro-aviso" role="status">
                 {motivo}.

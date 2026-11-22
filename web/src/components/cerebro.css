@@ -52,3 +52,5 @@
 .ev-voz-extrano span{background:rgba(255,59,48,.12);color:#b3261e}
 .ev-voz small{font-size:12px;color:var(--ink-3)}
 .ev-voz audio{height:32px;max-width:100%}
+.cerebro-voz{white-space:nowrap}
+.cerebro-voz.activo{background:#ff3b30;color:#fff;border-color:transparent}
