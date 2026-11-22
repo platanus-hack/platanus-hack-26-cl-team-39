@@ -4,6 +4,8 @@ _Agrega aquí todo link que el resto vaya a necesitar. Nada con claves, tokens n
 
 ## Proyecto
 
+- **Diagrama del proyecto (Excalidraw):** https://link.excalidraw.com/l/4iCyeooCs9Y/8iD0XuOrK3o
+
 - Repo oficial (público): https://github.com/platanus-hack/platanus-hack-26-cl-team-39 (se trabaja en `dev`)
 - Plataforma de Platanus Hack: https://hack.platan.us
 - Página de votación de referencia (Buenos Aires): https://hack.platan.us/26-ar/vote
@@ -21,7 +23,7 @@ _Agrega aquí todo link que el resto vaya a necesitar. Nada con claves, tokens n
 - **Brazo v4 listo para la SD (G-code A1/A2L, PETG/PLA, STL y guía):** https://drive.google.com/drive/folders/1tgVAXhTr5cy_0PL6q8t-ZDHyu3ACUdJh · en el repo: `diseno/imprimir/brazo_v4/`
 - **Archivos para imprimir (Drive):** https://drive.google.com/drive/folders/1a9WasSzIEE1wSZMqfCm-AzRK_FrVOw_S (placas enteras de 320 × 200)
 - Versión con las placas en dos mitades, para camas chicas, y versiones anteriores: https://drive.google.com/drive/folders/1YMCR-BZjomPj6vu6_y4VduugyFtjLoXz
-- Fotos y videos del proceso: https://drive.google.com/drive/folders/1-Ze_hGI7VpxI-U5A6CU_j8Gqs-QH9ReH
+- Fotos y videos del proceso: https://drive.google.com/drive/folders/1-Ze_hGI7VpxI-U5A6CU_j8Gqs-QH9ReH (el robot armado del domingo: subcarpeta «2026-11-22 robot armado»)
 - Taller 3D en local: `cd diseno && python3 -m http.server 8000` → http://localhost:8000/taller3d/
 - Taller 3D publicado (privado, pedir acceso a Walls): https://claude.ai/artifact/EVKma9DkW9tp2xa4Zq7xeD
 - Ideas del proyecto (22 ideas + kit de entrega, privado): https://claude.ai/artifact/5B7JYRVsV8Uq7vwyLrxGri
