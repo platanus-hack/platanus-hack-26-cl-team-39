@@ -498,7 +498,7 @@ function alOir(frase) {
 
 // «Preséntate», «di hola», «saluda»: se presenta en voz alta con la voz de ElevenLabs, sin pasar por el modelo.
 const PRESENTATE = /^(?:(?:oye|hey|ey|hola)[ ,]*)?(?:(?:bich[oaeiu]s?|bichito|pich[ou]|micho|nicho)[ ,]*)?(?:(?:puedes|podrias)[ ,]*)?(?:presentate|presentarte|di hola|decir hola|saluda|saludar|saluda al publico|saluda a todos|habla|hablanos|di algo|dinos quien eres|quien eres)[ ?!.]*$/
-const PRESENTACION = process.env.CEREBRO_PRESENTACION || 'Hola, soy el Bicho.'
+const PRESENTACION = process.env.CEREBRO_PRESENTACION || 'Hola, soy el Bicho. ¡Siuuuuuuu!'
 
 function procesar(frase) {
   const limpia = frase.texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9ñ ,?!.]+/g, ' ').replace(/\s+/g, ' ').trim()
@@ -844,7 +844,7 @@ Cómo es tu código (carpeta bicho/, todo en un mismo directorio, se importa por
 - sensores.py: leer() -> dict. Se llama 20 veces por segundo: tiene que ser rápida y no bloquear. Lo numérico o booleano se grafica solo en la web.
 - salida.py: salida.emitir(dict) manda algo a la web desde cualquier hilo. La web ya sabe mostrar {"t":"imagen","nombre":"camara","fmt":"jpeg","b64":"<base64>"} en su sección Vista (muestra la última de cada nombre). salida.hay_publico() dice si alguien está mirando.
 - Puedes crear módulos nuevos (por ejemplo camara.py) e importarlos desde comandos.py o sensores.py.
-- Para que hables, el cerebro te manda {"cmd":"hablar","voz":"dueno"|"extrano","fmt":"wav","b64":"<WAV en base64: 16 kHz, mono, 16 bits>"}. Si te piden aprender a hablar, implementa ese comando: decodifica el base64 a un archivo temporal y reprodúcelo con aplay (en la tarjeta de sonido que diga el diagnóstico) en un hilo daemon y con timeout. Si llega otro mientras suena, corta el anterior. Devuelve un texto corto, sin el base64.
+- Para que hables, el cerebro te manda {"cmd":"hablar","voz":"dueno"|"extrano","fmt":"wav","b64":"<WAV en base64: 16 kHz, mono, 16 bits>"}. Si te piden aprender a hablar (con ElevenLabs o como sea), implementa ESE comando y nada más: la voz de ElevenLabs la genera el cerebro, que ya tiene la clave; en el Pi no hay clave ni hace falta pedirle nada a ElevenLabs. Lo más simple: en comandos.py, para "hablar", decodifica el base64 y llama a speaker.tocar_wav(datos, segundos) (segundos = (bytes - 44) / 32000); si speaker.sonando(), primero speaker.parar(). Si no te sirve speaker, guárdalo en un archivo temporal y reprodúcelo con aplay (en la tarjeta que diga el diagnóstico) en un hilo daemon y con timeout. Para probarlo no necesitas audio real: basta que el comando exista y responda; el cerebro lo probará hablando apenas termines. Si llega otro mientras suena, corta el anterior. Devuelve un texto corto, sin el base64.
 
       nombre: {
         type: 'string',
