@@ -880,6 +880,11 @@ async function aprender(que, frase) {
     let instalaciones = 0
     let instalada = null
     paso(`Empiezo a aprender: ${que}`)
+    // Fuera del ciclo: las usan las herramientas (instalar) y el anuncio final. Estaban dentro del bloque de
+    // inspeccionar_hardware, y al instalar fallaba con «habilidad is not defined».
+    let habilidad = null // nombre corto, cómo pedírsela y comandos: para la sección Habilidades de bicho·dev
+    const escritos = {} // archivo → líneas, de lo que escribió en este aprendizaje
+    const inicio = new Date().toISOString()
 
     const r = await ciclo({
       sistema: SISTEMA_APRENDER,
@@ -897,9 +902,6 @@ async function aprender(que, frase) {
       alPensar: (n) => paso(n === 0 ? 'Pienso cómo hacerlo' : 'Pienso el siguiente paso (escribir código puede tardar un par de minutos)'),
       ejecutar: async (nombre, x) => {
         if (nombre === 'inspeccionar_hardware') {
-    let habilidad = null // nombre corto, cómo pedírsela y comandos: para la sección Habilidades de bicho·dev
-    const escritos = {} // archivo → líneas, de lo que escribió en este aprendizaje
-    const inicio = new Date().toISOString()
           paso('Reviso qué hardware tengo conectado')
           const d = await pedir('diag', 'diag', 60_000)
           if (!d) return 'El bicho no respondió el diagnóstico.'
