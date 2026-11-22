@@ -15,6 +15,7 @@ from pathlib import Path
 
 import camara
 import descubrir
+import escucha
 import flujo
 import flujo2
 import gesto
@@ -90,6 +91,7 @@ def leer() -> dict:
     if o:
         d["oido"] = o
     d["oido_luz"] = oido_luz.activa()  # la luz del micrófono sigue a la voz: solo un booleano
+    d["escucha"] = escucha.datos()  # turno de escucha (entre el pitido de inicio y el de cierre): solo copia
     r = respeaker.datos()  # monitor del chip del micrófono (comando mic): energía de voz y haces; solo copia
     if r:
         d["respeaker"] = r

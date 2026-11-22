@@ -1,6 +1,6 @@
 {
-  "version": "0.35.0",
-  "desc": "Raspberry Pi 3 con micrófono ReSpeaker (oye frases y de dónde vienen), cámara CSI, parlante, anillo de 12 LEDs y 4 motores por PCA9685 y drivers TB6612, y servos en un segundo PCA9685. Se expresa con luz y sonido, reconoce un gesto, escanea el bus I2C, mide el piso con dos sensores de flujo óptico y aprende: acepta código nuevo de su cerebro, lo prueba y vuelve atrás si falla. Lo que sabe hacer está en la ayuda de cada comando.",
-  "aprendido": "Girar en el lugar (\"giro\":\"izquierda\" o \"derecha\", y \"lados\" para decir qué motores van a cada lado), oído más rápido (las frases se cortan a los 4 s o tras 0,35 s de silencio, en vez de 12 s y 0,6 s) y la imagen de la cámara girada 180° porque quedó montada cabeza abajo. Mantiene los servos de la 0.34.0 y los motores sin topes.",
+  "version": "0.37.0",
+  "desc": "Raspberry Pi 3 con micrófono ReSpeaker (oye frases y de dónde vienen), cámara CSI, parlante, anillo de 12 LEDs y 4 motores por PCA9685 y drivers TB6612, y servos en un segundo PCA9685. Se expresa con luz y sonido, reconoce un gesto, escanea el bus I2C, mide el piso con dos sensores de flujo óptico, marca con pitidos el inicio y el fin de cada turno de escucha (comando escucha: el cerebro lo abre al oír \"bicho\" y el bicho lo cierra solo cuando la persona calla) y aprende: acepta código nuevo de su cerebro, lo prueba y vuelve atrás si falla. Lo que sabe hacer está en la ayuda de cada comando.",
+  "aprendido": "Cámara más fluida: 6 imágenes por segundo a Vista en vez de 1, ajustable en vivo con \"fps\" (1 a 15), y JPEG más liviano. Conserva lo que aprendió en la 0.36.0 (pitidos del turno de escucha), el giro, los servos y los motores sin topes.",
   "autor": "Cristian (Claude)"
 }

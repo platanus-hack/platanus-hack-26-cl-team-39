@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.37.0",
+      "date": "2026-11-22T10:39:07.018Z",
+      "author": "Cristian (Claude)",
+      "notes": "Cámara más fluida: 6 imágenes por segundo a Vista en vez de 1, ajustable en vivo con fps (1 a 15), y JPEG más liviano. Trae lo que el bicho aprendió solo en la 0.36.0 (pitidos del turno de escucha).",
+      "package": "0.37.0/bicho-0.37.0.tar.gz",
+      "size": 112435
+    },
+    {
       "version": "0.35.0",
       "date": "2026-11-22T08:49:24.168Z",
       "author": "Cristian (Claude)",

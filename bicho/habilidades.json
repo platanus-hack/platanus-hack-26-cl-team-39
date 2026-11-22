@@ -196,6 +196,20 @@
       ],
       "origen": "equipo",
       "version": "0.34.0"
+    },
+    {
+      "id": "v0.36.0",
+      "nombre": "Comando escucha: pitido de inicio al abrir el turno, detecta",
+      "que_hace": "Comando escucha: pitido de inicio al abrir el turno, detecta el fin de la frase con el detector de voz del ReSpeaker y toca el pitido de cierre; publica escucha.abierta en sensores.",
+      "comandos": [],
+      "origen": "solo",
+      "version": "0.36.0",
+      "inicio": "2026-11-22T10:21:01.959Z",
+      "cuando": "2026-11-22T10:24:22.859Z",
+      "pedido": "hola, no te escucho cuando digo bicho, subele el volumen al altavoz para detectar inicio y termino de comunicacion del usuario",
+      "canal": "web",
+      "archivos": {},
+      "intentos": 1
     }
   ]
 }

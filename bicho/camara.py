@@ -35,7 +35,10 @@ RUTA = os.environ.get("BICHO_CAMARA_RUTA", "/tmp/bicho_camara.jpg")
 ANCHO, ALTO = 640, 480
 # La cámara quedó montada cabeza abajo: la imagen se gira 180°. BICHO_CAMARA_GIRAR=0 si se monta derecha.
 GIRAR = os.environ.get("BICHO_CAMARA_GIRAR", "180") == "180"
-PERIODO = 1.0  # segundos entre imágenes para la web
+# Cuadros por segundo hacia la web: 6 por defecto (antes era 1, y en Vista se veía como diapositivas).
+# Se cambia en vivo con {"cmd":"camara","fps":10}. Con rpicam-still (sin picamera2) no pasa de ~1.
+FPS_MAX = 15
+_fps = max(1.0, min(float(FPS_MAX), float(os.environ.get("BICHO_CAMARA_FPS", "6"))))
 PERIODO_ANALISIS = 0.5  # segundos entre cuadros cuando alguien analiza
 MAX_BYTES = 300_000
 
@@ -47,7 +50,7 @@ _continuo = False
 _analizadores: dict = {}  # nombre -> fn(jpeg)
 _backend: str | None = None
 _sin_picamera2 = False
-_calidad = 80
+_calidad = int(os.environ.get("BICHO_CAMARA_CALIDAD", "65"))  # JPEG: 65 pesa la mitad que 80 y se ve igual en Vista
 _error: str | None = None
 _ultimo_t = 0.0  # time.time() de la última imagen
 _ultimo_emit = 0.0  # time.monotonic() de la última imagen mandada a la web
@@ -80,7 +83,7 @@ class _Picamera2:
             cfg = self.c.create_preview_configuration(
                 main={"size": (ANCHO, ALTO), "format": "RGB888"},
                 buffer_count=2,
-                controls={"FrameRate": 5.0},  # pocos cuadros: menos CPU
+                controls={"FrameRate": float(FPS_MAX)},  # el sensor entrega hasta 15; cuántos se mandan lo decide _fps
                 **extra,
             )
             self.c.configure(cfg)
@@ -174,7 +177,7 @@ def _publicar(jpg: bytes, suelta: bool) -> None:
     _ultimo_bytes = len(jpg)
     _cuadros += 1
     ahora = time.monotonic()
-    toca = _continuo and salida.hay_publico() and ahora - _ultimo_emit >= PERIODO - 0.15
+    toca = _continuo and salida.hay_publico() and ahora - _ultimo_emit >= 0.8 / _fps
     if not (suelta or toca):
         return  # cuadro solo para analizar: ni disco ni red
     try:
@@ -239,7 +242,7 @@ def _bucle() -> None:
             if _analizadores:
                 periodo = 2.0 if _backend == "rpicam-still" else PERIODO_ANALISIS
             else:
-                periodo = PERIODO
+                periodo = 1.0 / _fps
             _esperar(max(0.05, periodo - (time.monotonic() - t0)))
     except Exception as e:  # no debería pasar; que no quede un hilo fantasma
         _error = f"{type(e).__name__}: {e}"[:200]
@@ -293,11 +296,23 @@ def activa() -> bool:
     return _continuo
 
 
+def poner_fps(fps) -> str:
+    """Cambia cuántas imágenes por segundo se mandan a Vista, sin apagar la cámara."""
+    global _fps
+    try:
+        f = float(fps)
+    except (TypeError, ValueError):
+        return f'"fps" es un número de 1 a {FPS_MAX}'
+    _fps = max(1.0, min(float(FPS_MAX), f))
+    nota = " (con rpicam-still no pasa de ~1 por segundo)" if _backend == "rpicam-still" else ""
+    return f"cámara a {_fps:g} imágenes por segundo{nota}"
+
+
 def prender() -> str:
     global _continuo, _error
     if SIMULAR:
         _continuo = True
-        return "cámara prendida (simulada, sin hardware)"
+        return f"cámara prendida (simulada, sin hardware), {_fps:g} imágenes por segundo"
     with _lock:
         ya = _continuo
         _continuo = True
@@ -306,7 +321,7 @@ def prender() -> str:
     extra = "" if salida.hay_publico() else " (parte cuando alguien mire la web)"
     if ya:
         return "la cámara ya estaba prendida" + extra
-    return f"cámara prendida: una imagen de {ANCHO}x{ALTO} por segundo en Vista{extra}"
+    return f"cámara prendida: {_fps:g} imágenes de {ANCHO}x{ALTO} por segundo en Vista{extra}"
 
 
 def apagar() -> str:
@@ -330,7 +345,7 @@ def foto() -> str:
 
 
 def estado() -> str:
-    p = ["cámara " + ("prendida" if _continuo else "apagada")]
+    p = ["cámara " + ("prendida" if _continuo else "apagada"), f"{_fps:g} imágenes por segundo"]
     if SIMULAR:
         p.append("simulada")
     if _backend:

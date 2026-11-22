@@ -12,6 +12,7 @@ from __future__ import annotations
 import anillo
 import camara
 import descubrir
+import escucha
 import expresar
 import flujo
 import flujo2
@@ -80,6 +81,8 @@ herramientas.AYUDA["servo"] = servos.AYUDA
 herramientas.AYUDA["descubrir"] = descubrir.AYUDA
 # Salidas de los GPIO 23 y 24 (gpios.py): trae su propia ayuda.
 herramientas.AYUDA["gpio23_24"] = gpios.AYUDA
+# Turnos de escucha con pitidos de inicio y cierre (escucha.py): trae su propia ayuda.
+herramientas.AYUDA["escucha"] = escucha.AYUDA
 # Los comandos de respeaker.py (documentación y parámetros del ReSpeaker) traen su propia ayuda.
 herramientas.AYUDA.update(respeaker.AYUDA)
 
@@ -339,16 +342,19 @@ def manejar(c: dict) -> str | None:
         except Exception as e:
             return f"gpio23_24: falló: {type(e).__name__}: {e}"
 
-    # Cámara CSI:  {"cmd":"camara","on":true}   manda una imagen por segundo a Vista
+    # Cámara CSI:  {"cmd":"camara","on":true}   manda imágenes a Vista (6 por segundo; "fps":1-15 lo cambia en vivo)
     #              {"cmd":"camara","on":false}  la apaga
     #              {"cmd":"camara"}             dice cómo está
     #              {"cmd":"foto"}               saca una sola foto
     # Nada de esto bloquea: la captura corre en un hilo aparte (camara.py).
     if cmd == "camara":
         try:
-            if "on" not in c:
-                return camara.estado()
-            return camara.prender() if c.get("on") else camara.apagar()
+            partes = []
+            if "fps" in c:
+                partes.append(camara.poner_fps(c.get("fps")))
+            if "on" in c:
+                partes.append(camara.prender() if c.get("on") else camara.apagar())
+            return " · ".join(partes) if partes else camara.estado()
         except Exception as e:
             return f"la cámara falló: {type(e).__name__}: {e}"
 
@@ -403,6 +409,21 @@ def manejar(c: dict) -> str | None:
             return _vibrar(c)
         except Exception as e:
             return f"vibrar: falló: {type(e).__name__}: {e}"
+
+    # Escucha por turnos (escucha.py): pitido al empezar a escuchar y pitido al terminar la frase.
+    # El Pi no reconoce palabras: el cerebro transcribe y, cuando oye "bicho", manda "inicio":true.
+    #   {"cmd":"escucha","inicio":true}     pitido de inicio y abre el turno; se cierra solo, con otro pitido,
+    #                                       cuando la persona habló y lleva un rato callada (voz del ReSpeaker)
+    #   {"cmd":"escucha","fin":true}        cierra ahora con pitido  ·  {"cmd":"escucha"}  estado
+    #   {"cmd":"escucha","on":false}        desactiva el modo y corta el turno  ·  "on":true lo activa
+    #   {"cmd":"escucha","pitido":"inicio"} prueba un pitido ("fin" el otro)  ·  "vol":1-100
+    #   {"cmd":"escucha","silencio":0.9,"espera":6,"max":15}   tiempos
+    # No bloquea: un hilo daemon vive solo mientras el turno está abierto; sensores publica escucha.abierta.
+    if cmd in ("escucha", "turno"):
+        try:
+            return escucha.manejar(c)
+        except Exception as e:
+            return f"escucha: falló: {type(e).__name__}: {e}"
 
     # Luz del oído (oido_luz.py): los LEDs del ReSpeaker XVF3800 apuntan hacia donde llega la voz.
     #   {"cmd":"oido","on":true}      la prende  ·  {"cmd":"oido","on":false}  la apaga (y apaga los LEDs)
