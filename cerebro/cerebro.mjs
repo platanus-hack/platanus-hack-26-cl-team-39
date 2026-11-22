@@ -510,6 +510,12 @@ function procesar(frase) {
     if (ESCUCHA !== 'todo' && !LO_NOMBRAN.test(frase.texto) && !enConversacion) return
   }
   if (a) return void ejecutarAtajo(frase, a).catch((e) => errorDeClaude(e, 'con un atajo'))
+  // Lo nombraron (aunque venga con más palabras: «hola bicho, ¿cómo estás?»): suena al tiro que escuchó y
+  // queda atento, sin esperar a que el modelo decida. Antes solo sonaba si la frase era SOLO el nombre.
+  if (!frase.escrito && E.bicho && LO_NOMBRAN.test(frase.texto)) {
+    E.ultimaInteraccion = Date.now()
+    enviar({ cmd: 'expresar', estado: 'escucha', seg: 3 })
+  }
   if (pendientes >= 3) return // si se acumulan, se bota la más nueva: mejor responder tarde que a destiempo
   pendientes++
   colaDecidir = colaDecidir
