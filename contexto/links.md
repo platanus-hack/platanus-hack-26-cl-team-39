@@ -29,7 +29,8 @@ _Agrega aquí todo link que el resto vaya a necesitar. Nada con claves, tokens n
 ## Marca y pitch
 
 - **Manual de marca** (logo, colores, letra, voz; privado, pedir acceso a Guty): https://claude.ai/artifact/AFqF74EGV951uugDiV9pvJ
-- **Deck del pitch** (12 láminas en el estilo «Cristal claro» de bicho·dev, con notas para quien presenta; privado, pedir acceso a Guty): https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm
+- **Guion del pitch, editable** (el que vale; se edita y comenta en línea; privado, pedir acceso a Guty): https://claude.ai/artifact/MQWVsTP9RmfJCaA4kxwWNs
+- **Deck del pitch** (12 láminas en dark mode, como pidió la charla, con el gráfico de lo que aprendió solo y notas para quien presenta; privado, pedir acceso a Guty): https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm
 - En el repo: [`marca/MARCA.md`](../marca/MARCA.md) (el manual en texto), [`marca/PITCH.md`](../marca/PITCH.md) (guion, demo, plan B, preguntas) y [`marca/logo/`](../marca/logo/) (SVG y PNG; se regeneran con `python3 marca/generar_logo.py && bash marca/exportar_png.sh`).
 
 ## Skills compartidas (`.claude/skills/`)

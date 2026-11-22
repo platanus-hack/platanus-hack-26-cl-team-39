@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-_Lo actualiza el Claude de cualquiera cuando algo cambia. Máximo ~50 líneas: lo viejo se borra de aquí (queda en la bitácora). Última actualización: 21 nov, 20:02, Guty (Claude)._
+_Lo actualiza el Claude de cualquiera cuando algo cambia. Máximo ~50 líneas: lo viejo se borra de aquí (queda en la bitácora). Última actualización: 22 nov, 05:20, Guty (Claude)._
 
 ## La idea
 
@@ -26,7 +26,7 @@ El **Bicho** (nombre definitivo, votado por el equipo el 21 nov): un robot sobre
 - **Hand tracking** ([`handtracking/`](../handtracking/)): MediaPipe + Unity. Entra por el relé con la clave del equipo, y los gestos prenden las luces del bicho real (pulgar, V, puño). Roadmap a la demo en [`handtracking/ROADMAP.md`](../handtracking/ROADMAP.md): el wow es enseñarle un gesto; manejar con la palma depende de los motores (corte a la 01:00).
 - **Gemelo 3D y Manos en bicho·dev** (`#gemelo`, `#manos`): el bicho entero (chasis V1 + brazo v4) con los sensores en vivo encima, y la demo de las señas. En `dev`, falta el deploy.
 - **Simulador 3D** en bicho·dev → Simulador, con el **idioma del bicho** (30 estados y 5 escenas) en [`bicho/lenguaje.json`](../bicho/lenguaje.json). Propuesta de Guty para que la ajusten Walls y Cristian.
-- **Marca y pitch** ([`marca/`](../marca/)): logo en SVG y PNG, `project-logo.png` de 1000 × 1000 ya reemplazado, manual de marca y deck de 12 láminas (estilo «Cristal claro» de bicho·dev, con el ojo animado) publicados (links en `links.md`), y guion de 3 y 1 minuto con demo, plan B y preguntas difíciles en [`marca/PITCH.md`](../marca/PITCH.md). Nombre, frase y descripción ya están en `platanus-hack-project.jsonc` y `project-description.md`.
+- **Marca y pitch** ([`marca/`](../marca/)): logo en SVG y PNG, `project-logo.png` de 1000 × 1000 ya reemplazado, manual de marca y deck de 12 láminas en dark mode (lo pidió la charla, por el streaming), con el ojo animado y el gráfico de lo que aprendió solo, publicados (links en `links.md`), y el guion de 3 minutos en el orden de la charla (saludo, problema, solución y demo), con plan B y preguntas difíciles, en [`marca/PITCH.md`](../marca/PITCH.md). Nombre, frase y descripción ya están en `platanus-hack-project.jsonc` y `project-description.md`.
 
 ## En qué está cada uno
 
@@ -43,7 +43,7 @@ _Reparto sugerido el 21 nov a las 00:01; cada uno corrige su línea._
 - Medir el patrón de agujeros del motor TT antes de imprimir las cunas P24, y elegir la distribución: V1, V2 o V3.
 - Llevar el robot real (GLB) al Simulador de bicho·dev y agregar el modo «Armar» (ver `diseno/INTEGRAR_EN_BICHO_DEV.md`).
 - Elegir el caso de uso (guardián o ayuda). El borrador del pitch propone que lo central sea que aprende en vivo, con cuidar el patio como escenario: confirmar.
-- **Pitch:** elegir qué se le pide en la demo, quién presenta, opera y respalda, medir cuánto tarda en aprender (el `[N] s` del deck) y grabar el video de 60 s. Todo en `marca/PITCH.md`.
+- **Pitch:** elegir quién presenta, opera y respalda; medir en tres ensayos cuánto tarda en aprender a hablar (hoy aprende algo nuevo en ~4 min y tiene que bajar de 2); bicho·dev en dark mode para el streaming; README para el jurado (le pregunta al repo con IA); grabar el video de 60 s. Todo en `marca/PITCH.md`.
 - Corroborar que el esquemático (4 páginas) funciona con el hardware que hay.
 - Revisar por qué el segundo inversor no aparece en el sistema.
 - Publicar bicho·dev (lo ve quien hace los deploys) y conseguir una API key de Anthropic para el botón "Preguntar" del inventario.
