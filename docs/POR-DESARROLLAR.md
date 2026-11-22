@@ -22,8 +22,10 @@ Lo que dejamos diseñado o empezado durante las 36 horas, pero que **no es parte
 - **Modelo BIM:** [`web/public/bim/registro.json`](../web/public/bim/registro.json) registra las piezas, las revisiones, los planos y la calibración de cada servo.
 - **En bicho·dev:** la vista **Brazo** tiene el árbol de piezas, el visor 3D y sliders que mandan `{"cmd":"servo"}`. El firmware ya tiene ese comando: `bicho/servos.py` usa un segundo PCA9685 en 0x41, a 50 Hz.
 
+**Qué alcanzó a imprimirse:** las placas P09B, P10A y P10B y los separadores, en la CR-3040 (aviso en el Discord del equipo, sábado 21 a las 22:43). El resto del brazo se canceló.
+
 **Qué falta:**
-1. Imprimir el brazo y montarlo en la torreta.
+1. Imprimir las piezas que faltan y montar el brazo en la torreta.
 2. Calibrar el cero de cada servo con el tester. La calibración se corrige en el registro, no en el firmware.
 3. Probar el torque real del hombro con la pinza cargada. El cálculo estático está en la vista Brazo.
 

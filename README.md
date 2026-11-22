@@ -77,7 +77,9 @@ Diseñamos un brazo de 4 servos, pero Bicho anda sin brazo. El brazo quedó como
 
 ## Esquemáticos
 
-El esquemático de conexiones (A3, 4 hojas) está en [`diseno/fuentes/esquematico-conexiones.pdf`](diseno/fuentes/esquematico-conexiones.pdf). Es la **propuesta inicial**. En el robot armado cambió una cosa: el ESP32-CAM se descartó y la Raspberry Pi maneja directo el bus I2C (PCA9685 0x40 para los motores, PCA9685 0x41 para los servos). El resto de las redes, las direcciones I2C y la alimentación siguen como en las hojas.
+Los **primeros esquemas** (boceto, v1, v2 con vigilante, sensores y placas perforadas) y cómo evolucionaron hasta el robot armado están en [`docs/hardware/`](docs/hardware/). Son documentación inicial, no el producto final.
+
+El esquemático de conexiones v1 (A3, 4 hojas) está en [`diseno/fuentes/esquematico-conexiones.pdf`](diseno/fuentes/esquematico-conexiones.pdf). Es la **propuesta inicial**. En el robot armado cambió una cosa: el ESP32-CAM se descartó y la Raspberry Pi maneja directo el bus I2C (PCA9685 0x40 para los motores, PCA9685 0x41 para los servos). El resto de las redes, las direcciones I2C y la alimentación siguen como en las hojas.
 
 | | |
 |---|---|
@@ -105,7 +107,7 @@ Esto quedó diseñado o empezado, pero no es parte de lo que Bicho hace hoy. El 
 | [`rele/`](rele/) | El relé (Node, sin dependencias): une al bicho con la web y el Cerebro desde cualquier red, y transcribe lo que oye. |
 | [`web/`](web/) | **bicho·dev**, el panel (Vite + React): habilidades, firmware, sensores, Oído, Cerebro, consola, versiones, simulador e inventario. Las versiones publicadas del bicho están en `web/public/firmware/`. |
 | [`diseno/`](diseno/) | El cuerpo en 3D: STL, bandejas para imprimir, soportes, paneles, el Taller 3D y el brazo v4 (por desarrollar). El esquemático está en `diseno/fuentes/`. |
-| [`docs/`](docs/) | Esquemáticos en imagen y [features por desarrollar](docs/POR-DESARROLLAR.md). |
+| [`docs/`](docs/) | Esquemáticos en imagen, fotos del robot armado, [cómo evolucionó el hardware](docs/hardware/) y [features por desarrollar](docs/POR-DESARROLLAR.md). |
 | [`handtracking/`](handtracking/) | Por desarrollar: señas y gestos con la mano (MediaPipe + Unity) que mandan comandos al bicho por el relé. |
 | [`marca/`](marca/) | Logo, manual de marca y guion del pitch. |
 | [`contexto/`](contexto/) | Estado, decisiones y bitácora del equipo: el contexto que comparten los Claude de cada integrante. |
