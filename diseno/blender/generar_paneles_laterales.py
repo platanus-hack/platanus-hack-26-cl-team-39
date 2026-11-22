@@ -8,9 +8,10 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(AQUI, "generar_bicho_v3.py"), encoding="utf-8").read()
 exec(compile(src[:src.index("VERS = {}")], "generar_bicho_v3.py", "exec"))
 
-T_P = 2.4                                    # espesor del panel
+T_P = 0.4                                    # espesor de la hoja: 2 capas de 0,2 mm
+REL = 0.2                                    # relieve del texto y el ojo: 1 capa más (máximo 3 capas en total)
 Z0, Z1 = ZB + T + 0.2, ZT - 0.4              # entre la cara de arriba de la placa de abajo y la de abajo de la placa de arriba
-PIN = 2.6
+PIN = 3.0
 def bake(o): o.data.transform(o.matrix_basis); o.matrix_basis = Matrix.Identity(4); return o
 def box(n, x0, x1, y0, y1, z0, z1): return bake(pbox(n, x1-x0, y1-y0, z1-z0, ((x0+x1)/2, (y0+y1)/2, (z0+z1)/2), m=PLA))
 def cyl(n, r, x, y, z0, z1, axis="Z", seg=48):
@@ -41,8 +42,8 @@ def panel(pid, eje, fijo, u0, u1, pins, muescas=(), deco=None, hueco=None):
     o = box(pid, u0, u1, -T_P / 2, T_P / 2, Z0, Z1)                                  # local: x=u, y=w (espesor), z=z
     add = []
     for u in pins:
-        add += [box("_pb", u - PIN/2, u + PIN/2, -PIN/2, PIN/2, ZB + 0.6, Z0 + 0.5), box("_pt", u - PIN/2, u + PIN/2, -PIN/2, PIN/2, Z1 - 0.5, ZT + 2.4)]
-        add += [box("_r", u - 4, u + 4, -T_P / 2, T_P / 2 + 1.6, Z0, Z0 + 5), box("_r", u - 4, u + 4, -T_P / 2, T_P / 2 + 1.6, Z1 - 5, Z1)]  # refuerzo en la base del pasador
+        # pestañas planas del mismo espesor de la hoja: entran en los agujeros Ø3,4 de la rejilla como lengüetas
+        add += [box("_pb", u - PIN/2, u + PIN/2, -T_P/2, T_P/2, ZB + 0.6, Z0 + 0.5), box("_pt", u - PIN/2, u + PIN/2, -T_P/2, T_P/2, Z1 - 0.5, ZT + 2.4)]
     boolean(o, add, op="UNION")
     cuts = []
     for u in muescas: cuts.append(box("_m", u - 3.5, u + 3.5, -5, 5, ZT - T - 7.5, Z1 + 3))
@@ -57,16 +58,17 @@ def panel(pid, eje, fijo, u0, u1, pins, muescas=(), deco=None, hueco=None):
                 cuts.append(box("_v", a[0], a[1], -5, 5, a[2], a[3]) if kind == "box" else cyl("_vc", a[2], a[0], a[1], -5, 5, "Y", 24))
         u += 13
     cut(o, cuts)
-    if deco:                                                                            # relieve de 0,8 mm en la cara exterior (+w)
+    if deco:                                                                            # relieve de 1 capa (0,2 mm) en la cara exterior
         kind, uc = deco
         rel = []
         if kind == "texto":
-            t = texto("bicho", 15, uc, zc, 0.8, espejo); t.data.transform(Matrix.Rotation(math.radians(90), 4, 'X'))
-            t.data.transform(Matrix.Translation(Vector((0, (T_P / 2 + 0.4) * M, 0)))); rel.append(t)
+            t = texto("bicho", 17, uc, zc, REL + 0.1, espejo); t.data.transform(Matrix.Rotation(math.radians(90), 4, 'X'))
+            t.data.transform(Matrix.Translation(Vector((0, (T_P / 2 + REL / 2 - 0.05) * M, 0)))); rel.append(t)
         else:                                                                           # ojo con curita (logo de Bicho)
-            ojo = cyl("_o", 10, uc, zc, T_P/2 - 0.1, T_P/2 + 0.8, "Y", 64); cut(ojo, [cyl("_oi", 6.5, uc, zc, -5, 5, "Y", 64)])
-            pupila = cyl("_p", 3.2, uc + 1.2, zc - 0.5, T_P/2 - 0.1, T_P/2 + 0.8, "Y", 32)
-            cur = box("_c", -9, 9, T_P/2 - 0.1, T_P/2 + 0.8, -3, 3); cur.data.transform(Matrix.Rotation(math.radians(-28), 4, 'Y'))
+            z0r, z1r = T_P / 2 - 0.1, T_P / 2 + REL
+            ojo = cyl("_o", 10, uc, zc, z0r, z1r, "Y", 64); cut(ojo, [cyl("_oi", 6.5, uc, zc, -5, 5, "Y", 64)])
+            pupila = cyl("_p", 3.2, uc + 1.2, zc - 0.5, z0r, z1r, "Y", 32)
+            cur = box("_c", -9, 9, z0r, z1r, -3, 3); cur.data.transform(Matrix.Rotation(math.radians(-28), 4, 'Y'))
             cur.data.transform(Matrix.Translation(Vector(((uc - 4) * M, 0, (zc + 9) * M)))); rel += [ojo, pupila, cur]
         boolean(o, rel, op="UNION")
     # pasar de local (u, w, z) al chasis: eje x -> (u, fijo + w); eje y -> (fijo + w, u). La cara exterior mira hacia afuera.
