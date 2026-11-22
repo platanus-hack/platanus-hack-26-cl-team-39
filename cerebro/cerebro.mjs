@@ -29,6 +29,9 @@
 //                       bicho·dev. "todo": evalúa cada frase (caro: cada una es una llamada a Claude, y el
 //                       micrófono capta todas las conversaciones de alrededor).
 //   CEREBRO_MEMORIA     archivo donde guarda lo que recuerda (cerebro/memoria.json por defecto; no se sube).
+//   CEREBRO_ATAJOS      "0" para que ninguna orden se salte el modelo (por defecto, parar, avanzar, atrás y girar
+//                       se reconocen por palabras y se mandan al tiro). CEREBRO_POT: potencia de esas órdenes
+//                       cuando no se dice (50 por defecto).
 //   CEREBRO_MIRA_S      cada cuántos segundos saca una foto, la describe y la guarda en su memoria de lo que ve
 //                       (0, por defecto: no mira solo). Con 30 son unas 120 descripciones por hora.
 //   EXA_API_KEY         clave de Exa para que el bicho busque en internet. Sin ella, responde solo con lo que sabe.
@@ -43,6 +46,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { crearMemoria } from './memoria.mjs'
+import { atajo } from './atajos.mjs'
 
 const AQUI = dirname(fileURLToPath(import.meta.url))
 try {
@@ -64,6 +68,8 @@ const ESCUCHA = ['todo', 'nombre', 'estricto', 'no'].includes(process.env.CEREBR
 const LO_NOMBRAN = /\b(bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)\b/i
 const VENTANA_CONVERSACION_MS = 45_000
 const MIRA_S = Math.max(0, Number(process.env.CEREBRO_MIRA_S) || 0)
+const ATAJOS = process.env.CEREBRO_ATAJOS !== '0'
+const POT_ATAJO = Math.max(1, Math.min(100, Number(process.env.CEREBRO_POT) || 50))
 const EXA = process.env.EXA_API_KEY || ''
 
 // Voz: las que se diseñaron en ElevenLabs. Los voice_id están en bicho/lenguaje.json → voces.
@@ -420,7 +426,36 @@ ${comandosPy}
 let colaDecidir = Promise.resolve()
 let pendientes = 0
 
+/**
+ * Una orden de movimiento reconocida por palabras: se manda al bicho sin esperar a Claude ni a la cola de
+ * decisiones. Si el bicho la rechaza por algo que hay que resolver (mapa sin confirmar), pasa al modelo.
+ */
+async function ejecutarAtajo(frase, a) {
+  const inicio = Date.now()
+  anunciar('comando', JSON.stringify(a.cmd), { frase: frase.id })
+  // Si venía moviéndose, primero se corta: el bicho no acepta un movimiento encima de otro.
+  if (a.tipo !== 'parar') enviar({ cmd: 'motores', on: false })
+  const r = await comandoAlBicho(a.cmd, 1500)
+  if (a.tipo !== 'parar' && /sin confirmar|no hay mapa|todav[ií]a no hay mapa/i.test(r)) return decidir(frase)
+  const texto =
+    r
+      .split('\n')
+      .map((l) => l.replace(/^\[\w+\]\s*/, '').replace(/^motores:\s*/, ''))
+      .filter((l) => l && !/no hab[ií]a movimiento|^detenidos/i.test(l))
+      .pop()
+      ?.split(/[;(]|\.\s|,\s+con rampa/)[0]
+      .trim() || 'Hecho'
+  const dicho = a.tipo === 'parar' ? 'Motores detenidos.' : `${texto.charAt(0).toUpperCase()}${texto.slice(1).replace(/\.$/, '')}.`
+  M.turno({ escrito: frase.escrito, angulo: frase.angulo, texto: frase.texto, tipo: 'responde', respuesta: dicho })
+  if (!frase.escrito) E.ultimaInteraccion = Date.now()
+  log(`atajo ${a.tipo} en ${Date.now() - inicio} ms (sin modelo)`)
+  anunciar('responde', dicho, { id: randomUUID(), frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null })
+}
+
 function alOir(frase) {
+  const a = ATAJOS && E.bicho ? atajo(frase.texto, { potencia: POT_ATAJO, fw: E.info?.fw }) : null
+  // "Para" corta los motores venga de donde venga, aunque no lo nombren y aunque sea una sola palabra.
+  if (a?.tipo === 'parar') return void ejecutarAtajo(frase, a).catch((e) => errorDeClaude(e, 'parando'))
   if (!frase.escrito) {
     if (frase.texto.trim().split(/\s+/).length < 2) return // una palabra suelta casi nunca es una orden
     // Cada frase evaluada es una llamada a Claude. El micrófono oye todo lo que se conversa cerca, así que
@@ -429,6 +464,7 @@ function alOir(frase) {
     const enConversacion = ESCUCHA === 'nombre' && Date.now() - E.ultimaInteraccion < VENTANA_CONVERSACION_MS
     if (ESCUCHA !== 'todo' && !LO_NOMBRAN.test(frase.texto) && !enConversacion) return
   }
+  if (a) return void ejecutarAtajo(frase, a).catch((e) => errorDeClaude(e, 'con un atajo'))
   if (pendientes >= 3) return // si se acumulan, se bota la más nueva: mejor responder tarde que a destiempo
   pendientes++
   colaDecidir = colaDecidir
@@ -928,5 +964,5 @@ async function aprender(que, frase) {
   }
 }
 
-log(`cerebro del bicho · decide ${MODELO_DECIDIR} · aprende ${MODELO} · escucha ${ESCUCHA} · memoria ${M.datos.hechos.length} hechos, ${M.datos.conversacion.length} turnos y ${M.datos.vistas.length} vistas · mira ${MIRA_S ? `cada ${MIRA_S} s` : 'solo si se lo piden'} · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
+log(`cerebro del bicho · decide ${MODELO_DECIDIR} · aprende ${MODELO} · escucha ${ESCUCHA} · memoria ${M.datos.hechos.length} hechos, ${M.datos.conversacion.length} turnos y ${M.datos.vistas.length} vistas · mira ${MIRA_S ? `cada ${MIRA_S} s` : 'solo si se lo piden'} · atajos ${ATAJOS ? `sí (${POT_ATAJO} %)` : 'no'} · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
 conectar()

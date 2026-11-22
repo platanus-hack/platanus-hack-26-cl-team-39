@@ -55,9 +55,27 @@ Cuando Claude elige `hablar`, el cerebro pide el audio a ElevenLabs (WAV de 16 k
 | `CEREBRO_APRENDE` | `0` para que decida y responda, pero no modifique el bicho. |
 | `CEREBRO_ESCUCHA` | Qué evalúa de lo que oye: `nombre` (por defecto: lo que dice «bicho» o sigue una conversación en voz alta), `estricto` (solo lo que dice «bicho»; para salas con mucha gente), `no` (ignora el micrófono) o `todo`. |
 | `CEREBRO_MEMORIA` | Archivo donde guarda lo que recuerda (`cerebro/memoria.json` por defecto). |
+| `CEREBRO_ATAJOS` | `0` para que ninguna orden se salte el modelo. Por defecto, parar, avanzar, atrás y girar se reconocen por palabras. |
+| `CEREBRO_POT` | Potencia de esas órdenes cuando no se dice (`50` por defecto). |
 | `CEREBRO_MIRA_S` | Cada cuántos segundos saca una foto, la describe y la guarda en su memoria de lo que ve. `0` (por defecto): no mira solo. Con `30` son unas 120 descripciones por hora. |
 
 También se pueden poner en `cerebro/.env`, que no se sube al repo.
+
+## Atajos: órdenes que no pasan por el modelo
+
+Decidir con Claude tarda entre 1 y 3 segundos. Las órdenes de movimiento más comunes se reconocen por palabras ([`atajos.mjs`](atajos.mjs)) y salen hacia el bicho en el mismo instante en que llega la frase:
+
+| Se le dice | Manda |
+|---|---|
+| «para», «detente», «stop», «alto», «para los motores» | `{"cmd":"motores","on":false}` |
+| «avanza», «adelante», «corre» | `{"cmd":"motores","on":true,"pot":50,"seg":0}` (sigue hasta «para») |
+| «atrás», «retrocede», «marcha atrás» | lo mismo con `"sentido":-1` |
+| «gira a la izquierda», «dobla a la derecha», «izquierda» | `{"cmd":"motores","giro":"izquierda","pot":50}` (0,8 s; pide bicho v0.35.0) |
+
+- Se puede agregar potencia y tiempo: «avanza al 80», «atrás por 2 segundos», «gira a la derecha sin parar», «a toda potencia».
+- Solo calza si la frase entera es la orden. «Avanza hasta la puerta y vuelve» o «¿por qué no avanzas?» van al modelo.
+- **«Para» corta siempre:** por voz no necesita que lo nombren ni respeta el modo del micrófono. El resto de las órdenes habladas sigue las reglas de `CEREBRO_ESCUCHA`.
+- Si el bicho rechaza la orden porque el mapa de motores no está confirmado, la frase pasa al modelo, que lo resuelve.
 
 ## Memoria
 

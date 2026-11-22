@@ -29,9 +29,11 @@ DOA_VALUE = (20, 18)  # 2 x uint16: ángulo 0..359 y 1 si hay voz
 FRECUENCIA = 16000  # Hz, mono, 16 bits
 TROZO = 0.1  # segundos por trozo de audio
 PREVIO = 0.4  # audio que se guarda de antes de que empiece la voz
-SILENCIO = 0.6  # silencio que da la frase por terminada
+SILENCIO = float(os.environ.get("BICHO_OIDO_SILENCIO", "0.35"))  # silencio que da la frase por terminada (era 0,6)
 MINIMO = 0.5  # una frase más corta se descarta (golpes, clics)
-MAXIMO = 12.0  # una frase más larga se corta
+# En una sala con gente el silencio no llega nunca y un tercio de las frases esperaba el tope de 12 s antes
+# de mandarse. Una orden hablada dura 1 a 3 s: con 4 s de tope el bicho reacciona mucho antes.
+MAXIMO = float(os.environ.get("BICHO_OIDO_MAX", "4.0"))  # una frase más larga se corta
 
 disponible = False  # True si el ReSpeaker respondió
 _angulo: int | None = None

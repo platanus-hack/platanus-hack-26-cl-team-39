@@ -55,7 +55,7 @@ AYUDA = (
     ' confirmar el mapeo de canales y el sentido de giro, con las ruedas en el aire y potencia mínima:'
     '  "mapa":"pares"|"adafruit"|"simples" o una lista como [[0,1],[2,3],[4,5],[6,7]] ([in1,in2], [pwm,in1,in2]'
     ' o [pwm] por motor)  ·  "motor":1,"pot":12,"seg":1 prueba un solo motor ("sentido":-1 hacia atrás)'
-    '  ·  "canal":0,"pot":10,"seg":0.8 prueba un canal PWM en crudo  ·  "invertir":[4] da vuelta SOLO esos motores (los demás quedan como estaban; "invertidos":[1,4] fija la lista completa)'
+    '  ·  "canal":0,"pot":10,"seg":0.8 prueba un canal PWM en crudo  ·  "invertir":[4] da vuelta SOLO esos motores (los demás quedan como estaban; "invertidos":[1,4] fija la lista completa)  ·  "giro":"izquierda" (o "derecha") gira en el lugar: un lado avanza y el otro retrocede, 0,8 s si no dices "seg"  ·  "lados":{"izq":[1,2],"der":[3,4]} dice qué motores van a cada lado'
     '  ·  "confirmar":true deja el mapa como confirmado  ·  recién entonces "on":true mueve los 4 suave'
     f' ("pot" hasta {POT_MAX:g} %; "seg" los segundos que quieras, o "seg":0 para que siga sin límite hasta "on":false; "sentido":-1 atrás)  ·  "on":false para todo'
     ' al tiro (apaga los 16 canales). Con "seg" mayor que cero se detiene solo al cumplirse el tiempo'
@@ -94,6 +94,8 @@ def _config() -> dict:
                     inv = d.get("invertir")
                     if isinstance(inv, list):
                         cfg["invertir"] = sorted({int(i) for i in inv if isinstance(i, int) and 1 <= i <= len(m)})
+                    if _validar_lados(d.get("lados"), len(m)) is None:
+                        cfg["lados"] = {k: list(d["lados"][k]) for k in ("izq", "der")}
         except (OSError, ValueError, TypeError):
             pass
         _cfg = cfg
@@ -111,6 +113,32 @@ def _guardar() -> str:
         return ""
     except OSError as e:
         return f" (no pude guardarlo: {e})"
+
+
+def _validar_lados(l, n: int) -> str | None:
+    """None si sirve: {"izq":[1,2],"der":[3,4]}, con cada motor (de 1 a n) en un solo lado."""
+    if not isinstance(l, dict) or set(l) != {"izq", "der"}:
+        return 'tiene que ser {"izq":[1,2],"der":[3,4]}'
+    vistos: set[int] = set()
+    for k in ("izq", "der"):
+        if not isinstance(l[k], list) or not l[k]:
+            return f'"{k}" es una lista de motores, por ejemplo [1,2]'
+        for i in l[k]:
+            if isinstance(i, bool) or not isinstance(i, int) or not 1 <= i <= n:
+                return f"los motores van de 1 a {n}"
+            if i in vistos:
+                return f"el motor {i} está en los dos lados"
+            vistos.add(i)
+    return None
+
+
+def _lados() -> dict:
+    """Qué motores están a cada lado. Si nadie lo dijo: la primera mitad a la izquierda y el resto a la derecha."""
+    cfg = _config()
+    if cfg.get("lados"):
+        return cfg["lados"]
+    n = len(cfg["mapa"] or [])
+    return {"izq": list(range(1, n // 2 + 1)), "der": list(range(n // 2 + 1, n + 1))}
 
 
 def _validar_mapa(m) -> str | None:
@@ -517,7 +545,7 @@ def manejar(c: dict) -> str:
     cfg = _config()
 
     # 2. Configuración: no mueve nada.
-    if "mapa" in c or "invertir" in c or "invertidos" in c or "confirmar" in c:
+    if "mapa" in c or "invertir" in c or "invertidos" in c or "confirmar" in c or "lados" in c:
         if activa():
             return 'motores: primero páralos ({"cmd":"motores","on":false}) y después cambia la configuración'
         partes = []
@@ -535,6 +563,7 @@ def manejar(c: dict) -> str:
                 cfg["mapa"] = [list(x) for x in m]
                 cfg["invertir"] = []
                 cfg["confirmado"] = False
+                cfg.pop("lados", None)
             partes.append("mapa cambiado (queda sin confirmar)")
         if "invertir" in c:
             inv = c.get("invertir")
@@ -565,6 +594,15 @@ def manejar(c: dict) -> str:
             with _lock:
                 cfg["invertir"] = sorted(set(inv))
             partes.append("invertidos: " + (", ".join(f"M{i}" for i in cfg["invertir"]) or "ninguno"))
+        if "lados" in c:
+            if not cfg["mapa"]:
+                return 'motores: primero elige un "mapa"'
+            motivo = _validar_lados(c.get("lados"), len(cfg["mapa"]))
+            if motivo:
+                return f'motores: "lados" {motivo}'
+            with _lock:
+                cfg["lados"] = {k: sorted(c["lados"][k]) for k in ("izq", "der")}
+            partes.append("lados: izquierda " + ", ".join(f"M{i}" for i in cfg["lados"]["izq"]) + " · derecha " + ", ".join(f"M{i}" for i in cfg["lados"]["der"]))
         if "confirmar" in c:
             if c.get("confirmar") is True and not cfg["mapa"]:
                 return 'motores: no hay mapa que confirmar. ' + _PASOS
@@ -607,6 +645,33 @@ def manejar(c: dict) -> str:
             f"motores: motor {n} {hacia} al {pot:g} % {_dur(seg)}{_aviso_pot(c, pot)} (canal PWM {plan[0][0]});"
             + (" sigue hasta que lo pares con \"on\":false." if seg == SIN_LIMITE else " se detiene solo.")
             + " Fíjate cuál rueda gira y si va hacia adelante"
+        )
+
+    # 4b. Girar en el lugar: un lado avanza y el otro retrocede. Solo con el mapa confirmado.
+    if "giro" in c:
+        lado = str(c.get("giro")).strip().lower()
+        if lado[:3] not in ("izq", "der"):
+            return 'motores: "giro" es "izquierda" o "derecha"'
+        if not cfg["mapa"]:
+            return "motores: no giro todavía: no hay mapa de canales. " + _PASOS
+        if not cfg["confirmado"]:
+            return "motores: no giro con el mapa sin confirmar (" + _txt_mapa() + "). " + _PASOS
+        l = _lados()
+        a_la_izq = lado.startswith("izq")
+        # Para girar a la izquierda, el lado izquierdo retrocede y el derecho avanza (y al revés).
+        p_izq = _plan([i - 1 for i in l["izq"]], -1 if a_la_izq else 1)
+        p_der = _plan([i - 1 for i in l["der"]], 1 if a_la_izq else -1)
+        for p in (p_izq, p_der):
+            if isinstance(p, str):
+                return "motores: " + p
+        plan = tuple(p_izq[k] + p_der[k] for k in range(3))
+        seg = _seg(c, 0.8)
+        nombre = "izquierda" if a_la_izq else "derecha"
+        no = _lanzar(plan, pot, seg, f"giro a la {nombre} al {pot:g} % {_dur(seg)}")
+        return no or (
+            f"motores: giro a la {nombre} al {pot:g} % {_dur(seg)}{_aviso_pot(c, pot)} (izquierda "
+            + ", ".join(f"M{i}" for i in l["izq"]) + " · derecha " + ", ".join(f"M{i}" for i in l["der"])
+            + '). Si gira para el otro lado o un lado no acompaña, corrige con "lados" o "invertir". Para parar: {"cmd":"motores","on":false}'
         )
 
     # 5. Los 4 a la vez: solo con el mapa confirmado.

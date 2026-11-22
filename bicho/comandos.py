@@ -188,6 +188,9 @@ def manejar(c: dict) -> str | None:
     #   {"cmd":"motores","confirmar":true}             deja el mapa confirmado
     #   {"cmd":"motores","on":true,"pot":15,"seg":1.5} mueve los 4 (solo con el mapa confirmado)
     #   {"cmd":"motores","on":true,"pot":80,"seg":0}   corre sin límite de tiempo, hasta {"cmd":"motores","on":false}
+    #   {"cmd":"motores","on":true,"sentido":-1}       hacia atrás
+    #   {"cmd":"motores","giro":"izquierda","pot":50}  gira en el lugar (o "derecha"); 0,8 s si no dices "seg"
+    #   {"cmd":"motores","lados":{"izq":[1,2],"der":[3,4]}}  qué motores van a cada lado (para el giro)
     # No bloquea: el movimiento corre en un hilo daemon que se apaga solo al cumplirse el tiempo.
     if cmd in ("motores", "motor"):
         try:

@@ -2,6 +2,14 @@
   "device": "bicho",
   "releases": [
     {
+      "version": "0.35.0",
+      "date": "2026-11-22T08:49:24.168Z",
+      "author": "Cristian (Claude)",
+      "notes": "Girar en el lugar (giro izquierda o derecha), oído más rápido (corta las frases a los 4 s o tras 0,35 s de silencio) y la imagen de la cámara girada 180°. Mantiene servos y motores sin topes.",
+      "package": "0.35.0/bicho-0.35.0.tar.gz",
+      "size": 108323
+    },
+    {
       "version": "0.34.0",
       "date": "2026-11-22T05:19:38.208Z",
       "author": "Cristian (Claude)",

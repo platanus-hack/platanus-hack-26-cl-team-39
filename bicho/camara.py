@@ -33,6 +33,8 @@ import salida
 SIMULAR = os.environ.get("BICHO_SIMULAR") == "1"
 RUTA = os.environ.get("BICHO_CAMARA_RUTA", "/tmp/bicho_camara.jpg")
 ANCHO, ALTO = 640, 480
+# La cámara quedó montada cabeza abajo: la imagen se gira 180°. BICHO_CAMARA_GIRAR=0 si se monta derecha.
+GIRAR = os.environ.get("BICHO_CAMARA_GIRAR", "180") == "180"
 PERIODO = 1.0  # segundos entre imágenes para la web
 PERIODO_ANALISIS = 0.5  # segundos entre cuadros cuando alguien analiza
 MAX_BYTES = 300_000
@@ -67,10 +69,19 @@ class _Picamera2:
 
         self.c = Picamera2()
         try:
+            extra = {}
+            if GIRAR:
+                try:
+                    from libcamera import Transform
+
+                    extra["transform"] = Transform(hflip=1, vflip=1)  # 180° = espejo horizontal + vertical
+                except Exception:
+                    pass  # sin libcamera.Transform la imagen sale sin girar, pero la cámara funciona igual
             cfg = self.c.create_preview_configuration(
                 main={"size": (ANCHO, ALTO), "format": "RGB888"},
                 buffer_count=2,
                 controls={"FrameRate": 5.0},  # pocos cuadros: menos CPU
+                **extra,
             )
             self.c.configure(cfg)
             self.c.start()
@@ -100,7 +111,7 @@ class _RpicamStill:
         tmp = RUTA + ".rpicam.jpg"
         r = subprocess.run(
             ["rpicam-still", "-n", "-t", "800", "--width", str(ANCHO), "--height", str(ALTO),
-             "-q", str(_calidad), "-o", tmp],
+             *(["--rotation", "180"] if GIRAR else []), "-q", str(_calidad), "-o", tmp],
             stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=20,
         )
         if r.returncode != 0:
