@@ -50,7 +50,7 @@ Son tres roles; los nombres se eligen en el primer ensayo.
 
 ## Láminas
 
-El [deck](https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm) está en dark mode, como pidió la charla. Orden de la demo: portada → el problema (aspiradora robot, dron y brazo industrial: ya tienen cámara, sensores y computador, y solo hacen lo que les programaron) → el harness → bicho·dev en vivo (o la lámina del gráfico si falla) → «Un harness para miles de robots» → gracias. Después de «gracias» hay una lámina que dice «Anexo»: lo que sigue no se presenta. Ahí quedan, para las preguntas, «Hecho en 36 horas» (con el render del chasis de Walls), «Un robot que se programa solo» (con el loop: si falla, lee el error, lo corrige y lo vuelve a probar, hasta 4 veces) y «Se puede equivocar»; al final, las de respaldo de la demo.
+El [deck](https://claude.ai/artifact/Q9PgQu6yFWAbDWSDyrahgm) está en dark mode, como pidió la charla. Orden de la demo: portada → el problema (aspiradora robot, dron y brazo industrial: ya tienen cámara, sensores y computador, y solo hacen lo que les programaron) → «El harness: se programa solo y, si falla, se corrige» (los cuatro pasos y el loop: si falla, lee el error, lo corrige y lo vuelve a probar, hasta 4 veces) → bicho·dev en vivo (o la lámina del gráfico si falla) → «Un harness para miles de robots» → gracias. Después de «gracias» hay una lámina que dice «Anexo»: lo que sigue no se presenta. Ahí quedan, para las preguntas, «Hecho en 36 horas» (con el render del chasis de Walls), la del anillo con las seis etapas («Se escribe su propio firmware») y «Se puede equivocar»; al final, las de respaldo de la demo.
 
 ## Guion de 3 minutos
 
@@ -80,9 +80,9 @@ Se da vuelta hacia Bicho: «Bicho, aprende a hablar por tu parlante.»
 
 ### 0:35 · Mientras aprende: la solución, el harness (35 s)
 
-**Pantalla:** la lámina del harness, con la luz que recorre el anillo por las seis etapas. Quien presenta la señala mientras habla.
+**Pantalla:** la lámina «El harness: se programa solo y, si falla, se corrige», con los cuatro pasos y el loop. Quien presenta la señala mientras habla.
 
-«Esto es lo que está haciendo ahora mismo: escribir su propio firmware. Y esto es lo que construimos en estas 36 horas: no solo un robot, sino el harness que le permite construirse a sí mismo. Le muestra qué hardware tiene, lo deja escribir su código pero no tocar su núcleo, se lo instala por WiFi y lo prueba antes de activarlo. Si en 60 segundos no confirma que funciona, vuelve solo a la versión anterior. Por eso se puede reescribir sin romperse. Para eso es la curita del logo.»
+«Esto es lo que está haciendo ahora mismo: escribir su propio firmware. Y esto es lo que construimos en estas 36 horas: no solo un robot, sino el harness que le permite construirse a sí mismo. Le muestra qué hardware tiene, lo deja escribir su código pero no tocar su núcleo, se lo instala por WiFi y lo prueba antes de activarlo. Si falla, lee el error, lo corrige y lo vuelve a probar, hasta cuatro veces. Y si en 60 segundos no confirma que funciona, vuelve solo a la versión anterior. Por eso se puede reescribir sin romperse. Para eso es la curita del logo.»
 
 «Esto es en vivo, y puede fallar.»
 
