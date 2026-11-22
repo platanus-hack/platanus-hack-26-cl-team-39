@@ -28,7 +28,7 @@ export function desde(v, min) {
 export function atajo(texto, { potencia = 50, fw = null, giroSeg = 2.5, giroPot = 70, acelera = 80 } = {}) {
   let t = sinTildes(texto)
     .replace(/[^a-z0-9ñ%., ]+/g, ' ')
-    .replace(/\b(bich[oaei]s?|bichito|vich[oa]|oye|hey|ey|ya|ahora|altiro|al tiro|porfa|por favor|rapido|no mas|po|pues|puedes|podrias|quiero que|necesito que|me puedes|te pido que)\b/g, ' ')
+    .replace(/\b(bich[oaeiu]s?|bichito|vich[oa]|micho|pich[ou]|nicho|oye|hey|ey|ya|ahora|altiro|al tiro|porfa|por favor|rapido|no mas|po|pues|puedes|podrias|quiero que|necesito que|me puedes|te pido que)\b/g, ' ')
   // Potencia ("al 80", "80 %", "a toda potencia") y tiempo ("por 3 segundos", "2 s"). Se sacan de la frase.
   let pot = null
   let seg = null

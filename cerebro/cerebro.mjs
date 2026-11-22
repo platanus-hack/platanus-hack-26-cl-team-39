@@ -67,11 +67,12 @@ const CLAVE = process.env.CLAVE_EQUIPO || ''
 const APRENDE = process.env.CEREBRO_APRENDE !== '0'
 const ESCUCHA = ['todo', 'nombre', 'estricto', 'no'].includes(process.env.CEREBRO_ESCUCHA) ? process.env.CEREBRO_ESCUCHA : 'nombre'
 // Cómo suele transcribir Whisper el nombre del bicho.
-const LO_NOMBRAN = /\b(bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)\b/i
+// Cómo transcriben «bicho» con ruido: Micho, Picho, Pichu, Nicho… (visto en los registros del 22 nov).
+const LO_NOMBRAN = /\b(bich[oaeiu]s?|bichito|vich[oa]|bitcho|beach[oa]|m[ií]cho|p[ií]ch[ou]|n[ií]cho)\b/i
 // Cuánto rato después de hablarle en voz alta sigue evaluando lo que oye sin que lo nombren (CEREBRO_VENTANA_S).
 const VENTANA_CONVERSACION_MS = Math.max(0, Number(process.env.CEREBRO_VENTANA_S ?? 45)) * 1000
 // Solo lo llamaron ("bicho", "oye bicho", "bicho, ¿me escuchas?"): se despierta y espera la orden.
-const SOLO_LLAMADO = /^(?:(?:oye|hey|ey|hola|a ver|escucha|escuchame|disculpa)[ ,]*)?(?:bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)(?:[ ,]*(?:me (?:escuchas|oyes|estas escuchando)|estas ahi|ven|oye))?$/
+const SOLO_LLAMADO = /^(?:(?:oye|hey|ey|hola|a ver|escucha|escuchame|disculpa)[ ,]*)?(?:bich[oaeiu]s?|bichito|vich[oa]|bitcho|beach[oa]|micho|pich[ou]|nicho)(?:[ ,]*(?:me (?:escuchas|oyes|estas escuchando)|estas ahi|ven|oye))?$/
 const MIRA_S = Math.max(0, Number(process.env.CEREBRO_MIRA_S) || 0)
 const ATAJOS = process.env.CEREBRO_ATAJOS !== '0'
 const POT_ATAJO = Math.max(1, Math.min(100, Number(process.env.CEREBRO_POT) || 50))
