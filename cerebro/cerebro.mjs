@@ -69,6 +69,8 @@ const ESCUCHA = ['todo', 'nombre', 'estricto', 'no'].includes(process.env.CEREBR
 const LO_NOMBRAN = /\b(bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)\b/i
 // Cuánto rato después de hablarle en voz alta sigue evaluando lo que oye sin que lo nombren (CEREBRO_VENTANA_S).
 const VENTANA_CONVERSACION_MS = Math.max(0, Number(process.env.CEREBRO_VENTANA_S ?? 45)) * 1000
+// Solo lo llamaron ("bicho", "oye bicho", "bicho, ¿me escuchas?"): se despierta y espera la orden.
+const SOLO_LLAMADO = /^(?:(?:oye|hey|ey|hola|a ver|escucha|escuchame|disculpa)[ ,]*)?(?:bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)(?:[ ,]*(?:me (?:escuchas|oyes|estas escuchando)|estas ahi|ven|oye))?$/
 const MIRA_S = Math.max(0, Number(process.env.CEREBRO_MIRA_S) || 0)
 const ATAJOS = process.env.CEREBRO_ATAJOS !== '0'
 const POT_ATAJO = Math.max(1, Math.min(100, Number(process.env.CEREBRO_POT) || 50))
@@ -454,11 +456,42 @@ async function ejecutarAtajo(frase, a) {
   anunciar('responde', dicho, { id: randomUUID(), frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null })
 }
 
+/** Lo llamaron por su nombre y nada más: muestra que escucha (luz y sonido) y abre la ventana para la orden. */
+function despertar(frase) {
+  E.ultimaInteraccion = Date.now()
+  enviar({ cmd: 'expresar', estado: 'escucha', seg: Math.min(8, VENTANA_CONVERSACION_MS / 1000) })
+  log(`despierto: lo llamaron («${frase.texto}»); espera la orden ${Math.round(VENTANA_CONVERSACION_MS / 1000)} s`)
+  anunciar('responde', '¿Sí? Te escucho.', { id: randomUUID(), frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null })
+}
+
+// Una orden larga llega partida: el oído corta cada frase a los pocos segundos. Si una frase llegó hasta ese
+// tope, lo más probable es que siga: se espera un momento la continuación y se juntan antes de decidir.
+const TOPE_FRASE_S = Number(process.env.CEREBRO_TOPE_FRASE_S) || 3.8
+let enEspera = null // { frase, reloj }
 function alOir(frase) {
+  if (!frase.escrito) {
+    if (enEspera) {
+      clearTimeout(enEspera.reloj)
+      frase = { ...frase, texto: `${enEspera.frase.texto} ${frase.texto}`.trim(), dur: (enEspera.frase.dur || 0) + (frase.dur || 0) }
+      enEspera = null
+    }
+    const soloParar = ATAJOS && atajo(frase.texto, { fw: E.info?.fw })?.tipo === 'parar'
+    if (!soloParar && (frase.dur || 0) >= TOPE_FRASE_S && (frase.dur || 0) < TOPE_FRASE_S * 4) {
+      const f = frase
+      enEspera = { frase: f, reloj: setTimeout(() => ((enEspera = null), procesar({ ...f, dur: 0 })), 1600) }
+      return
+    }
+  }
+  procesar(frase)
+}
+
+function procesar(frase) {
   const a = ATAJOS && E.bicho ? atajo(frase.texto, { potencia: POT_ATAJO, fw: E.info?.fw }) : null
   // "Para" corta los motores venga de donde venga, aunque no lo nombren y aunque sea una sola palabra.
   if (a?.tipo === 'parar') return void ejecutarAtajo(frase, a).catch((e) => errorDeClaude(e, 'parando'))
   if (!frase.escrito) {
+    const limpio = frase.texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9ñ ,]+/g, ' ').replace(/\s+/g, ' ').trim()
+    if (ESCUCHA !== 'no' && E.bicho && SOLO_LLAMADO.test(limpio)) return despertar(frase)
     if (frase.texto.trim().split(/\s+/).length < 2) return // una palabra suelta casi nunca es una orden
     // Cada frase evaluada es una llamada a Claude. El micrófono oye todo lo que se conversa cerca, así que
     // solo se evalúa lo que nombra al bicho o lo que sigue una conversación que él ya estaba teniendo.

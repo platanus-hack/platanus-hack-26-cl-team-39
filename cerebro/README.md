@@ -77,6 +77,12 @@ Decidir con Claude tarda entre 1 y 3 segundos. Las órdenes de movimiento más c
 - **«Para» corta siempre:** por voz no necesita que lo nombren ni respeta el modo del micrófono. El resto de las órdenes habladas sigue las reglas de `CEREBRO_ESCUCHA`.
 - Si el bicho rechaza la orden porque el mapa de motores no está confirmado, la frase pasa al modelo, que lo resuelve.
 
+## Conversar por voz
+
+- **Llamarlo lo despierta.** Si alguien dice solo «Bicho» (o «oye bicho», «bicho, ¿me escuchas?»), prende la luz de «te escucha», contesta «¿Sí? Te escucho» y espera la orden durante `CEREBRO_VENTANA_S` segundos (45 por defecto). En ese rato no hace falta volver a nombrarlo, y cada orden que cumple renueva la espera.
+- **Órdenes largas.** El oído corta cada frase a los pocos segundos. Si una frase llegó hasta ese tope, el cerebro espera 1,6 s la continuación y las junta antes de decidir (`CEREBRO_TOPE_FRASE_S`, 3,8 por defecto, tiene que calzar con el tope del oído del bicho).
+- Lo que oye sin que lo nombren y fuera de esa espera no se evalúa.
+
 ## Memoria
 
 Cada frase es una llamada nueva a Claude, así que lo que el bicho sabe de antes hay que dárselo. Tiene tres capas ([`memoria.mjs`](memoria.mjs)):
