@@ -496,7 +496,19 @@ function alOir(frase) {
   procesar(frase)
 }
 
+// «Preséntate», «di hola», «saluda»: se presenta en voz alta con la voz de ElevenLabs, sin pasar por el modelo.
+const PRESENTATE = /^(?:(?:oye|hey|ey|hola)[ ,]*)?(?:(?:bich[oaeiu]s?|bichito|pich[ou]|micho|nicho)[ ,]*)?(?:(?:puedes|podrias)[ ,]*)?(?:presentate|presentarte|di hola|decir hola|saluda|saludar|saluda al publico|saluda a todos|habla|hablanos|di algo|dinos quien eres|quien eres)[ ?!.]*$/
+const PRESENTACION = process.env.CEREBRO_PRESENTACION || 'Hola, soy el Bicho.'
+
 function procesar(frase) {
+  const limpia = frase.texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9ñ ,?!.]+/g, ' ').replace(/\s+/g, ' ').trim()
+  if (HABLA && E.bicho && (frase.escrito || LO_NOMBRAN.test(frase.texto) || Date.now() - E.ultimaInteraccion < VENTANA_CONVERSACION_MS) && PRESENTATE.test(limpia)) {
+    const id = randomUUID()
+    log(`atajo presentarse (voz de ElevenLabs): «${PRESENTACION}»`)
+    anunciar('responde', PRESENTACION, { id, frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null, voz: 'dueno' })
+    M.turno({ escrito: frase.escrito, angulo: frase.angulo, texto: frase.texto, tipo: 'responde', respuesta: `(en voz alta) ${PRESENTACION}` })
+    return void hablar(PRESENTACION, 'dueno', id).catch((e) => anunciar('error', `No pude hablar: ${String(e?.message ?? e).slice(0, 200)}`, { frase: frase.id }))
+  }
   const a = ATAJOS && E.bicho ? atajo(frase.texto, OPC_ATAJO()) : null
   // "Para" corta los motores venga de donde venga, aunque no lo nombren y aunque sea una sola palabra.
   if (a?.tipo === 'parar') return void ejecutarAtajo(frase, a).catch((e) => errorDeClaude(e, 'parando'))

@@ -76,6 +76,7 @@ herramientas.AYUDA["expresar"] = (
 herramientas.AYUDA["i2c"] = i2c.AYUDA
 # Motores por el PCA9685 (motores.py): trae su propia ayuda.
 herramientas.AYUDA["motores"] = motores.AYUDA
+herramientas.AYUDA["hablar"] = '{"cmd":"hablar","fmt":"wav","b64":"..."}  dice en voz alta un WAV (lo manda el cerebro con la voz de ElevenLabs) por el parlante elegido'
 herramientas.AYUDA["servo"] = servos.AYUDA
 # Descubrir el mapeo de motores midiendo con flujo y cámara (descubrir.py): trae su propia ayuda.
 herramientas.AYUDA["descubrir"] = descubrir.AYUDA
@@ -357,6 +358,31 @@ def manejar(c: dict) -> str | None:
             return " · ".join(partes) if partes else camara.estado()
         except Exception as e:
             return f"la cámara falló: {type(e).__name__}: {e}"
+
+    # Hablar: el cerebro sintetiza la voz con ElevenLabs y manda {"cmd":"hablar","fmt":"wav","b64":"..."} (WAV de
+    # 16 kHz, mono, 16 bits). Aquí solo se toca por el parlante elegido (speaker.py), en su hilo, sin bloquear.
+    if cmd == "hablar":
+        try:
+            import base64
+
+            data = base64.b64decode(str(c.get("b64") or ""), validate=False)
+            if len(data) < 46 or data[:4] != b"RIFF":
+                return 'hablar: falta el audio ("b64" con un WAV)'
+            hz = int.from_bytes(data[24:28], "little") or 16000
+            canales = int.from_bytes(data[22:24], "little") or 1
+            bits = int.from_bytes(data[34:36], "little") or 16
+            seg = max(0.3, (len(data) - 44) / (hz * canales * bits / 8))
+            if speaker.sonando():
+                import time
+
+                speaker.parar()  # la voz manda: corta un pitido que estuviera sonando
+                time.sleep(0.15)
+            if not speaker.tocar_wav(data, seg):
+                return "hablar: el parlante está ocupado, no pude decirlo"
+            texto = str(c.get("texto") or "")
+            return f"hablar: digo en voz alta ({seg:.1f} s, voz {c.get('voz') or 'dueno'})" + (f": «{texto[:80]}»" if texto else "")
+        except Exception as e:
+            return f"hablar: falló: {type(e).__name__}: {e}"
 
     if cmd == "foto":
         try:

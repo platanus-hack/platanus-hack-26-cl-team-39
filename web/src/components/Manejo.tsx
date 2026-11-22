@@ -31,6 +31,7 @@ const ACCIONES: { nombre: string; lineas: (pot: number) => string[] }[] = [
 const TECLAS: Record<string, Dir> = { ArrowUp: 'adelante', ArrowDown: 'atras', ArrowLeft: 'izquierda', ArrowRight: 'derecha' }
 
 export function Manejo({ conectado, motivo, enviar }: { conectado: boolean; motivo: string | null; enviar: (linea: string) => void }) {
+  const decir = (texto: string) => enviar(JSON.stringify({ t: 'cerebro', id: crypto.randomUUID(), tipo: 'decir', texto, ts: Date.now() }))
   const [pot, setPot] = useState(50)
   const [activo, setActivo] = useState<Dir | null>(null)
   const activoRef = useRef<Dir | null>(null)
@@ -127,6 +128,9 @@ export function Manejo({ conectado, motivo, enviar }: { conectado: boolean; moti
               <input id="manejo-pot" type="range" min={20} max={100} step={5} value={pot} onChange={(e) => setPot(Number(e.target.value))} />
             </label>
             <div className="manejo-acciones">
+              <button type="button" className="btn-secondary" disabled={!puede} onClick={() => decir('preséntate')} title="Dice «Hola, soy el Bicho» con su voz de ElevenLabs">
+                🗣️ Hola, soy el Bicho
+              </button>
               {ACCIONES.map((a) => (
                 <button key={a.nombre} type="button" className="btn-secondary" disabled={!puede} onClick={() => a.lineas(pot).forEach(enviar)}>
                   {a.nombre}
