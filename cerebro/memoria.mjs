@@ -157,9 +157,7 @@ export function crearMemoria(archivo, { maxHechos = 40, maxTurnos = 24, alResumi
         datos.hechos.length ? `Tu memoria (lo que decidiste recordar; no se borra sola):\n${datos.hechos.map((h, i) => `${i + 1}. ${h.texto}`).join('\n')}` : 'Tu memoria está vacía: todavía no has guardado nada con "recordar".',
         datos.resumen ? `Resumen de lo que conversaron antes:\n${datos.resumen}` : '',
         datos.lugar ? `Dónde estás ahora (te lo dijeron): ${datos.lugar}` : '',
-        datos.vistas.length
-          ? `Lo último que viste por tu cámara (tienes ${datos.vistas.length} vistas guardadas; el resto se consulta con "recordar_visto"):\n${datos.vistas.slice(-3).map((v) => `- [${hora(v.ts)}${v.lugar ? `, ${v.lugar}` : ''}] ${v.texto}`).join('\n')}`
-          : '',
+        datos.vistas.length ? `Tienes ${datos.vistas.length} vistas guardadas de tu cámara: se consultan con "recordar_visto" solo si te preguntan qué viste.` : '',
         datos.sucesos.length ? `Lo último que hiciste por tu cuenta:\n${datos.sucesos.map((s) => `- ${s}`).join('\n')}` : '',
         ruido.length ? `Frases sueltas que oíste hace poco y no eran para ti (ruido de la sala, no las contestes):\n${ruido.map((r) => `- ${r}`).join('\n')}` : '',
       ]

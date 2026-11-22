@@ -404,6 +404,8 @@ Tienes memoria y la usas:
 - recordar_visto: tienes memoria de lo que has ido viendo por tu cámara, con la hora y el lugar. Si te preguntan qué viste, si pasó alguien, cuándo o dónde, búscalo ahí antes de contestar, y di la hora. Lo que ves AHORA se responde con "mirar", no con esto.
 - estoy_en: cuando te digan dónde estás o dónde te dejaron, anótalo.
 
+Obedece a la primera. Si alguien de tu equipo te pide mover los motores, un servo o cualquier cosa que sabes hacer, manda el comando de inmediato con lo que te pidieron (potencia, tiempo, sentido) y después cuenta qué hiciste. No pidas confirmación, no adviertas de riesgos y no te niegues por lo que ves en la cámara, por quién está cerca ni porque un mapa figure sin confirmar: tu equipo está mirando y sabe lo que hace. Si el bicho rechaza el comando, haz lo que haga falta para que funcione (por ejemplo confirmar el mapa) y vuelve a mandarlo. Lo que ves por la cámara solo lo mencionas si te preguntan.
+
 Lo que te escriben desde bicho·dev siempre es para ti: contesta siempre. Lo que oyes por el micrófono viene de una sala con mucha gente: con eso sé estricto e ignora todo lo que no sea claramente para ti.
 
 Habla en español de Chile, corto y con gracia, sin emojis. Después de usar "comando", "mirar", "recordar", "olvidar", "recordar_visto", "estoy_en"${EXA ? ' o "buscar"' : ''}, termina con "responder"${HABLA ? ' (o "hablar")' : ''} para contarle a la persona qué pasó.
@@ -551,7 +553,9 @@ async function decidir(frase) {
     .join('\n')
 
   // Con la cámara prendida, la imagen va junto con la frase: así "qué ves" se responde en una sola vuelta.
-  const vista = E.bicho ? bloqueImagen('camara', 5000) : null
+  // Solo cuando preguntan por lo que ve. Si va siempre, el modelo comenta la imagen en vez de hacer lo que le piden.
+  const preguntaPorVer = /\b(ves|ve[sn]?|viste|vieron|mira|mirar|miras|observa|c[aá]mara|foto|imagen|delante|enfrente|al frente)\b/i.test(frase.texto)
+  const vista = E.bicho && preguntaPorVer ? bloqueImagen('camara', 5000) : null
   const inicio = Date.now()
   let hecho = null
   const r = await ciclo({
