@@ -9,7 +9,7 @@ const sinTildes = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036
 const PARAR = /^(para|parate|paren|detente|detenete|alto|stop|frena|quieto|basta|para ahi|apaga(?: los)? motores|para(?: los)? motores|deten(?: los)? motores|corta(?: los)? motores)$/
 const AVANZAR = /^(avanza|avanzar|adelante|hacia adelante|para adelante|pa delante|avanza (?:hacia |para )?adelante|anda (?:hacia |para )?adelante|ve (?:hacia |para )?adelante|camina|corre|(?:prende|prender|enciende|encender|arranca|arrancar|activa|activar|echa a andar|parte|partir)(?: los| tus)? motores|motores)$/
 const ATRAS = /^(atras|hacia atras|para atras|pa tras|retrocede|retroceder|reversa|marcha atras|retrocede (?:hacia |para )?atras|anda (?:hacia |para )?atras|ve (?:hacia |para )?atras|echate (?:para |pa )?atras)$/
-const GIRO = /^(?:(?:gira|girar|dobla|doblar|vira|virar|voltea|date vuelta|da vuelta|vuelta) )?(?:(?:a|hacia|para) )?(?:la )?(izquierda|derecha)$/
+const GIRO = /^(?:(?:gira|girar|rota|rotar|dobla|doblar|vira|virar|voltea|date vuelta|da vuelta|vuelta) )?(?:(?:a|hacia|para) )?(?:la )?(izquierda|derecha)$/
 
 /** ¿La versión `v` es igual o mayor que `min`? ("0.35.0" ≥ "0.35.0") */
 export function desde(v, min) {

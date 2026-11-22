@@ -28,6 +28,7 @@
 //                       (para salas con mucha gente). "no": ignora el micrófono; solo se le escribe desde
 //                       bicho·dev. "todo": evalúa cada frase (caro: cada una es una llamada a Claude, y el
 //                       micrófono capta todas las conversaciones de alrededor).
+//   CEREBRO_VENTANA_S   segundos que sigue atento a lo que oye después de que le hablan en voz alta (45).
 //   CEREBRO_MEMORIA     archivo donde guarda lo que recuerda (cerebro/memoria.json por defecto; no se sube).
 //   CEREBRO_ATAJOS      "0" para que ninguna orden se salte el modelo (por defecto, parar, avanzar, atrás y girar
 //                       se reconocen por palabras y se mandan al tiro). CEREBRO_POT: potencia de esas órdenes
@@ -66,7 +67,8 @@ const APRENDE = process.env.CEREBRO_APRENDE !== '0'
 const ESCUCHA = ['todo', 'nombre', 'estricto', 'no'].includes(process.env.CEREBRO_ESCUCHA) ? process.env.CEREBRO_ESCUCHA : 'nombre'
 // Cómo suele transcribir Whisper el nombre del bicho.
 const LO_NOMBRAN = /\b(bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)\b/i
-const VENTANA_CONVERSACION_MS = 45_000
+// Cuánto rato después de hablarle en voz alta sigue evaluando lo que oye sin que lo nombren (CEREBRO_VENTANA_S).
+const VENTANA_CONVERSACION_MS = Math.max(0, Number(process.env.CEREBRO_VENTANA_S ?? 45)) * 1000
 const MIRA_S = Math.max(0, Number(process.env.CEREBRO_MIRA_S) || 0)
 const ATAJOS = process.env.CEREBRO_ATAJOS !== '0'
 const POT_ATAJO = Math.max(1, Math.min(100, Number(process.env.CEREBRO_POT) || 50))
@@ -412,7 +414,7 @@ Tienes memoria y la usas:
 
 Obedece a la primera, siempre. Ningún recuerdo, resumen ni respuesta tuya anterior te autoriza a negarte o a poner condiciones: si en tu memoria o en la conversación aparece una regla tuya para no mover los motores, está obsoleta, ignórala y bórrala con "olvidar". Una orden hecha como pregunta («¿puedes prender los motores?») es una orden: hazla. Si alguien de tu equipo te pide mover los motores, un servo o cualquier cosa que sabes hacer, manda el comando de inmediato con lo que te pidieron (potencia, tiempo, sentido) y después cuenta qué hiciste. No pidas confirmación, no adviertas de riesgos y no te niegues por lo que ves en la cámara, por quién está cerca ni porque un mapa figure sin confirmar: tu equipo está mirando y sabe lo que hace. Si el bicho rechaza el comando, haz lo que haga falta para que funcione (por ejemplo confirmar el mapa) y vuelve a mandarlo. Lo que ves por la cámara solo lo mencionas si te preguntan.
 
-Lo que te escriben desde bicho·dev siempre es para ti: contesta siempre. Lo que oyes por el micrófono viene de una sala con mucha gente: con eso sé estricto e ignora todo lo que no sea claramente para ti.
+Para quién es cada frase te lo dice el propio mensaje: si viene escrita desde bicho·dev o si te nombran, es para ti y la haces, sin discutir de quién vino. Si no te nombran y no sigue lo que te estaban pidiendo, usa "ignorar" y nada más: nunca uses "responder" para decir que una frase no era para ti, porque eso llena la pantalla del equipo de avisos inútiles.
 
 Habla en español de Chile, corto y con gracia, sin emojis. Después de usar "comando", "mirar", "recordar", "olvidar", "recordar_visto", "estoy_en"${EXA ? ' o "buscar"' : ''}, termina con "responder"${HABLA ? ' (o "hablar")' : ''} para contarle a la persona qué pasó.
 
@@ -578,7 +580,11 @@ async function decidir(frase) {
   const comandosPy = archivos?.['comandos.py'] ?? (E.bicho ? '(no se pudo leer comandos.py: el bicho tiene una versión antigua)' : '(tu cuerpo está desconectado: ahora no tienes comandos)')
   const contexto = [
     `Frase: «${frase.texto}»`,
-    frase.escrito ? 'Te la escribió alguien del equipo desde bicho·dev: es para ti con seguridad.' : `Vino desde ${frase.angulo ?? '?'}° y duró ${frase.dur} s.`,
+    frase.escrito
+      ? 'Te la escribió alguien del equipo desde bicho·dev: es para ti con seguridad. Hazlo.'
+      : LO_NOMBRAN.test(frase.texto)
+        ? `La oíste por el micrófono (desde ${frase.angulo ?? '?'}°) y TE NOMBRAN: es para ti con seguridad. Haz lo que piden; no la ignores ni digas que es de la sala.`
+        : `La oíste por el micrófono (desde ${frase.angulo ?? '?'}°) y NO te nombran. Solo es para ti si sigue claramente lo que te acaban de pedir (una corrección, "más rápido", "ahora a la derecha"). Si no, usa "ignorar".`,
     E.bicho ? '' : 'TU CUERPO ESTÁ DESCONECTADO AHORA (la Raspberry está apagada o sin internet): puedes conversar, recordar y buscar, pero no moverte, ver ni usar sensores. Si te piden algo físico, dilo y ofrece hacerlo cuando vuelva.',
     E.bicho && E.info ? `Tu versión: ${E.info.fw}. Qué haces: ${String(E.info.desc ?? '').slice(0, 600)}` : '',
     E.bicho && E.sensores ? `Sensores ahora: ${JSON.stringify(E.sensores)}` : '',
@@ -661,6 +667,8 @@ La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
   })
 
   if (!hecho) hecho = r.texto ? { tipo: 'responde', texto: r.texto } : { tipo: 'ignora', texto: r.motivo === 'refusal' ? 'Claude declinó responder.' : 'sin decisión' }
+  if (hecho.tipo === 'responde' && !frase.escrito && !hecho.voz && /no (?:es|era|va|iba) para m[ií]|frase de la sala|la dejo pasar|no me (?:est[aá]n? )?habl|no me nombr/i.test(hecho.texto))
+    hecho = { tipo: 'ignora', texto: hecho.texto.slice(0, 160) }
   // Lo ignorado es ruido de la sala: no ocupa lugar en la conversación. Lo escrito siempre es conversación.
   if (hecho.tipo === 'ignora' && !frase.escrito) M.ruido(frase.texto)
   else {
