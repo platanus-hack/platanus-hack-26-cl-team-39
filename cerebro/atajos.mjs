@@ -7,7 +7,7 @@
 const sinTildes = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
 const PARAR = /^(para|parate|paren|detente|detenete|alto|stop|frena|quieto|basta|para ahi|apaga(?: los)? motores|para(?: los)? motores|deten(?: los)? motores|corta(?: los)? motores)$/
-const AVANZAR = /^(avanza|avanzar|adelante|hacia adelante|para adelante|pa delante|avanza (?:hacia |para )?adelante|anda (?:hacia |para )?adelante|ve (?:hacia |para )?adelante|camina|corre)$/
+const AVANZAR = /^(avanza|avanzar|adelante|hacia adelante|para adelante|pa delante|avanza (?:hacia |para )?adelante|anda (?:hacia |para )?adelante|ve (?:hacia |para )?adelante|camina|corre|(?:prende|prender|enciende|encender|arranca|arrancar|activa|activar|echa a andar|parte|partir)(?: los| tus)? motores|motores)$/
 const ATRAS = /^(atras|hacia atras|para atras|pa tras|retrocede|retroceder|reversa|marcha atras|retrocede (?:hacia |para )?atras|anda (?:hacia |para )?atras|ve (?:hacia |para )?atras|echate (?:para |pa )?atras)$/
 const GIRO = /^(?:(?:gira|girar|dobla|doblar|vira|virar|voltea|date vuelta|da vuelta|vuelta) )?(?:(?:a|hacia|para) )?(?:la )?(izquierda|derecha)$/
 
@@ -26,7 +26,7 @@ export function desde(v, min) {
 export function atajo(texto, { potencia = 50, fw = null } = {}) {
   let t = sinTildes(texto)
     .replace(/[^a-z0-9ñ%., ]+/g, ' ')
-    .replace(/\b(bich[oaei]s?|bichito|vich[oa]|oye|hey|ey|ya|ahora|altiro|al tiro|porfa|por favor|rapido|no mas|po|pues)\b/g, ' ')
+    .replace(/\b(bich[oaei]s?|bichito|vich[oa]|oye|hey|ey|ya|ahora|altiro|al tiro|porfa|por favor|rapido|no mas|po|pues|puedes|podrias|quiero que|necesito que|me puedes|te pido que)\b/g, ' ')
   // Potencia ("al 80", "80 %", "a toda potencia") y tiempo ("por 3 segundos", "2 s"). Se sacan de la frase.
   let pot = null
   let seg = null
