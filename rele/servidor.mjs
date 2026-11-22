@@ -19,6 +19,7 @@
 //   CLAVE_EQUIPO       clave para mandar comandos y actualizar (la del inventario). Sin ella, cualquiera puede.
 //   RELE_PUERTO        puerto (8787 por defecto).     RELE_HOST   interfaz (127.0.0.1 por defecto).
 //   GROQ_API_KEY       para transcribir lo que oye el bicho con Groq (Whisper large v3 turbo, lo más rápido).
+//                      Acepta varias separadas por comas: cuando una llega a su límite (429), sigue con la otra.
 //   WHISPER_URL        alternativa: un servicio propio que recibe el audio por POST y responde {"text": "..."}.
 //   OIDO_IDIOMA        idioma de lo que se le dice al bicho ("es" por defecto).
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
@@ -339,9 +340,29 @@ function conectarWeb(c, puedeMandar) {
 
 const MAX_FRASES = 40
 
+// Claves de Groq y hasta cuándo está agotada cada una (el plan gratis da 2000 transcripciones al día).
+const GROQ = String(process.env.GROQ_API_KEY || '').split(',').map((k) => k.trim()).filter(Boolean).map((clave) => ({ clave, hasta: 0 }))
+let avisoGroq = 0
+
+/** Cuánto esperar según el mensaje de Groq ("try again in 7m12.5s"); si no lo dice, una hora. */
+function esperaGroq(texto) {
+  const m = /try again in (?:(\d+)h)?(?:(\d+)m)?(?:([\d.]+)s)?/i.exec(texto)
+  if (!m || (!m[1] && !m[2] && !m[3])) return 3_600_000
+  return ((Number(m[1] || 0) * 60 + Number(m[2] || 0)) * 60 + Number(m[3] || 0)) * 1000 + 5000
+}
+
 async function transcribir(audio, fmt) {
   const idioma = process.env.OIDO_IDIOMA || 'es'
-  if (process.env.GROQ_API_KEY) {
+  const libre = GROQ.find((k) => k.hasta < Date.now())
+  if (GROQ.length && !libre) {
+    if (Date.now() - avisoGroq > 60_000) {
+      avisoGroq = Date.now()
+      const vuelve = Math.min(...GROQ.map((k) => k.hasta))
+      log(`transcripción: todas las claves de Groq (${GROQ.length}) llegaron a su límite; la primera vuelve a las ${new Date(vuelve).toISOString().slice(11, 16)} UTC`)
+    }
+    throw new Error('Groq sin cupo')
+  }
+  if (libre) {
     const cuerpo = new FormData()
     cuerpo.append('file', new Blob([audio], { type: fmt === 'ogg' ? 'audio/ogg' : 'audio/wav' }), `frase.${fmt === 'ogg' ? 'ogg' : 'wav'}`)
     cuerpo.append('model', process.env.GROQ_MODELO || 'whisper-large-v3-turbo')
@@ -350,10 +371,17 @@ async function transcribir(audio, fmt) {
     cuerpo.append('temperature', '0')
     const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
-      headers: { authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+      headers: { authorization: `Bearer ${libre.clave}` },
       body: cuerpo,
       signal: AbortSignal.timeout(30_000),
     })
+    if (r.status === 429) {
+      const texto = await r.text()
+      libre.hasta = Date.now() + esperaGroq(texto)
+      log(`transcripción: la clave ${GROQ.indexOf(libre) + 1} de Groq llegó a su límite; descansa hasta las ${new Date(libre.hasta).toISOString().slice(11, 16)} UTC`)
+      if (GROQ.some((k) => k.hasta < Date.now())) return transcribir(audio, fmt) // hay otra con cupo
+      throw new Error('Groq sin cupo')
+    }
     if (!r.ok) throw new Error(`Groq respondió ${r.status}: ${(await r.text()).slice(0, 200)}`)
     const j = await r.json()
     // Whisper dice qué tan probable es que el trozo no tenga voz: con ruido o música inventa palabras.
