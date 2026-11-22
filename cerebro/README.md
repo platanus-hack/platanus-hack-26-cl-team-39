@@ -53,8 +53,25 @@ Cuando Claude elige `hablar`, el cerebro pide el audio a ElevenLabs (WAV de 16 k
 | `CEREBRO_MODELO_DECIDIR` | Modelo que decide qué hacer con cada frase (`claude-haiku-5-5` por defecto, por velocidad). |
 | `EXA_API_KEY` | Clave de Exa para que busque en internet. Sin ella, responde solo con lo que sabe. |
 | `CEREBRO_APRENDE` | `0` para que decida y responda, pero no modifique el bicho. |
+| `CEREBRO_ESCUCHA` | Qué evalúa de lo que oye: `nombre` (por defecto: lo que dice «bicho» o sigue una conversación en voz alta), `estricto` (solo lo que dice «bicho»; para salas con mucha gente), `no` (ignora el micrófono) o `todo`. |
+| `CEREBRO_MEMORIA` | Archivo donde guarda lo que recuerda (`cerebro/memoria.json` por defecto). |
 
 También se pueden poner en `cerebro/.env`, que no se sube al repo.
+
+## Memoria
+
+Cada frase es una llamada nueva a Claude, así que lo que el bicho sabe de antes hay que dárselo. Tiene tres capas ([`memoria.mjs`](memoria.mjs)):
+
+| Capa | Qué guarda | Cuánto dura |
+|---|---|---|
+| Hechos | Lo que él decide guardar con la herramienta `recordar` (nombres, gustos, decisiones, cómo le conectaron algo) y borra con `olvidar`. Hasta 40. | Hasta que lo olvide |
+| Resumen | Lo conversado hace rato, en un párrafo. Se actualiza solo cuando la conversación pasa de 24 turnos. | Se va reescribiendo |
+| Conversación | Los últimos turnos en que le hablaron a él, tal cual. Van a Claude como mensajes de verdad, así entiende «hazlo de nuevo» o «¿y el otro?». | Hasta que pasan al resumen |
+
+- Las frases que oye y decide ignorar son ruido: guarda las últimas 4 y nunca desplazan la conversación. Antes compartían 12 líneas con todo lo demás y en una sala con gente la memoria duraba menos de un minuto.
+- Escribirle desde bicho·dev no abre la ventana de escucha del micrófono; solo lo que le dicen en voz alta.
+- Si el bicho (la Raspberry) está desconectado, igual contesta lo que le escriben y recuerda: avisa que no puede moverse.
+- Todo queda en `cerebro/memoria.json`, al lado del cerebro, y sobrevive a un reinicio. Tiene nombres y conversaciones del equipo: no se sube al repo. Para borrarle la memoria, detén el cerebro y borra ese archivo.
 
 ## Lo que anuncia
 

@@ -24,3 +24,7 @@ bicho/*.tar.gz
 
 # Ajustes personales de Claude Code (los compartidos van en .claude/settings.json)
 .claude/settings.local.json
+
+# Lo que el cerebro recuerda (nombres y conversaciones del equipo): solo vive donde corre
+cerebro/memoria.json
+cerebro/memoria.json.tmp

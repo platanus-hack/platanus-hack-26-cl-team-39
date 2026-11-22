@@ -24,8 +24,11 @@
 //                       en un par de segundos; con Fable cada vuelta tarda varias veces más).
 //   CEREBRO_APRENDE     "0" para que decida y responda pero no modifique el bicho.
 //   CEREBRO_ESCUCHA     "nombre" (por defecto): de lo que oye, solo evalúa las frases que dicen "bicho" o que
-//                       siguen una conversación reciente. "todo": evalúa cada frase (caro: cada una es una
-//                       llamada a Claude, y el micrófono capta todas las conversaciones de alrededor).
+//                       siguen una conversación reciente EN VOZ ALTA. "estricto": solo las que dicen "bicho"
+//                       (para salas con mucha gente). "no": ignora el micrófono; solo se le escribe desde
+//                       bicho·dev. "todo": evalúa cada frase (caro: cada una es una llamada a Claude, y el
+//                       micrófono capta todas las conversaciones de alrededor).
+//   CEREBRO_MEMORIA     archivo donde guarda lo que recuerda (cerebro/memoria.json por defecto; no se sube).
 //   EXA_API_KEY         clave de Exa para que el bicho busque en internet. Sin ella, responde solo con lo que sabe.
 //   ELEVENLABS_API_KEY  clave de ElevenLabs para que el bicho hable. Sin ella, solo responde por escrito.
 //   ELEVENLABS_MODELO   modelo de voz (eleven_v4 por defecto; eleven_flash_v2_5 es más rápido).
@@ -37,6 +40,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { crearMemoria } from './memoria.mjs'
 
 const AQUI = dirname(fileURLToPath(import.meta.url))
 try {
@@ -53,7 +57,7 @@ const MODELO_DECIDIR = process.env.CEREBRO_MODELO_DECIDIR || 'claude-haiku-5-5'
 const RELE = (process.env.RELE_URL || '').replace(/\/+$/, '')
 const CLAVE = process.env.CLAVE_EQUIPO || ''
 const APRENDE = process.env.CEREBRO_APRENDE !== '0'
-const ESCUCHA_TODO = process.env.CEREBRO_ESCUCHA === 'todo'
+const ESCUCHA = ['todo', 'nombre', 'estricto', 'no'].includes(process.env.CEREBRO_ESCUCHA) ? process.env.CEREBRO_ESCUCHA : 'nombre'
 // Cómo suele transcribir Whisper el nombre del bicho.
 const LO_NOMBRAN = /\b(bich[oaei]s?|bichito|vich[oa]|bitcho|beach[oa]|micho)\b/i
 const VENTANA_CONVERSACION_MS = 45_000
@@ -99,12 +103,14 @@ const E = {
   info: null, // última info del bicho (versión, qué hace, red)
   sensores: null,
   imagenes: new Map(), // nombre → { b64, fmt, ts }
-  historia: [], // lo último que se oyó y qué se hizo, para darle contexto a Claude
   esperas: new Set(), // quienes esperan un mensaje del relé
   aprendiendo: null, // descripción del aprendizaje en curso
   ultimoAprendizaje: 0,
-  ultimaInteraccion: 0, // última vez que el bicho respondió o hizo algo: por un rato sigue la conversación
+  ultimaInteraccion: 0, // última vez que respondió a algo dicho EN VOZ ALTA: por un rato sigue esa conversación
 }
+
+// Lo que recuerda: hechos, resumen y conversación. Vive en cerebro/memoria.json (no se sube al repo).
+const M = crearMemoria(process.env.CEREBRO_MEMORIA || join(AQUI, 'memoria.json'))
 
 function conectar() {
   const url = `${RELE.replace(/^http/, 'ws')}/ws${CLAVE ? `?clave=${encodeURIComponent(CLAVE)}` : ''}`
@@ -320,6 +326,14 @@ const H_DECIDIR = [
         }),
       ]
     : []),
+  herramienta(
+    'recordar',
+    'Guarda algo en tu memoria permanente para saberlo en conversaciones futuras: cómo se llama alguien, qué le gusta, una decisión, cómo te conectaron algo, una promesa que hiciste. Una idea por llamada, escrita para que se entienda sola dentro de un mes.',
+    { texto: { type: 'string', description: 'El hecho, en una frase completa. Por ejemplo: "Cristian prefiere que le hable de tú y sin rodeos."' } },
+  ),
+  herramienta('olvidar', 'Borra algo de tu memoria permanente porque ya no es cierto o te lo pidieron.', {
+    que: { type: 'string', description: 'El número del recuerdo, como aparece en tu memoria, o un trozo de su texto.' },
+  }),
   herramienta('mirar', 'Devuelve la última imagen de la cámara del bicho, si tiene una funcionando, para que puedas ver lo que él ve.', {}),
   herramienta(
     'aprender',
@@ -367,7 +381,15 @@ ${
       : ''
   }Se nota que te hablan a ti cuando te nombran ("bicho"), te saludan o te hablan directo ("hey", "oye", "puedes…", "tienes…") o siguen una conversación que ya tenías. La transcripción puede venir con errores: interpreta con sentido común.
 
-Habla en español de Chile, corto y con gracia, sin emojis. Después de usar "comando", "mirar"${EXA ? ' o "buscar"' : ''}, termina con "responder"${HABLA ? ' (o "hablar")' : ''} para contarle a la persona qué pasó.
+Tienes memoria y la usas:
+- Los mensajes anteriores de esta conversación son lo que ya hablaron: léelos antes de contestar. Si te dicen "hazlo de nuevo", "el otro", "más fuerte", "¿y ese?" o "como te dije", se refieren a eso. No pidas que te repitan lo que ya está ahí.
+- "Tu memoria" (viene con cada mensaje) son hechos que tú mismo guardaste y que siguen siendo ciertos. Úsalos con naturalidad, sin anunciar que los recuerdas.
+- recordar: cuando te digan algo que conviene saber después (un nombre, quién es quién, un gusto, una decisión, cómo te conectaron algo, algo que prometiste), guárdalo en el mismo turno, sin que te lo pidan. No guardes ruido, saludos ni lo que ya está guardado.
+- olvidar: cuando un recuerdo dejó de ser cierto o te piden que lo olvides.
+
+Lo que te escriben desde bicho·dev siempre es para ti: contesta siempre. Lo que oyes por el micrófono viene de una sala con mucha gente: con eso sé estricto e ignora todo lo que no sea claramente para ti.
+
+Habla en español de Chile, corto y con gracia, sin emojis. Después de usar "comando", "mirar", "recordar", "olvidar"${EXA ? ' o "buscar"' : ''}, termina con "responder"${HABLA ? ' (o "hablar")' : ''} para contarle a la persona qué pasó.
 
 Así es tu código de comandos ahora mismo (lo que sabes hacer):
 
@@ -384,8 +406,9 @@ function alOir(frase) {
     if (frase.texto.trim().split(/\s+/).length < 2) return // una palabra suelta casi nunca es una orden
     // Cada frase evaluada es una llamada a Claude. El micrófono oye todo lo que se conversa cerca, así que
     // solo se evalúa lo que nombra al bicho o lo que sigue una conversación que él ya estaba teniendo.
-    const enConversacion = Date.now() - E.ultimaInteraccion < VENTANA_CONVERSACION_MS
-    if (!ESCUCHA_TODO && !LO_NOMBRAN.test(frase.texto) && !enConversacion) return
+    if (ESCUCHA === 'no') return
+    const enConversacion = ESCUCHA === 'nombre' && Date.now() - E.ultimaInteraccion < VENTANA_CONVERSACION_MS
+    if (ESCUCHA !== 'todo' && !LO_NOMBRAN.test(frase.texto) && !enConversacion) return
   }
   if (pendientes >= 3) return // si se acumulan, se bota la más nueva: mejor responder tarde que a destiempo
   pendientes++
@@ -402,6 +425,39 @@ function errorDeClaude(e, haciendo) {
   else anunciar('error', `Falló ${haciendo}: ${String(e?.message ?? e).slice(0, 200)}`)
 }
 
+let resumiendo = false
+/** Cuando la conversación se alarga, los turnos más viejos pasan a un resumen corto. No bloquea las respuestas. */
+function resumirSiHaceFalta() {
+  const turnos = M.porResumir()
+  if (!turnos || resumiendo) return
+  resumiendo = true
+  claude.beta.messages
+    .create({
+      model: MODELO_DECIDIR,
+      max_tokens: 700,
+      ...(/haiku/.test(MODELO_DECIDIR) ? { thinking: { type: 'disabled' } } : {}),
+      output_config: { effort: 'low' },
+      system:
+        'Mantienes el resumen de lo que un robot (el bicho) ha conversado con su equipo. Te dan el resumen anterior y turnos nuevos. Escribe el resumen actualizado en un solo párrafo de 700 caracteres como máximo, en español: quién le habló, qué le pidieron, qué hizo, qué quedó pendiente y qué prometió. Conserva nombres y datos concretos; bota saludos y repeticiones. Responde solo con el resumen.',
+      messages: [{ role: 'user', content: M.textoParaResumir(turnos) }],
+    })
+    .then((r) => {
+      const texto = r.content
+        .filter((b) => b.type === 'text')
+        .map((b) => b.text)
+        .join(' ')
+        .trim()
+      if (texto) {
+        M.aplicarResumen(texto, turnos)
+        log(`memoria: ${turnos.length} turnos pasaron al resumen`)
+      }
+    })
+    .catch((e) => log(`memoria: no se pudo resumir (${String(e?.message ?? e).slice(0, 120)})`))
+    .finally(() => {
+      resumiendo = false
+    })
+}
+
 let fuenteCache = { version: null, archivos: null }
 async function fuente() {
   const v = E.info?.fw ?? null
@@ -412,33 +468,47 @@ async function fuente() {
 }
 
 async function decidir(frase) {
-  if (!E.bicho) return
-  const archivos = await fuente()
-  const comandosPy = archivos?.['comandos.py'] ?? '(no se pudo leer comandos.py: el bicho tiene una versión antigua)'
+  // Sin cuerpo no oye nada, pero si le escriben igual conversa y recuerda: solo no puede moverse.
+  if (!E.bicho && !frase.escrito) return
+  const archivos = E.bicho ? await fuente() : fuenteCache.archivos
+  const comandosPy = archivos?.['comandos.py'] ?? (E.bicho ? '(no se pudo leer comandos.py: el bicho tiene una versión antigua)' : '(tu cuerpo está desconectado: ahora no tienes comandos)')
   const contexto = [
     `Frase: «${frase.texto}»`,
     frase.escrito ? 'Te la escribió alguien del equipo desde bicho·dev: es para ti con seguridad.' : `Vino desde ${frase.angulo ?? '?'}° y duró ${frase.dur} s.`,
-    E.info ? `Tu versión: ${E.info.fw}. Qué haces: ${E.info.desc}` : '',
-    E.sensores ? `Sensores ahora: ${JSON.stringify(E.sensores)}` : '',
+    E.bicho ? '' : 'TU CUERPO ESTÁ DESCONECTADO AHORA (la Raspberry está apagada o sin internet): puedes conversar, recordar y buscar, pero no moverte, ver ni usar sensores. Si te piden algo físico, dilo y ofrece hacerlo cuando vuelva.',
+    E.bicho && E.info ? `Tu versión: ${E.info.fw}. Qué haces: ${E.info.desc}` : '',
+    E.bicho && E.sensores ? `Sensores ahora: ${JSON.stringify(E.sensores)}` : '',
     E.aprendiendo ? `EN ESTE MOMENTO ESTÁS APRENDIENDO: ${E.aprendiendo}. No lances otro aprendizaje.` : '',
-    E.historia.length ? `Lo último que pasó (más nuevo al final):\n${E.historia.map((h) => `- ${h}`).join('\n')}` : '',
+    M.bloque(),
   ]
     .filter(Boolean)
     .join('\n')
 
   // Con la cámara prendida, la imagen va junto con la frase: así "qué ves" se responde en una sola vuelta.
-  const vista = bloqueImagen('camara', 5000)
+  const vista = E.bicho ? bloqueImagen('camara', 5000) : null
   const inicio = Date.now()
   let hecho = null
   const r = await ciclo({
     modelo: MODELO_DECIDIR,
     sistema: sistemaDecidir(comandosPy),
     herramientas: H_DECIDIR,
-    mensajes: [{ role: 'user', content: vista ? [vista, { type: 'text', text: `${contexto}
+    // La conversación anterior va como mensajes de verdad: así "hazlo de nuevo" o "¿y el otro?" se entienden.
+    mensajes: [...M.mensajes(), { role: 'user', content: vista ? [vista, { type: 'text', text: `${contexto}
 La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
-    esfuerzo: 'low',
-    maxVueltas: 5,
+    // Lo escrito es deliberado y poco frecuente: vale la pena pensarlo un poco más que una frase oída al pasar.
+    esfuerzo: frase.escrito ? 'medium' : 'low',
+    maxVueltas: 7,
     ejecutar: async (nombre, x) => {
+      if (nombre === 'recordar') {
+        const r = M.recordar(x.texto)
+        log(`recuerda: ${String(x.texto ?? '').slice(0, 200)}`)
+        return r
+      }
+      if (nombre === 'olvidar') {
+        const r = M.olvidar(x.que)
+        log(`olvida: ${String(x.que ?? '').slice(0, 120)} → ${r}`)
+        return r
+      }
       if (nombre === 'ignorar') {
         hecho = { tipo: 'ignora', texto: String(x.motivo ?? '') }
         return { fin: 'ignora' }
@@ -480,9 +550,14 @@ La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
   })
 
   if (!hecho) hecho = r.texto ? { tipo: 'responde', texto: r.texto } : { tipo: 'ignora', texto: r.motivo === 'refusal' ? 'Claude declinó responder.' : 'sin decisión' }
-  E.historia.push(`Oíste «${frase.texto}» (${frase.angulo ?? '?'}°) → ${hecho.tipo}${hecho.voz ? ` en voz alta (voz ${hecho.voz})` : ''}: ${hecho.texto}`)
-  if (E.historia.length > 12) E.historia.shift()
-  if (hecho.tipo !== 'ignora') E.ultimaInteraccion = Date.now()
+  // Lo ignorado es ruido de la sala: no ocupa lugar en la conversación. Lo escrito siempre es conversación.
+  if (hecho.tipo === 'ignora' && !frase.escrito) M.ruido(frase.texto)
+  else {
+    M.turno({ escrito: frase.escrito, angulo: frase.angulo, texto: frase.texto, tipo: hecho.tipo, respuesta: `${hecho.voz ? `(en voz alta, voz ${hecho.voz}) ` : ''}${hecho.texto}` })
+    resumirSiHaceFalta()
+  }
+  // Solo lo dicho en voz alta abre la ventana de conversación por micrófono: escribirle no pone a escuchar la sala.
+  if (hecho.tipo !== 'ignora' && !frase.escrito) E.ultimaInteraccion = Date.now()
   log(`decidió en ${Date.now() - inicio} ms (${MODELO_DECIDIR})`)
   const idEvento = randomUUID()
   anunciar(hecho.tipo, hecho.texto, { id: idEvento, frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null, ...(hecho.voz ? { voz: hecho.voz } : {}) })
@@ -770,7 +845,7 @@ async function aprender(que, frase) {
     const porque = { refusal: 'Claude declinó hacer este aprendizaje.', max_tokens: 'Se me acabó el espacio para escribir a mitad del aprendizaje.', max_vueltas: 'Di demasiadas vueltas sin terminar.' }
     const resumen = r.texto || `${porque[r.motivo] ?? `Terminé sin explicación (${r.motivo}).`}${instalada ? ` Quedó instalada la versión ${instalada}.` : ' No instalé nada.'}`
     log(`aprendizaje terminó: motivo=${r.motivo} instalada=${instalada} instalaciones=${instalaciones}`)
-    E.historia.push(`Aprendizaje «${que}» → ${instalada ? `instalaste la versión ${instalada}` : 'no se instaló nada'}: ${resumen.slice(0, 200)}`)
+    M.suceso(`Aprendizaje «${que}» → ${instalada ? `instalaste la versión ${instalada}` : 'no se instaló nada'}: ${resumen.slice(0, 200)}`)
     anunciar(instalada ? 'aprendido' : 'error', resumen, { trabajo, version: instalada, ...(instalada && habilidad ? { habilidad } : {}) })
   } finally {
     E.aprendiendo = null
@@ -778,5 +853,5 @@ async function aprender(que, frase) {
   }
 }
 
-log(`cerebro del bicho · decide ${MODELO_DECIDIR} · aprende ${MODELO} · escucha ${ESCUCHA_TODO ? 'todo' : 'solo si lo nombran'} · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
+log(`cerebro del bicho · decide ${MODELO_DECIDIR} · aprende ${MODELO} · escucha ${ESCUCHA} · memoria ${M.datos.hechos.length} hechos y ${M.datos.conversacion.length} turnos · aprendizaje ${APRENDE ? 'activado' : 'desactivado'}${CLAVE ? '' : ' · OJO: sin CLAVE_EQUIPO no puede mandar comandos'}`)
 conectar()

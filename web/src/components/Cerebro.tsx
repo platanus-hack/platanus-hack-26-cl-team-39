@@ -46,6 +46,7 @@ export function Cerebro({
   vozAqui,
   onVozAqui,
   connected,
+  sinBicho,
   motivo,
   onReconectar,
   onDecir,
@@ -58,6 +59,8 @@ export function Cerebro({
   vozAqui: boolean
   onVozAqui: (v: boolean) => void
   connected: boolean
+  /** El relé está, pero el bicho (la Raspberry) no está conectado a él. */
+  sinBicho?: boolean
   /** Por qué no se le puede escribir ahora (null si se puede). */
   motivo: string | null
   /** Si volver a conectar lo arregla (por ejemplo, la clave cambió). */
@@ -136,6 +139,12 @@ export function Cerebro({
                     Volver a conectar
                   </button>
                 )}
+              </p>
+            )}
+
+            {connected && sinBicho && (
+              <p className="cerebro-aviso" role="status">
+                El bicho no está conectado: está apagado o sin internet. Puedes escribirle y conversa igual, pero no va a moverse, ver ni oír hasta que vuelva.
               </p>
             )}
 

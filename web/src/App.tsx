@@ -1047,6 +1047,7 @@ export default function App() {
               vozAqui={vozAqui}
               onVozAqui={cambiarVozAqui}
               connected={connected}
+              sinBicho={sinBicho}
               motivo={motivoCerebro}
               onReconectar={reconectarRele}
               onDecir={decirAlCerebro}
