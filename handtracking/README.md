@@ -1,5 +1,7 @@
 # bicho · hand tracking (Unity)
 
+> **Feature por desarrollar.** No es parte de lo que Bicho hace hoy. Estado y pendientes en [`docs/POR-DESARROLLAR.md`](../docs/POR-DESARROLLAR.md).
+
 Manejar el bicho con las manos frente a la cámara del computador.
 
 ```

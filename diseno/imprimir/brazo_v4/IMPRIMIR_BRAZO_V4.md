@@ -1,5 +1,7 @@
 # Brazo v4 de Bicho: piezas definitivas para imprimir
 
+> **Feature por desarrollar.** Bicho anda sin brazo desde el 21 de noviembre a las 22:42. Este brazo quedó listo para imprimir y montar más adelante. Estado y pendientes en [`docs/POR-DESARROLLAR.md`](../../../docs/POR-DESARROLLAR.md).
+
 21-nov-2026 · Equipo CRBRC · Platanus Hack 26. **Reemplaza al brazo de la bandeja B07** (P07-P11, P14, P15 de la v3): no imprimir B07 ni B08.
 
 ## ✅ PLAN VIGENTE: 3 impresoras en paralelo, ~3 h 45 min (21-nov, 18:00)

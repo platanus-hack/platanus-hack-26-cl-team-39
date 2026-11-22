@@ -54,7 +54,28 @@ Dónde verlo:
 - **Dos sensores de flujo óptico** ADNS-3080 por SPI, que aprendió a usar solo.
 - **Chasis de 2 placas impresas en 3D** de 32 × 20 cm, con rejilla M3 cada 10 mm, soportes para los sensores y el audio, y 6 paneles laterales a presión.
 
-Diseñamos un brazo (sigue en [`diseno/`](diseno/)), pero lo descartamos: Bicho anda sin brazo.
+Diseñamos un brazo de 4 servos, pero Bicho anda sin brazo. El brazo quedó como feature por desarrollar (ver más abajo).
+
+## Esquemáticos
+
+El esquemático de conexiones (A3, 4 hojas) está en [`diseno/fuentes/esquematico-conexiones.pdf`](diseno/fuentes/esquematico-conexiones.pdf). Es la **propuesta inicial**. En el robot armado cambió una cosa: el ESP32-CAM se descartó y la Raspberry Pi maneja directo el bus I2C (PCA9685 0x40 para los motores, PCA9685 0x41 para los servos). El resto de las redes, las direcciones I2C y la alimentación siguen como en las hojas.
+
+| | |
+|---|---|
+| **1 · Señales y control.** Pi, bus I2C, PCA9685, TB6612 y motores. | **2 · Alimentación.** Baterías 18650, UPS, LM2596 y masas. |
+| [![Hoja 1: señales y control](docs/esquematicos/esquematico-1.png)](docs/esquematicos/esquematico-1.png) | [![Hoja 2: alimentación](docs/esquematicos/esquematico-2.png)](docs/esquematicos/esquematico-2.png) |
+| **3 · Tabla de cableado.** Pin por pin. | **4 · Recursos libres, flasheo y pendientes.** |
+| [![Hoja 3: tabla de cableado](docs/esquematicos/esquematico-3.png)](docs/esquematicos/esquematico-3.png) | [![Hoja 4: recursos libres](docs/esquematicos/esquematico-4.png)](docs/esquematicos/esquematico-4.png) |
+
+## Por desarrollar
+
+Esto quedó diseñado o empezado, pero no es parte de lo que Bicho hace hoy. El detalle de cada feature, con estado y lo que falta, está en [`docs/POR-DESARROLLAR.md`](docs/POR-DESARROLLAR.md).
+
+- **Brazo de 4 servos** ([`diseno/imprimir/brazo_v4/`](diseno/imprimir/brazo_v4/)): diseño final, archivos para tres impresoras, modelo BIM y la vista **Brazo** en bicho·dev. El firmware ya tiene el comando `servo`. Falta imprimirlo y montarlo.
+- **LiDAR 2D**: el soporte está impreso. Falta el módulo en el Pi.
+- **Señas con la mano** ([`handtracking/tracker/senas.py`](handtracking/tracker/senas.py)): le enseñas una seña con la voz frente a su cámara y la reconoce. Está probado contra el relé, pero falta la prueba con el robot real.
+- **Manejar con las manos** ([`handtracking/unity/`](handtracking/unity/)): app Unity con gestos y parada de emergencia que entra por el relé. Falta probarla con los motores.
+- **Gemelo digital**: las pestañas **Gemelo 3D** y **Manos** de bicho·dev, con el robot completo y los sensores en vivo. Falta el deploy.
 
 ## Mapa del repo
 
@@ -64,8 +85,9 @@ Diseñamos un brazo (sigue en [`diseno/`](diseno/)), pero lo descartamos: Bicho 
 | [`cerebro/`](cerebro/) | El Cerebro: decide y aprende con Claude, conectado al relé. |
 | [`rele/`](rele/) | El relé (Node, sin dependencias): une al bicho con la web y el Cerebro desde cualquier red, y transcribe lo que oye. |
 | [`web/`](web/) | **bicho·dev**, el panel (Vite + React): habilidades, firmware, sensores, Oído, Cerebro, consola, versiones, simulador e inventario. Las versiones publicadas del bicho están en `web/public/firmware/`. |
-| [`diseno/`](diseno/) | El cuerpo en 3D: STL, bandejas para imprimir y el Taller 3D. |
-| [`handtracking/`](handtracking/) | Gestos con la mano (MediaPipe + Unity) que mandan comandos al bicho por el relé. |
+| [`diseno/`](diseno/) | El cuerpo en 3D: STL, bandejas para imprimir, soportes, paneles, el Taller 3D y el brazo v4 (por desarrollar). El esquemático está en `diseno/fuentes/`. |
+| [`docs/`](docs/) | Esquemáticos en imagen y [features por desarrollar](docs/POR-DESARROLLAR.md). |
+| [`handtracking/`](handtracking/) | Por desarrollar: señas y gestos con la mano (MediaPipe + Unity) que mandan comandos al bicho por el relé. |
 | [`marca/`](marca/) | Logo, manual de marca y guion del pitch. |
 | [`contexto/`](contexto/) | Estado, decisiones y bitácora del equipo: el contexto que comparten los Claude de cada integrante. |
 | [`harness/`](harness/) | El boceto inicial de la capa de IA; lo que corre de verdad está en `cerebro/`. |
