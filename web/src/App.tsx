@@ -8,6 +8,7 @@ import { BotonTema } from './components/Tema'
 import { Icon, SparkDefs, fmtAgo, fmtBytes, fmtUptime } from './components/ui'
 import { cmpSemver, fetchPackage, loadManifest, looksLikePackage, uploadPackage, type Manifest, type Release } from './lib/firmware'
 import { Cerebro, type Evento, type Imagen } from './components/Cerebro'
+import { Manejo } from './components/Manejo'
 import { Habilidades } from './components/Habilidades'
 import { Oido, type Frase } from './components/Oido'
 import { clave as claveEquipo } from './lib/inventario'
@@ -1037,6 +1038,8 @@ export default function App() {
                 </article>
               </div>
             </section>
+
+            <Manejo conectado={connected && !sinBicho} motivo={relLink ? motivoCerebro : null} enviar={(l) => void send(l)} />
 
             <Sensors store={store} connected={connected} onRate={(hz) => send(CMD.rate(hz))} />
 

@@ -1,0 +1,23 @@
+/* Manejo: cruceta de flechas, freno al centro, velocidad y acciones rápidas */
+.manejo-cuerpo{display:flex;flex-wrap:wrap;gap:24px;align-items:center}
+.manejo-cruz{display:grid;grid-template-columns:repeat(3,76px);grid-template-rows:repeat(3,76px);gap:8px;touch-action:none;user-select:none;-webkit-user-select:none}
+.manejo-adelante{grid-column:2;grid-row:1}
+.manejo-izquierda{grid-column:1;grid-row:2}
+.manejo-freno{grid-column:2;grid-row:2}
+.manejo-derecha{grid-column:3;grid-row:2}
+.manejo-atras{grid-column:2;grid-row:3}
+.manejo-flecha,.manejo-freno{appearance:none;border:0;border-radius:18px;font:600 26px var(--font);cursor:pointer;touch-action:none;
+  transition:transform .08s ease,background .12s ease}
+.manejo-flecha{background:rgba(0,122,255,.12);color:var(--blue)}
+.manejo-flecha.activo{background:var(--blue);color:#fff;transform:scale(.96)}
+.manejo-freno{background:var(--red);color:#fff;font-size:13px;letter-spacing:.06em}
+.manejo-freno:active{transform:scale(.94)}
+.manejo-flecha:disabled,.manejo-freno:disabled{opacity:.4;cursor:not-allowed}
+.manejo-flecha:focus-visible,.manejo-freno:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.manejo-lado{flex:1;min-width:220px;display:grid;gap:16px}
+.manejo-vel{display:grid;gap:6px;font-size:14px}
+.manejo-vel b{font-variant-numeric:tabular-nums}
+.manejo-vel input{width:100%}
+.manejo-acciones{display:flex;flex-wrap:wrap;gap:8px}
+.manejo-acciones .btn-secondary{height:36px;padding:0 14px}
+.manejo-aviso{margin:-4px 0 12px;padding:8px 12px;border-radius:12px;background:rgba(255,159,10,.14);color:#8a5300;font-size:13px}
