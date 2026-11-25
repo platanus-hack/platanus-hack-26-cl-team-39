@@ -48,7 +48,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { crearMemoria } from './memoria.mjs'
-import { atajo } from './atajos.mjs'
+import { atajo, atajoOido, LO_NOMBRAN } from './atajos.mjs'
 
 const AQUI = dirname(fileURLToPath(import.meta.url))
 try {
@@ -66,13 +66,19 @@ const RELE = (process.env.RELE_URL || '').replace(/\/+$/, '')
 const CLAVE = process.env.CLAVE_EQUIPO || ''
 const APRENDE = process.env.CEREBRO_APRENDE !== '0'
 const ESCUCHA = ['todo', 'nombre', 'estricto', 'no'].includes(process.env.CEREBRO_ESCUCHA) ? process.env.CEREBRO_ESCUCHA : 'nombre'
-// Cómo suele transcribir Whisper el nombre del bicho.
-// Cómo transcriben «bicho» con ruido: Micho, Picho, Pichu, Nicho… (visto en los registros del 22 nov).
-const LO_NOMBRAN = /\b(bich[oaeiu]s?|bichito|vich[oa]|bitcho|beach[oa]|m[ií]cho|p[ií]ch[ou]|n[ií]cho)\b/i
 // Cuánto rato después de hablarle en voz alta sigue evaluando lo que oye sin que lo nombren (CEREBRO_VENTANA_S).
 const VENTANA_CONVERSACION_MS = Math.max(0, Number(process.env.CEREBRO_VENTANA_S ?? 45)) * 1000
 // Solo lo llamaron ("bicho", "oye bicho", "bicho, ¿me escuchas?"): se despierta y espera la orden.
-const SOLO_LLAMADO = /^(?:(?:oye|hey|ey|hola|a ver|escucha|escuchame|disculpa)[ ,]*)?(?:bich[oaeiu]s?|bichito|vich[oa]|bitcho|beach[oa]|micho|pich[ou]|nicho)(?:[ ,]*(?:me (?:escuchas|oyes|estas escuchando)|estas ahi|ven|oye))?$/
+const SOLO_LLAMADO = /^(?:(?:oye|hey|ey|ei|hola|a ver|escucha|escuchame|disculpa) )?bicho(?: bicho)*(?: (?:me (?:escuchas|oyes|estas escuchando)(?: bien)?|estas ahi|ven|oye))?$/
+const PRUEBA_DE_VOZ = /^(?:hola )?(?:me (?:oyes|escuchas)(?: bien)?|me hablas bien|estas ahi)$/
+
+function confirmaEscucha(texto) {
+  if (!E.bicho || ESCUCHA === 'no') return false
+  const limpio = texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const normalizado = limpio.replaceAll(new RegExp(LO_NOMBRAN, 'gi'), 'bicho')
+  if (SOLO_LLAMADO.test(normalizado)) return true
+  return ESCUCHA === 'nombre' && Date.now() - E.ultimaInteraccion < VENTANA_CONVERSACION_MS && PRUEBA_DE_VOZ.test(limpio)
+}
 const MIRA_S = Math.max(0, Number(process.env.CEREBRO_MIRA_S) || 0)
 const ATAJOS = process.env.CEREBRO_ATAJOS !== '0'
 const POT_ATAJO = Math.max(1, Math.min(100, Number(process.env.CEREBRO_POT) || 50))
@@ -157,12 +163,20 @@ function conectar() {
   ws.onerror = () => {}
 }
 
+// El relé reenvía su historial al conectar. Una escucha ya atendida no debe repetir un giro.
+const arranque = Date.now()
+const oidas = new Set()
+
 function recibir(m) {
   if (m.t === 'rele') E.bicho = Boolean(m.bicho)
   else if (m.t === 'info') E.info = m
   else if (m.t === 's') E.sensores = m.d
   else if (m.t === 'imagen' && typeof m.nombre === 'string' && typeof m.b64 === 'string') E.imagenes.set(m.nombre, { b64: m.b64, fmt: m.fmt === 'png' ? 'png' : 'jpeg', ts: Date.now() })
-  else if (m.t === 'oido' && m.estado === 'listo' && m.texto && Date.now() - (m.ts ?? 0) < 20_000) alOir(m)
+  else if (m.t === 'oido' && m.estado === 'listo' && m.texto && m.ts >= arranque && Date.now() - m.ts < 20_000 && !oidas.has(m.id)) {
+    oidas.add(m.id)
+    if (oidas.size > 128) oidas.delete(oidas.values().next().value)
+    alOir(m)
+  }
   // Desde bicho·dev también se le puede escribir: llega como {"t":"cerebro","tipo":"decir","texto":"..."}.
   else if (m.t === 'cerebro' && m.tipo === 'decir' && typeof m.texto === 'string' && m.texto.trim() && Date.now() - (m.ts ?? Date.now()) < 20_000)
     alOir({ id: String(m.id ?? randomUUID()), texto: m.texto.trim(), angulo: null, dur: 0, escrito: true })
@@ -199,11 +213,11 @@ function anunciar(tipo, texto, extra = {}) {
 }
 
 /** Manda un comando al bicho y junta lo que responde por la consola durante un rato. */
-async function comandoAlBicho(comando, ms = 2500) {
+async function comandoAlBicho(comando, ms = 2500, aceptarLog = () => true) {
   if (!E.bicho) return 'El bicho no está conectado al relé.'
   const respuestas = []
   const juntar = (m) => {
-    if (m.t === 'log' && typeof m.msg === 'string') respuestas.push(`[${m.lvl ?? 'info'}] ${m.msg}`)
+    if (m.t === 'log' && typeof m.msg === 'string' && aceptarLog(m.msg)) respuestas.push(`[${m.lvl ?? 'info'}] ${m.msg}`)
   }
   E.esperas.add(juntar)
   if (!enviar(comando)) {
@@ -449,8 +463,19 @@ async function ejecutarAtajo(frase, a) {
   anunciar('comando', JSON.stringify(a.cmd), { frase: frase.id })
   // Si venía moviéndose, primero se corta: el bicho no acepta un movimiento encima de otro.
   if (a.tipo !== 'parar') enviar({ cmd: 'motores', on: false })
-  const r = await comandoAlBicho(a.cmd, 1500)
+  // Los logs de la luz y de la parada previa también llegan por la consola.
+  const delGiro = msg => /^motores: (giro a la |no giro |no existe |ya hay )/.test(msg)
+  let r = a.tipo === 'giro' ? await comandoAlBicho(a.cmd, 3000, delGiro) : await comandoAlBicho(a.cmd, 1500)
   if (a.tipo !== 'parar' && /sin confirmar|no hay mapa|todav[ií]a no hay mapa/i.test(r)) return decidir(frase)
+  if (a.tipo === 'giro') {
+    const aceptado = r.split('\n').find(l => l.startsWith(`[info] motores: giro a la ${a.cmd.giro} al `))
+    if (!aceptado) {
+      enviar({ cmd: 'expresar', estado: 'no', seg: 1.5 })
+      anunciar('error', 'El robot no confirmó el giro. ' + r.slice(0, 250), { frase: frase.id })
+      return
+    }
+    r = aceptado
+  }
   enviar({ cmd: 'expresar', estado: SONIDO_ATAJO[a.tipo] ?? 'si', seg: 1.5 })
   const texto =
     r
@@ -480,18 +505,34 @@ function despertar(frase) {
 const TOPE_FRASE_S = Number(process.env.CEREBRO_TOPE_FRASE_S) || 3.8
 let enEspera = null // { frase, reloj }
 function alOir(frase) {
-  if (!frase.escrito) {
-    if (enEspera) {
-      clearTimeout(enEspera.reloj)
-      frase = { ...frase, texto: `${enEspera.frase.texto} ${frase.texto}`.trim(), dur: (enEspera.frase.dur || 0) + (frase.dur || 0) }
+  if (frase.escrito) return procesar(frase)
+  const llamado = confirmaEscucha(frase.texto)
+  const nombrado = E.bicho && ESCUCHA !== 'no' && LO_NOMBRAN.test(frase.texto)
+  if (enEspera) {
+    clearTimeout(enEspera.reloj)
+    const anterior = enEspera.frase
+    enEspera = null
+    if (ATAJOS && E.bicho && atajo(frase.texto, OPC_ATAJO())?.tipo === 'parar') {
+      // Una parada cancela la orden que aún no se había decidido.
+      return procesar(frase)
+    }
+    if (llamado || nombrado) procesar(anterior)
+    else frase = { ...frase, texto: `${anterior.texto} ${frase.texto}`, dur: anterior.dur + frase.dur }
+  }
+  if (llamado) return despertar(frase)
+  if (nombrado) {
+    E.ultimaInteraccion = Date.now()
+    enviar({ cmd: 'expresar', estado: 'escucha', seg: 3 })
+  }
+  // Una orden completa ya se puede ejecutar, aunque la captura haya llegado al tope de 4 s.
+  if (ATAJOS && E.bicho && atajoOido(frase.texto, OPC_ATAJO())) return procesar(frase)
+  if (frase.dur >= TOPE_FRASE_S && frase.dur < TOPE_FRASE_S * 4) {
+    const reloj = setTimeout(() => {
       enEspera = null
-    }
-    const soloParar = ATAJOS && atajo(frase.texto, { fw: E.info?.fw })?.tipo === 'parar'
-    if (!soloParar && (frase.dur || 0) >= TOPE_FRASE_S && (frase.dur || 0) < TOPE_FRASE_S * 4) {
-      const f = frase
-      enEspera = { frase: f, reloj: setTimeout(() => ((enEspera = null), procesar({ ...f, dur: 0 })), 1600) }
-      return
-    }
+      procesar(frase)
+    }, 1600)
+    enEspera = { frase, reloj }
+    return
   }
   procesar(frase)
 }
@@ -509,26 +550,17 @@ function procesar(frase) {
     M.turno({ escrito: frase.escrito, angulo: frase.angulo, texto: frase.texto, tipo: 'responde', respuesta: `(en voz alta) ${PRESENTACION}` })
     return void hablar(PRESENTACION, 'dueno', id).catch((e) => anunciar('error', `No pude hablar: ${String(e?.message ?? e).slice(0, 200)}`, { frase: frase.id }))
   }
-  const a = ATAJOS && E.bicho ? atajo(frase.texto, OPC_ATAJO()) : null
+  const reconocer = frase.escrito ? atajo : atajoOido
+  const a = ATAJOS && E.bicho ? reconocer(frase.texto, OPC_ATAJO()) : null
   // "Para" corta los motores venga de donde venga, aunque no lo nombren y aunque sea una sola palabra.
   if (a?.tipo === 'parar') return void ejecutarAtajo(frase, a).catch((e) => errorDeClaude(e, 'parando'))
   if (!frase.escrito) {
-    const limpio = frase.texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9ñ ,]+/g, ' ').replace(/\s+/g, ' ').trim()
-    if (ESCUCHA !== 'no' && E.bicho && SOLO_LLAMADO.test(limpio)) return despertar(frase)
-    if (frase.texto.trim().split(/\s+/).length < 2) return // una palabra suelta casi nunca es una orden
-    // Cada frase evaluada es una llamada a Claude. El micrófono oye todo lo que se conversa cerca, así que
-    // solo se evalúa lo que nombra al bicho o lo que sigue una conversación que él ya estaba teniendo.
     if (ESCUCHA === 'no') return
     const enConversacion = ESCUCHA === 'nombre' && Date.now() - E.ultimaInteraccion < VENTANA_CONVERSACION_MS
     if (ESCUCHA !== 'todo' && !LO_NOMBRAN.test(frase.texto) && !enConversacion) return
+    if (frase.texto.trim().split(/\s+/).length < 2 && !(a?.tipo === 'giro' && enConversacion)) return
   }
   if (a) return void ejecutarAtajo(frase, a).catch((e) => errorDeClaude(e, 'con un atajo'))
-  // Lo nombraron (aunque venga con más palabras: «hola bicho, ¿cómo estás?»): suena al tiro que escuchó y
-  // queda atento, sin esperar a que el modelo decida. Antes solo sonaba si la frase era SOLO el nombre.
-  if (!frase.escrito && E.bicho && LO_NOMBRAN.test(frase.texto)) {
-    E.ultimaInteraccion = Date.now()
-    enviar({ cmd: 'expresar', estado: 'escucha', seg: 3 })
-  }
   if (pendientes >= 3) return // si se acumulan, se bota la más nueva: mejor responder tarde que a destiempo
   pendientes++
   colaDecidir = colaDecidir
@@ -662,6 +694,7 @@ async function decidir(frase) {
   const vista = E.bicho && preguntaPorVer ? bloqueImagen('camara', 5000) : null
   const inicio = Date.now()
   let hecho = null
+  let mandoComando = false
   const r = await ciclo({
     modelo: MODELO_DECIDIR,
     sistema: sistemaDecidir(comandosPy),
@@ -703,6 +736,7 @@ La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
       if (nombre === 'comando') {
         const c = x.comando
         if (!c || typeof c !== 'object' || typeof c.cmd !== 'string' || c.cmd.startsWith('_')) throw new Error('El comando debe ser un objeto con "cmd".')
+        mandoComando = true
         anunciar('comando', JSON.stringify(c), { frase: frase.id })
         return comandoAlBicho(c)
       }
@@ -743,6 +777,10 @@ La imagen adjunta es lo que ve tu cámara en este momento.` }] : contexto }],
   log(`decidió en ${Date.now() - inicio} ms (${MODELO_DECIDIR})`)
   const idEvento = randomUUID()
   anunciar(hecho.tipo, hecho.texto, { id: idEvento, frase: frase.id, oido: frase.texto, angulo: frase.angulo ?? null, ...(hecho.voz ? { voz: hecho.voz } : {}) })
+  // En una continuación sin nombre no hubo tono de llamado. Confirma también las respuestas solo de texto.
+  if (hecho.tipo === 'responde' && !frase.escrito && !hecho.voz && !mandoComando && !LO_NOMBRAN.test(frase.texto)) {
+    enviar({ cmd: 'expresar', estado: 'escucha', seg: 1 })
+  }
   if (hecho.voz) hablar(hecho.texto, hecho.voz, idEvento).catch((e) => anunciar('error', `No pude hablar: ${String(e?.message ?? e).slice(0, 200)}`, { frase: frase.id }))
   if (hecho.tipo === 'aprende') aprender(hecho.que, frase).catch((e) => errorDeClaude(e, 'aprendiendo'))
 }

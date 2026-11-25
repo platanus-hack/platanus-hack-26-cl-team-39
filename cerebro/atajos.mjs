@@ -6,6 +6,8 @@
 
 const sinTildes = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
+export const LO_NOMBRAN = /\b(bich[oaeiu]s?|bichito|vich[oa]|bitcho|beach[oa]|m[ií]cho|p[ií]ch[ou]|n[ií]cho)\b/i
+
 const PARAR = /^(para|parate|paren|detente|detenete|alto|stop|frena|quieto|basta|para ahi|apaga(?: los)? motores|para(?: los)? motores|deten(?: los)? motores|corta(?: los)? motores)$/
 const AVANZAR = /^(avanza|avanzar|adelante|hacia adelante|para adelante|pa delante|avanza (?:hacia |para )?adelante|anda (?:hacia |para )?adelante|ve (?:hacia |para )?adelante|camina|corre|acelera|acelerar|(?:prende|prender|enciende|encender|arranca|arrancar|activa|activar|echa a andar|parte|partir)(?: los| tus)? motores|motores)$/
 const ATRAS = /^(atras|hacia atras|para atras|pa tras|retrocede|retroceder|reversa|marcha atras|retrocede (?:hacia |para )?atras|anda (?:hacia |para )?atras|ve (?:hacia |para )?atras|echate (?:para |pa )?atras)$/
@@ -28,7 +30,8 @@ export function desde(v, min) {
 export function atajo(texto, { potencia = 50, fw = null, giroSeg = 2.5, giroPot = 70, acelera = 80 } = {}) {
   let t = sinTildes(texto)
     .replace(/[^a-z0-9ñ%., ]+/g, ' ')
-    .replace(/\b(bich[oaeiu]s?|bichito|vich[oa]|micho|pich[ou]|nicho|oye|hey|ey|ya|ahora|altiro|al tiro|porfa|por favor|rapido|no mas|po|pues|puedes|podrias|quiero que|necesito que|me puedes|te pido que)\b/g, ' ')
+    .replaceAll(new RegExp(LO_NOMBRAN, 'gi'), ' ')
+    .replace(/\b(oye|hey|ey|ei|hola|ya|ahora|altiro|al tiro|porfa|por favor|rapido|no mas|po|pues|puedes|podrias|quiero que|necesito que|me puedes|te pido que)\b/g, ' ')
   // Potencia ("al 80", "80 %", "a toda potencia") y tiempo ("por 3 segundos", "2 s"). Se sacan de la frase.
   let pot = null
   let seg = null
@@ -55,4 +58,18 @@ export function atajo(texto, { potencia = 50, fw = null, giroSeg = 2.5, giroPot 
     return { tipo: 'giro', cmd: { cmd: 'motores', giro: g ? g[1] : 'derecha', pot: pot ?? giroPot, seg: seg ?? giroSeg } }
   }
   return null
+}
+
+// El transcriptor a veces mete charla de la sala y luego «¿Bicho gira?» en el mismo bloque.
+// Solo rescata un giro entero dirigido por nombre al final de una oración independiente.
+export function atajoOido(texto, opciones) {
+  const directo = atajo(texto, opciones)
+  if (directo) return directo
+  const oraciones = texto.trim().replace(/[.!?]+$/, '').split(/[.!?]+/)
+  if (oraciones.length < 2) return null
+  const final = oraciones.at(-1).trim().replace(/^(?:(?:oye|hey|baby),\s*)?[¿¡]/i, '').trim()
+  const primera = final.split(/[\s,]+/)[0]
+  if (!/^\p{L}+$/u.test(primera) || !LO_NOMBRAN.test(primera)) return null
+  const orden = atajo(final, opciones)
+  return orden?.tipo === 'giro' ? orden : null
 }

@@ -80,6 +80,8 @@ Decidir con Claude tarda entre 1 y 3 segundos. Las órdenes de movimiento más c
 ## Conversar por voz
 
 - **Llamarlo lo despierta.** Si alguien dice solo «Bicho» (o «oye bicho», «bicho, ¿me escuchas?»), prende la luz de «te escucha», contesta «¿Sí? Te escucho» y espera la orden durante `CEREBRO_VENTANA_S` segundos (45 por defecto). En ese rato no hace falta volver a nombrarlo, y cada orden que cumple renueva la espera.
+- Si oye «Bicho, Bicho» confirma enseguida con el mismo tono, incluso si el audio llegó al tope de duración. En modo `nombre`, una comprobación breve como «¿me escuchas?» también recibe el tono mientras la conversación siga abierta. Si contesta por texto a una continuación sin nombre y sin ejecutar comandos, da un tono para que la persona sepa que recibió respuesta.
+- «Bicho, gira» da el tono de escucha apenas llega la transcripción y manda el giro por el atajo. El tono de acción indica que el controlador aceptó el giro. En modo `nombre` también se puede decir «Bicho», esperar el pitido y luego «gira».
 - **Órdenes largas.** El oído corta cada frase a los pocos segundos. Si una frase llegó hasta ese tope, el cerebro espera 1,6 s la continuación y las junta antes de decidir (`CEREBRO_TOPE_FRASE_S`, 3,8 por defecto, tiene que calzar con el tope del oído del bicho).
 - Lo que oye sin que lo nombren y fuera de esa espera no se evalúa.
 
